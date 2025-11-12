@@ -1,0 +1,11 @@
+export { AIALRouter } from "./router.js";
+export { createAialRouter, createDefaultAdapters, shouldEnableAial, isOpenAiConfigured } from "./createRouter.js";
+export { createAialEvent, buildMetadata } from "./events.js";
+export { isFeatureEnabled, getEnvVar, parseIntegerEnv, parseNumberEnv } from "./config.js";
+export { MockAdapter, createMockAdapter } from "./adapters/mockAdapter.js";
+export { OpenAiAdapter, createOpenAiAdapter, isOpenAiConfigured as isOpenAiReady } from "./adapters/openaiAdapter.js";
+export { SupabaseAgentAdapter, createSupabaseAgentAdapter } from "./adapters/supabaseAgentAdapter.js";
+export * as Intent from "./intent/index.js";
+export { registerLeadEnrichmentExecutor, detectLeadIntentFromPrompt, buildLeadIntent } from "./intent/leadEnrichment.js";
+export { registerMeetingPrepExecutor, detectMeetingIntentFromPrompt, buildMeetingIntent } from "./intent/meetingPrep.js";
+export { registerComplianceAlertExecutor, detectComplianceIntentFromPrompt, buildComplianceIntent } from "./intent/complianceAlert.js";

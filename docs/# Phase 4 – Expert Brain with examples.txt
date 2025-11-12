@@ -1,0 +1,974 @@
+# Phase 4 – “Expert Brain / Mental Models” Scenario Pack  
+### For Insurance Advisors in Singapore & Malaysia  
+*(with Knowledge Atom Index + Copilot End-to-End Example)*
+
+---
+
+## How to Use This Document
+
+This markdown file is designed as a **blueprint** for:
+
+1. **Designing training** for SG/MY insurance advisors.
+2. **Building an AI copilot** that behaves like an experienced advisor coach.
+
+It contains:
+
+1. **Scenario Pack** (Phase 4)  
+   – 3–5 concrete, realistic scenarios per domain, showing how an expert thinks.
+
+2. **Knowledge Atom Index**  
+   – A structured list of micro-skills (“atoms”) with IDs, triggers, and outputs.
+
+3. **End-to-End Copilot Example**  
+   – One full Singapore case to show how the atoms feed a pre-meeting coach, in-meeting “whispers”, and post-meeting review.
+
+You can:
+
+- Use this as a **curriculum map** for micro-learning and role plays.
+- Use the IDs and structures as a **specification** for LLM prompts and tools.
+
+---
+
+# Part 1 – Scenario Pack (Phase 4: Expert Brain / Mental Models)
+
+Each domain has:
+
+- A short **description**.
+- A **table of scenarios** (3–5 each).
+- Each scenario is phrased so it can become:
+  - A training case study, and/or
+  - A trigger for an AI copilot.
+
+---
+
+## Domain 1 – Product Knowledge & Application
+
+**Core question:**  
+> “Given this client’s situation, which products, in what order, and why?”
+
+### Domain 1 Scenario Table
+
+| # | Scenario Name | Summary | Key Knowledge Atoms (examples) |
+|---|---------------|---------|---------------------------------|
+| 1 | Young Family with Heavy Commitments | Married couple in late 20s, one child, HDB/BTO or new mortgage, supporting parents, several confusing ILPs. They think they are “well covered” but actually lack CI/disability and rely on group cover. | Protection-first ordering; life cover sizing; CI sizing; term vs whole decision. |
+| 2 | Young Single “Just Wants to Invest” | 25-year-old single, no dependants, good income, minimal insurance. Asks for “something with better returns than fixed deposits” and is curious about ILPs. | Protection-first ordering; basic medical + CI first; term vs ILP; suitability vs “chasing returns”. |
+| 3 | “Whole Life vs Term – Which Is Better?” | Client has read blogs saying whole life is bad, but agent is strongly promoting whole life with multipliers as “best of both worlds”. Client is genuinely confused. | Term vs whole life decision tree; separating protection needs from investment goals; explaining guarantees vs bonuses in simple language. |
+| 4 | Muslim Client Choosing Takaful vs Conventional (MY) | 32-year-old Muslim professional in Malaysia wants to insure family and is unsure whether to use takaful or conventional insurance; hears friends say “just buy the cheapest”. | Takaful vs conventional choice; values-based framing; explaining cooperative risk sharing and Shariah aspects. |
+| 5 | Older Client with Limited Income | 60+ client with low income, no private medical cover, only basic national scheme. Wants to “not burden children” if hospitalised. | Hospitalisation priority; affordability and plan sizing; deciding what not to cover; safeguards for vulnerable clients. |
+
+---
+
+### Example Scenario – Young Single “Just Wants to Invest”
+
+**Client Snapshot**
+
+- Age: 25, single, working in a stable job.
+- Income: SGD 4,000/month.
+- No dependants, no mortgage yet.
+- Has only basic national health scheme, no integrated shield, no CI or disability cover.
+- Asks: “I want something with higher returns than fixed deposits. My friend bought an ILP, should I?”
+
+**Expert Mental Model**
+
+1. **Reframe the conversation: protection first, then investment.**  
+   - Check hospitalisation and income protection before any ILP/endowment.
+   - Explain that medical and CI protect *future earning power*.
+
+2. **Quantify minimum viable protection:**
+   - Medical: integrated hospital plan.
+   - CI: maybe 1–2 years of income.
+   - Disability income (if available and affordable).
+
+3. **Only then consider investment products:**
+   - Separate pure investments (funds, ETFs, etc.) from insurance.
+   - Explain ILP complexity and fees vs simpler investment routes.
+
+4. **Decision outcome example:**
+   - Step 1: Install medical + basic CI.
+   - Step 2: Allocate remaining savings capacity to investment portfolio, not necessarily through insurance.
+
+**Knowledge Atoms involved:**
+
+- KA-PROD-01 – Protection-First Ordering  
+- KA-PROD-02 – Life Cover Sizing (if future dependants/mortgage discussed)  
+- KA-PROD-03 – CI / Income Protection Sizing  
+- KA-PROD-04 – Term vs Whole Life vs ILP Decision Tree  
+
+---
+
+## Domain 2 – Advisory Process & Financial Needs Analysis (FNA)
+
+**Core question:**  
+> “How do I structure fact-finding and needs analysis into a coherent, documented recommendation?”
+
+### Domain 2 Scenario Table
+
+| # | Scenario Name | Summary | Key Knowledge Atoms |
+|---|---------------|---------|---------------------|
+| 1 | First-Time Full FNA | Advisor meets a new client (mid-30s, married, 1 child) for a comprehensive financial review. Client has policies from several insurers and is confused. | Comprehensive fact-find checklist; needs-based analysis; protection vs savings vs retirement; documenting “no new product” if appropriate. |
+| 2 | Client Wants “Safe, Better Than Fixed Deposit” | Near-retiree with lump sum (e.g. SGD 100k) says they want something “safe like fixed deposit but higher interest”. Bank or agent is tempted to suggest complex products. | Needs analysis for capital preservation; mapping objectives to product types; suitability vs complexity; explaining trade-offs simply. |
+| 3 | Policy Replacement Proposal | Client has a long-standing traditional policy; competitor proposes switching to a new ILP with “better returns”. | Policy replacement checklist; comparing charges, guarantees, surrender penalties; documenting rationale for replacing or not replacing. |
+| 4 | Life Event Review – New Child & Mortgage | Existing client had term + basic CI while single; now has spouse, baby, new housing loan. | Life-event triggered review FNA; recalculating cover; recognising increased responsibilities; planning an update roadmap. |
+| 5 | “No Product Is Best” Case | Client is heavily insured but financially stretched; best advice may be to reduce coverage or not add more. | Needs vs affordability; ethical decision to say “no new product”; documentation of rationale. |
+
+---
+
+### Example Scenario – Life Event Review: New Child & Mortgage
+
+**Client Snapshot**
+
+- Age: 33, married, 1-year-old child.
+- New mortgage: SGD 500k.
+- Existing cover:  
+  - Term life SGD 200k  
+  - No CI, no disability income  
+  - Integrated hospital plan  
+- Objective: “I want to make sure my family is okay if anything happens.”
+
+**Expert Mental Model**
+
+1. **Trigger: life event = automatic review.**
+   - Marriage, child, mortgage = major changes.
+   - Update dependants, liabilities, and income.
+
+2. **Recalculate needs:**
+   - Life cover often needs to increase (mortgage + several years of income).
+   - CI and disability income needs become much more important.
+
+3. **Gap analysis:**
+   - Current term SGD 200k < likely needed amount.
+   - Zero CI/disability coverage is a serious gap.
+
+4. **Plan options:**
+   - Increase term to cover mortgage + income replacement.
+   - Add CI and/or disability income within budget.
+   - Schedule future review for education/retirement planning.
+
+**Knowledge Atoms involved:**
+
+- KA-FNA-01 – Comprehensive Fact-Find Checklist  
+- KA-FNA-02 – Needs Prioritisation Under Budget Constraint  
+- KA-FNA-04 – Review Meeting FNA (Life Event Triggered)  
+
+---
+
+## Domain 3 – Regulatory & Ethical Guardrails
+
+**Core question:**  
+> “What must I *never* ignore or cross, no matter the sales opportunity?”
+
+### Domain 3 Scenario Table
+
+| # | Scenario Name | Summary | Key Knowledge Atoms |
+|---|---------------|---------|---------------------|
+| 1 | Older, Low-Income Client Sold Complex Product | 60+ client with low literacy and low income is sold a high-premium, complex investment-linked plan as “guaranteed retirement savings”. Family suspects mis-selling. | Vulnerable client safeguards; ILP suitability; mis-selling red flags; complaint and remediation flow. |
+| 2 | Using a Customer Knowledge Assessment (CKA) Result | Client “passes” a knowledge assessment, but clearly does not understand investment risks. Advisor is tempted to sell a high-risk ILP or complex wrap. | ILP suitability vs CKA; obligation to ensure understanding; documenting advice. |
+| 3 | High Premium vs Income | Agent proposes a premium that is 20–30% of client’s income for savings/investment policies. | Mis-selling red-flag pattern; budget-driven suitability; prioritising essentials. |
+| 4 | Policy Replacement Without Full Comparison | Agent proposes replacing an old policy purely for higher projected returns, without clearly listing disadvantages. | Replacement decision checklist; disclosure and comparison duties. |
+| 5 | Complaint Handling & Escalation | Client feels misled and wants to cancel or complain. Agent is unsure how to respond without being defensive. | Complaint and remediation flow; documentation; empathy and fairness. |
+
+---
+
+### Example Scenario – High Premium vs Income
+
+**Client Snapshot**
+
+- Income: MYR 3,000/month.
+- Agent proposes ILP with premium MYR 800/month as “forced savings and investment”.
+- Client is hesitant but likes the “discipline” idea.
+
+**Expert Mental Model**
+
+1. **Red-flag: premium is over 25% of income.**
+   - This is a large obligation for basic living standards.
+   - If circumstances change, risk of lapse is high.
+
+2. **Re-evaluate needs and priorities:**
+   - Confirm existing cover (medical, life, CI).
+   - Confirm debts, dependants, emergency savings.
+
+3. **Offer scaled alternatives:**
+   - Lower premium level (e.g. MYR 200–300) with more flexible protection.
+   - Emphasise building emergency savings and basic protection first.
+
+4. **Document clearly:**
+   - Record discussion about affordability and alternatives.
+   - If client chooses high premium despite advice, note that as well.
+
+**Knowledge Atoms involved:**
+
+- KA-ETH-04 – Mis-Selling Red-Flag Pattern  
+- KA-FNA-02 – Needs Prioritisation Under Budget Constraint  
+- KA-ETH-03 – Disclosure & Documentation Checklist  
+
+---
+
+## Domain 4 – Client Psychology & Communication
+
+**Core question:**  
+> “How do I talk so people understand, feel safe, and make good decisions?”
+
+### Domain 4 Scenario Table
+
+| # | Scenario Name | Summary | Key Knowledge Atoms |
+|---|---------------|---------|---------------------|
+| 1 | Young Client Feels Invincible | 25-year-old says, “I’m healthy, I’ll buy insurance later, I want to invest now.” | Invincibility and present bias reframe; protection for “future you”; simple risk-stat stories. |
+| 2 | “Whole Life Regret” vs “Term Regret” | One client regrets buying whole life; another regrets not having any cash value. Both are emotional. | Term vs whole framing; separating emotional stories from factual needs; focusing on “job to be done”. |
+| 3 | Muslim Client and Values (Takaful) | Client cares about faith-based decisions and wants to know what takaful really means. | Takaful values framing; explaining cooperative risk pooling; respecting value hierarchy. |
+| 4 | Client Burnt by Previous Agent | Client feels betrayed by prior mis-selling and is wary of any advisor. | Repairing trust; neutral policy review; explanation of good advisory process. |
+| 5 | Overwhelmed Client | Client is confused by terms like ILP, riders, bonuses, waiting periods. | Kitchen-table language; analogy-based explanations; teach-back method. |
+
+---
+
+### Example Scenario – Client Burnt by Previous Agent
+
+**Client Snapshot**
+
+- Age: 40, professional.
+- Previously sold a policy they did not understand, with poor results.
+- Emotional statement: “Insurance agents just push products. I don’t trust this industry.”
+
+**Expert Mental Model**
+
+1. **Acknowledge emotion first:**
+   - “I’m sorry you had that experience. It should not have happened that way.”
+
+2. **Offer value without immediate product pitch:**
+   - Free policy review, explanation of terms, and options (keep, reduce, adjust).
+
+3. **Educate on good process:**
+   - Explain how a proper FNA and transparent explanation should look.
+   - Contrast calmly with what they experienced, without attacking other agents personally.
+
+4. **Move at their pace:**
+   - Allow them to say “no new products today”.
+   - The goal is trust and clarity, not immediate sales.
+
+**Knowledge Atoms involved:**
+
+- KA-PSY-05 – Repairing Trust after Mis-Selling  
+- KA-FNA-01 – Comprehensive Fact-Find Checklist  
+- KA-ETH-03 – Disclosure & Documentation Checklist  
+
+---
+
+## Domain 5 – Sales Craft & Practice Management
+
+**Core question:**  
+> “How do I build a sustainable, ethical advisory practice?”
+
+### Domain 5 Scenario Table
+
+| # | Scenario Name | Summary | Key Knowledge Atoms |
+|---|---------------|---------|---------------------|
+| 1 | 200-Contact CRM but No Clear Plan | Advisor has many contacts but doesn’t know who to call first. | Lead prioritisation by life stage and risk; outreach topics based on gaps. |
+| 2 | Unstructured Week | Advisor feels busy but unproductive, with irregular meetings and no protected learning time. | Weekly activity plan; tracking fact-finds, reviews, and learning. |
+| 3 | Education-First Prospecting | Advisor prefers teaching (webinars, posts) over cold calling but doesn’t know how to convert that into business. | Education-led prospecting; calls to action; follow-up processes. |
+| 4 | Niche Positioning | Advisor works with a mix of clients and wants to stand out as a specialist. | Niche and personal brand positioning; consistent messaging. |
+| 5 | CPD as Competitive Advantage | Advisor wants to use formal certifications and courses to differentiate. | Personal CPD planning; connecting learning to client value and branding. |
+
+---
+
+### Example Scenario – 200-Contact CRM, No Plan
+
+**Advisor Snapshot**
+
+- 200 names in the CRM: friends, ex-clients, seminar attendees.
+- No segmentation, no prioritisation.
+- Feels overwhelmed and ends up doing random outreach.
+
+**Expert Mental Model**
+
+1. **Segment by life stage / risk:**
+   - Young families with mortgages and little cover.
+   - Self-employed with no group benefits.
+   - Pre-retirees with accumulated savings but unclear plan.
+
+2. **Define priority rules:**
+   - Highest potential *impact* on client outcome first (e.g., big protection gap, high financial consequence).
+   - Combine with advisor’s niche if any.
+
+3. **Design outreach themes:**
+   - “New parents protection check-up.”
+   - “Self-employed benefits audit.”
+   - “Pre-retirement risk & income review.”
+
+4. **Track activity and outcomes:**
+   - Number of outreach messages, booked meetings, completed FNAs.
+
+**Knowledge Atoms involved:**
+
+- KA-BUS-01 – Lead Prioritisation by Life Stage & Gap  
+- KA-BUS-02 – Weekly Activity Plan  
+
+---
+
+## Domain 6 – Digital & Data Literacy
+
+**Core question:**  
+> “How do I use digital tools to make better, more consistent advice decisions?”
+
+### Domain 6 Scenario Table
+
+| # | Scenario Name | Summary | Key Knowledge Atoms |
+|---|---------------|---------|---------------------|
+| 1 | eFNA Adoption | Advisor’s company has launched an electronic FNA tool, but advisor still prefers paper and feels it’s extra work. | eFNA utilisation; benefits for clarity and compliance. |
+| 2 | Client Comes with Online Comparison Screenshots | Client brings in screenshots from comparison sites and says, “This is the cheapest, why should I use you?” | Aggregator benchmarking; differentiating on advice and customisation. |
+| 3 | EPF / CPF and Digital Insurance Platforms (MY/SG) | Client has bought small covers from digital platforms (e.g., app-based micro-cover) and asks how they fit into the overall plan. | Integrating direct/digital covers into overall plan; explanation of pros and cons. |
+| 4 | Simple Analytics on Book of Business | Advisor wants to identify underinsured patterns across their client base. | Portfolio analytics for gap campaigns; targeted reviews. |
+| 5 | Digital Disclosure Design (for Insurer/Bank Teams) | Team is designing a digital purchase journey and needs to ensure key disclosures are clear. | Digital disclosure UI patterns; highlighting key facts in simple screens. |
+
+---
+
+### Example Scenario – Client with Comparison-Site Screenshots
+
+**Client Snapshot**
+
+- Has researched term life online and found a “cheapest” plan.
+- Comes to advisor with printouts/screenshots.
+- Question: “Why should I buy through you when this is the lowest price?”
+
+**Expert Mental Model**
+
+1. **Acknowledge the research:**
+   - “Great, you’ve already done some homework. Let’s build on that.”
+
+2. **Shift from price-only to suitability:**
+   - Discuss whether the cover amount, term, and riders match their situation.
+
+3. **Highlight advisory value:**
+   - Underwriting nuances, claim support, integration with their entire financial plan.
+
+4. **Document comparison:**
+   - Show differences in a simple table; if aggregator plan is truly best fit, say so.
+
+**Knowledge Atoms involved:**
+
+- KA-DIG-02 – Aggregator Benchmarking  
+- KA-PROD-04 – Term vs Whole Life vs ILP Decision Tree  
+- KA-FNA-02 – Needs Prioritisation Under Budget Constraint  
+
+---
+
+# Part 2 – Knowledge Atom Index (Condensed)
+
+Below is a **condensed version** of the Knowledge Atom Index.  
+Each atom has:
+
+- **ID** – stable reference.
+- **Domain**
+- **Name**
+- **Description**
+- **Typical Triggers**
+- **Inputs Needed**
+- **Outputs / Actions**
+- **Markets** – SG / MY / Both.
+
+You can expand this index as needed.
+
+---
+
+## A. Product Knowledge & Application (PROD)
+
+---
+
+### KA-PROD-01 – Protection-First Ordering
+
+- **Domain**: Product  
+- **Description**: Always sequence advice as:  
+  1) medical / hospitalisation,  
+  2) income protection (CI / disability),  
+  3) death cover for dependants/loans,  
+  4) long-term savings / investments.  
+- **Typical Triggers**: Client asks for investment or savings products while having weak/no basic protection.  
+- **Inputs Needed**: Age, income, dependants, liabilities, existing coverage.  
+- **Outputs / Actions**: Reprioritised recommendation focusing on protection first; simple explanation of why.  
+- **Markets**: Both.
+
+---
+
+### KA-PROD-02 – Life Cover Sizing (Needs-Based)
+
+- **Domain**: Product  
+- **Description**: Estimate life cover based on debts + income replacement + goals – existing assets/cover.  
+- **Typical Triggers**: Marriage, child, mortgage; question “How much life insurance do I need?”.  
+- **Inputs Needed**: Income, dependants, debts, assets, existing coverage.  
+- **Outputs / Actions**: Recommended life cover range and rationale; suggestion for term vs whole structure.  
+- **Markets**: Both.
+
+---
+
+### KA-PROD-03 – CI / Income Protection Sizing
+
+- **Domain**: Product  
+- **Description**: Size CI and/or disability income to cover several years of income or a tailored recovery period.  
+- **Typical Triggers**: Client thinks medical coverage alone is enough; CI coverage is clearly low.  
+- **Inputs Needed**: Income, savings, existing CI/disability coverage.  
+- **Outputs / Actions**: CI/DI amount range and explanation; simple story about income loss due to illness.  
+- **Markets**: Both.
+
+---
+
+### KA-PROD-04 – Term vs Whole Life vs ILP Decision Tree
+
+- **Domain**: Product  
+- **Description**: Map client goal and constraints to appropriate product type using a decision tree.  
+- **Typical Triggers**: “Which is better, term or whole?”, confusion about ILPs.  
+- **Inputs Needed**: Goal (protection, legacy, savings), time horizon, budget, risk tolerance.  
+- **Outputs / Actions**: Explanation of product roles and trade-offs; suggested default option based on profile.  
+- **Markets**: Both.
+
+---
+
+### KA-PROD-05 – Takaful vs Conventional Choice (MY-Heavy)
+
+- **Domain**: Product  
+- **Description**: Help Muslim clients decide between takaful and conventional options based on values and features.  
+- **Typical Triggers**: Questions about “halal”, Shariah-compliant insurance, hibah, etc.  
+- **Inputs Needed**: Client’s values and preferences, price and benefits comparisons.  
+- **Outputs / Actions**: Values-based explanation; clear recommendation logic.  
+- **Markets**: Mainly MY.
+
+---
+
+## B. Advisory Process & FNA (FNA)
+
+---
+
+### KA-FNA-01 – Comprehensive Fact-Find Checklist
+
+- **Domain**: FNA  
+- **Description**: Structured question set to capture income, expenses, assets, liabilities, goals, existing cover, and preferences.  
+- **Typical Triggers**: First comprehensive meeting; annual review.  
+- **Inputs Needed**: Basic client profile; meeting type.  
+- **Outputs / Actions**: List of questions and required fields; visible “what’s still missing” indicators.  
+- **Markets**: Both.
+
+---
+
+### KA-FNA-02 – Needs Prioritisation Under Budget Constraint
+
+- **Domain**: FNA  
+- **Description**: Turn a long list of needs into a realistic roadmap when budget is limited.  
+- **Typical Triggers**: Client says “too expensive” or gives a firm budget ceiling.  
+- **Inputs Needed**: FNA result, monthly budget, risk profile.  
+- **Outputs / Actions**: Sequenced plan (now vs later); simple explanation to the client.  
+- **Markets**: Both.
+
+---
+
+### KA-FNA-03 – Policy Replacement Checklist
+
+- **Domain**: FNA / Ethics  
+- **Description**: Framework to decide whether replacing an existing policy is in the client’s best interest.  
+- **Typical Triggers**: Consideration of surrendering or replacing policies.  
+- **Inputs Needed**: Existing policy details and proposed new policy.  
+- **Outputs / Actions**: Side-by-side comparison; conclusion on whether replacement is justified; documentation prompts.  
+- **Markets**: Both.
+
+---
+
+### KA-FNA-04 – Review Meeting FNA (Life Event Triggered)
+
+- **Domain**: FNA  
+- **Description**: Review template when major life events occur (marriage, child, new home, near retirement).  
+- **Typical Triggers**: Change in family, job, or debts; scheduled review after 1+ years.  
+- **Inputs Needed**: Previous FNA, event details, existing policies.  
+- **Outputs / Actions**: Updated questions and gap highlights.  
+- **Markets**: Both.
+
+---
+
+### KA-FNA-05 – “No Product” Recommendation Documentation
+
+- **Domain**: FNA / Ethics  
+- **Description**: When best advice is no new product or reduced cover, record the reasoning.  
+- **Typical Triggers**: Over-insured or financially stretched clients; advice is to pause or reduce.  
+- **Inputs Needed**: FNA summary; client objectives; current coverage.  
+- **Outputs / Actions**: Short note explaining why no product is recommended; suggested phrasing to explain to client.  
+- **Markets**: Both.
+
+---
+
+## C. Regulatory & Ethical Guardrails (ETH)
+
+---
+
+### KA-ETH-01 – Vulnerable Client Safeguards
+
+- **Domain**: Ethics  
+- **Description**: Identify vulnerable clients (e.g. older age, low literacy, language barrier) and apply extra care.  
+- **Typical Triggers**: Age > ~60, obvious language or comprehension issues.  
+- **Inputs Needed**: Age, education, language preference, advisor notes.  
+- **Outputs / Actions**: Prompts for slower explanation, teach-back, involvement of a trusted person, and documentation.  
+- **Markets**: Both.
+
+---
+
+### KA-ETH-02 – ILP Suitability vs Knowledge Assessment
+
+- **Domain**: Ethics / Product  
+- **Description**: Ensure ILPs are only recommended when truly suitable, not just when a client “passes” a knowledge test.  
+- **Typical Triggers**: ILP discussion; client mentions guaranteed returns; knowledge test results.  
+- **Inputs Needed**: Client objective, risk tolerance, investment knowledge, product features.  
+- **Outputs / Actions**: Suitability diagnosis; alternative product suggestions if ILP not aligned.  
+- **Markets**: Both.
+
+---
+
+### KA-ETH-03 – Disclosure & Documentation Checklist
+
+- **Domain**: Ethics  
+- **Description**: Ensure all key product features, risks, and trade-offs are clearly disclosed and documented.  
+- **Typical Triggers**: Presentation and closing stages; before submitting application.  
+- **Inputs Needed**: Product type; whether replacement is involved.  
+- **Outputs / Actions**: Checklist of key points to disclose; optional short script in plain English.  
+- **Markets**: Both.
+
+---
+
+### KA-ETH-04 – Mis-Selling Red-Flag Pattern
+
+- **Domain**: Ethics  
+- **Description**: Identify patterns where mis-selling risk is high (e.g. high premium vs income, vulnerable clients with complex products).  
+- **Typical Triggers**: Premium/income ratio very high; complex products to low-literacy clients; objective vs product mismatch.  
+- **Inputs Needed**: Income, premium, product type, client profile, objective.  
+- **Outputs / Actions**: Warning message; suggestions to simplify or scale down; prompt to document justification.  
+- **Markets**: Both.
+
+---
+
+### KA-ETH-05 – Complaint & Remediation Flow
+
+- **Domain**: Ethics  
+- **Description**: Steps for dealing with dissatisfied clients constructively.  
+- **Typical Triggers**: Client expresses regret, anger, or mentions complaining.  
+- **Inputs Needed**: Policy details, sales notes, nature of complaint.  
+- **Outputs / Actions**: High-level process; empathetic phrases; prompts to review suitability.  
+- **Markets**: Both.
+
+---
+
+## D. Client Psychology & Communication (PSY)
+
+---
+
+### KA-PSY-01 – Invincibility & Present Bias Reframe
+
+- **Domain**: Psychology  
+- **Description**: Help young clients relate to long-term risks they struggle to imagine.  
+- **Typical Triggers**: “I’m healthy, I’ll buy later”, “Company covers me”.  
+- **Inputs Needed**: Age, dependants, employment type, existing benefits.  
+- **Outputs / Actions**: Simple stories and analogies; focus on protecting future income and dependants.  
+- **Markets**: Both.
+
+---
+
+### KA-PSY-02 – Takaful Values Framing
+
+- **Domain**: Psychology / Product  
+- **Description**: Explain takaful in terms of values and ethics, not just technicalities.  
+- **Typical Triggers**: Muslim clients; references to religious considerations.  
+- **Inputs Needed**: Client values and preferences.  
+- **Outputs / Actions**: Explanation of cooperative risk sharing and alignment with their values.  
+- **Markets**: Mainly MY.
+
+---
+
+### KA-PSY-03 – Handling “I Need to Think About It”
+
+- **Domain**: Psychology / Sales  
+- **Description**: Treat “I need to think” as a surface statement; probe underlying concerns respectfully.  
+- **Typical Triggers**: Client delays decision without specifying why.  
+- **Inputs Needed**: Proposal summary; meeting context.  
+- **Outputs / Actions**: Follow-up questions; possible next steps (second meeting, written summary).  
+- **Markets**: Both.
+
+---
+
+### KA-PSY-04 – Kitchen-Table Language
+
+- **Domain**: Psychology / Communication  
+- **Description**: Translate jargon into plain, everyday language with analogies.  
+- **Typical Triggers**: Client confusion; heavy jargon in advisor speech.  
+- **Inputs Needed**: Term to be explained; client education level; language preference.  
+- **Outputs / Actions**: Plain-language explanations; analogies; teach-back prompts.  
+- **Markets**: Both.
+
+---
+
+### KA-PSY-05 – Repairing Trust after Mis-Selling
+
+- **Domain**: Psychology / Ethics  
+- **Description**: Engage clients who were hurt by previous mis-selling in a constructive way.  
+- **Typical Triggers**: “I was cheated before”; “I don’t trust insurance”.  
+- **Inputs Needed**: Past experience description; current emotional tone.  
+- **Outputs / Actions**: Empathetic acknowledgment; offer of neutral review; education on good process.  
+- **Markets**: Both.
+
+---
+
+## E. Sales Craft & Practice Management (BUS)
+
+---
+
+### KA-BUS-01 – Lead Prioritisation by Life Stage & Gap
+
+- **Domain**: Business  
+- **Description**: Use life stage and coverage information to prioritise outreach.  
+- **Typical Triggers**: Advisor opens CRM or “book of business” view.  
+- **Inputs Needed**: Client age, family status, debts, coverage summary.  
+- **Outputs / Actions**: Priority list with suggested conversation topics.  
+- **Markets**: Both.
+
+---
+
+### KA-BUS-02 – Weekly Activity Plan
+
+- **Domain**: Business  
+- **Description**: Shape a realistic weekly plan of meetings, prospecting, reviews, and learning.  
+- **Typical Triggers**: Start of week; planning sessions.  
+- **Inputs Needed**: Targets, existing appointments, available hours.  
+- **Outputs / Actions**: Proposed schedule blocks; simple KPIs to track.  
+- **Markets**: Both.
+
+---
+
+### KA-BUS-03 – Education-Led Prospecting
+
+- **Domain**: Business / Psychology  
+- **Description**: Use educational content and events to generate warm leads.  
+- **Typical Triggers**: Advisor preparing webinars, workshops or posts.  
+- **Inputs Needed**: Advisor niche, topics, channel preference.  
+- **Outputs / Actions**: Suggested topics, invitations, and follow-up scripts.  
+- **Markets**: Both.
+
+---
+
+### KA-BUS-04 – Niche Positioning
+
+- **Domain**: Business  
+- **Description**: Define and express a clear niche or positioning (e.g., “young families”, “doctors”, “Islamic financial planning”).  
+- **Typical Triggers**: Profile updates; marketing planning.  
+- **Inputs Needed**: Advisor strengths, interests, existing client base.  
+- **Outputs / Actions**: Short positioning statement; list of content themes.  
+- **Markets**: Both.
+
+---
+
+## F. Digital & Data Literacy (DIG)
+
+---
+
+### KA-DIG-01 – eFNA Utilisation
+
+- **Domain**: Digital / FNA  
+- **Description**: Use eFNA tools to standardise data entry and visualise gaps.  
+- **Typical Triggers**: New client onboarding; system prompts to use FNA tool.  
+- **Inputs Needed**: Standard FNA data; tool capabilities.  
+- **Outputs / Actions**: Suggested order of input; data visualisations to show client.  
+- **Markets**: Both.
+
+---
+
+### KA-DIG-02 – Aggregator Benchmarking
+
+- **Domain**: Digital / Product  
+- **Description**: Integrate information from comparison sites into the advisory conversation.  
+- **Typical Triggers**: Client shows screenshots or quotes from online comparison.  
+- **Inputs Needed**: Product details from comparison; client needs.  
+- **Outputs / Actions**: Comparison summary; explanation of advisor’s added value.  
+- **Markets**: Both.
+
+---
+
+### KA-DIG-03 – Portfolio Analytics for Gap Campaigns
+
+- **Domain**: Digital / Business  
+- **Description**: Analyse existing client base to find underinsured groups.  
+- **Typical Triggers**: Advisor opens analytics dashboard; periodic review.  
+- **Inputs Needed**: Client coverage data (per client).  
+- **Outputs / Actions**: Insights such as “X clients with no CI”; campaign suggestions.  
+- **Markets**: Both.
+
+---
+
+### KA-DIG-04 – Digital Disclosure UI Patterns
+
+- **Domain**: Digital / Ethics  
+- **Description**: Provide best-practice guidance for clear digital disclosures.  
+- **Typical Triggers**: Designing or reviewing digital purchase journeys.  
+- **Inputs Needed**: Flow description or screenshots.  
+- **Outputs / Actions**: Checklist of key facts; suggestions for clear screens and summaries.  
+- **Markets**: Both.
+
+---
+
+# Part 3 – End-to-End Copilot Example (Singapore)
+
+This section shows how the **Knowledge Atom Index** can drive:
+
+1. **Pre-meeting preparation**  
+2. **In-meeting “whispers”**  
+3. **Post-meeting review**
+
+for a single realistic scenario.
+
+---
+
+## Scenario Overview – Older, Low-Income, Vulnerable Client (SG)
+
+**Client**
+
+- Name: Mdm Tan  
+- Age: 63  
+- Country: Singapore  
+- Occupation: Part-time cleaner  
+- Income: ~SGD 1,200/month  
+- Language: Speaks Mandarin primarily; limited English  
+- Family: Widowed; 1 adult daughter (32) who has 2 young children  
+- Financial support: Daughter gives SGD 300/month to help  
+- Existing cover:
+  - Only basic national health scheme (no private hospital plan)  
+  - No CI, no life insurance  
+- Savings: SGD 18,000 cash  
+- Stated worry:  
+  > “I don’t want to burden my daughter if I get sick and need to go to hospital.”
+
+**Meeting**
+
+- Jurisdiction: Singapore  
+- Meeting type: First appointment, arranged by daughter  
+- Likely focus: Hospital/medical coverage, affordability, understanding; this is a **vulnerable client**.
+
+**Key Atoms to Use**
+
+- KA-PROD-01 – Protection-First Ordering  
+- KA-FNA-02 – Needs Prioritisation Under Budget Constraint  
+- KA-ETH-01 – Vulnerable Client Safeguards  
+- KA-PSY-03 – Handling “I Need to Think About It”  
+
+---
+
+## 3.1 Pre-Meeting Copilot Output (Sample)
+
+The copilot receives client and meeting data and produces:
+
+### A. Suggested Meeting Agenda (Advisor-Facing)
+
+1. **Build understanding and comfort**
+   - Confirm preferred language.
+   - Ask what she worries about most regarding health and money.
+
+2. **Clarify current medical protection**
+   - Check what she knows about her basic national health cover.
+   - Explain possible gaps (e.g., extra hospital charges, choice of hospital/ward).
+
+3. **Discuss budget honestly**
+   - Establish a comfortable monthly premium range.
+   - Stress that the plan must be sustainable even in a bad month.
+
+4. **Explore a simple protection option**
+   - Focus on one clear, basic hospital plan.
+   - Avoid complex add-ons unless she shows strong capacity and understanding.
+
+5. **Agree on a next step**
+   - If she is not ready to decide, clarify what exactly she wants to think about.
+   - Offer a simple summary sheet in her preferred language.
+
+---
+
+### B. Prep Cards (By Atom)
+
+#### [KA-PROD-01] Protection-First Ordering
+
+- **Why this matters for this client**
+  - Hospital bills are the main threat; investment or savings products are not appropriate at this stage.
+  - She has no private hospital cover but is in a high-risk age group.
+  - A clear medical solution addresses exactly what she worries about.
+
+- **Questions to ask**
+  - “If you needed to stay in hospital for a few days, how do you imagine paying the bill right now?”
+  - “What kind of hospital or ward would you feel comfortable in?”
+  - “What is more important to you: lower cost with fewer choices, or more choice even if the premium is slightly higher?”
+
+- **Pitfalls to avoid**
+  - Introducing savings or complex investment products.
+  - Overloading her with many different plan variants at once.
+
+---
+
+#### [KA-FNA-02] Needs Prioritisation Under Budget Constraint
+
+- **Why this matters**
+  - Her income is low; a premium that is too high may cause stress and lapses.
+  - It is better to have a smaller, sustainable plan than to start something she cannot keep.
+  - You must co-create a budget that she truly feels comfortable with.
+
+- **Questions to ask**
+  - “After paying your monthly expenses, how much do you feel you can safely set aside for insurance?”
+  - “If your income drops for a few months, what amount of premium would still feel manageable?”
+  - “Would you like your daughter to help with the premium, and if so, what amount is realistic for her?”
+
+- **Pitfalls to avoid**
+  - Designing a plan at the highest amount she can possibly pay.
+  - Not writing down an agreed budget range.
+
+---
+
+#### [KA-ETH-01] Vulnerable Client Safeguards
+
+- **Why this matters**
+  - Age, low income, and limited English increase her vulnerability.
+  - Regulators expect more care with such clients.
+  - The goal is not just a signed form, but clear understanding and free consent.
+
+- **Steps to take**
+  - Confirm language and speak slowly with simple words.
+  - Involve the daughter as support, but always check that the mother understands and agrees.
+  - Ask the client to explain the plan back in her own words (teach-back).
+
+- **Pitfalls to avoid**
+  - Only talking to the daughter.
+  - Using technical terms without explanation.
+  - Rushing to get signatures.
+
+---
+
+#### [KA-PSY-03] Handling “I Need to Think About It”
+
+- **Why this matters**
+  - Older clients often say they want to think because they are unsure or afraid of committing.
+  - Understanding her specific worry will guide your follow-up and plan design.
+  - Pressure will damage trust, especially when the daughter is present.
+
+- **Questions to ask**
+  - “When you say you want to think about it, what is the main thing you want to think about? The price, the coverage, or something else?”
+  - “Would it help if I give you a simple one-page summary to take home and read with your daughter?”
+
+- **Pitfalls to avoid**
+  - Accepting “I’ll think about it” without clarification.
+  - Pushing for decision on the same day when she looks uncomfortable.
+
+---
+
+## 3.2 In-Meeting Micro-Coaching (“Whispers”)
+
+Imagine the copilot is listening to a transcript and surfaces **tiny cards** during key moments.
+
+### Moment 1 – Early Fact-Find
+
+**Transcript snippet**
+
+- Client: “I can still work now, my health is okay. I just worry that when I am older and if I need to be in hospital, my daughter will have to pay everything. I don’t want that.”  
+- Advisor: “So your main worry is becoming a financial burden if you get sick, is that right?”
+
+**Copilot whisper**
+
+- **[KA-PROD-01] Protection-First Ordering**  
+  - **Next move:** Stay with the hospitalisation risk. Ask what she believes her current cover does, and gently highlight the gap.  
+  - **Suggested question:** “What do you think your current government health cover pays for, and what do you think you still have to pay yourself?”
+
+- **[KA-ETH-01] Vulnerable Client Safeguards**  
+  - **Next move:** Confirm language comfort.  
+  - **Suggested question:** “Would you prefer that I explain everything in simple English, or should I slow down and let your daughter help to translate?”
+
+---
+
+### Moment 2 – Budget Concern
+
+**Transcript snippet**
+
+- Advisor (after explaining a plan): “This plan would cost about 150 dollars per month.”  
+- Client: “150 is quite a lot. I only earn about 1,200 a month. I have to think about it.”  
+- Daughter: “Maybe it’s a bit high for her, but hospital can be very expensive.”
+
+**Copilot whisper**
+
+- **[KA-FNA-02] Needs Prioritisation Under Budget Constraint**  
+  - **Next move:** Step back from that specific plan. Co-create a comfortable budget range with them before adjusting cover.  
+  - **Suggested question:** “What is an amount per month that you feel you can safely handle without stress? For example, is something around 80 dollars more comfortable?”
+
+- **[KA-PSY-03] Handling “I Need to Think About It”**  
+  - **Next move:** Treat “I have to think” as a signal of affordability fear. Name it gently.  
+  - **Suggested question:** “Is your main worry that the premium may be too heavy every month, or is there another part you are unsure about?”
+
+---
+
+### Moment 3 – At End of Meeting
+
+**Transcript snippet**
+
+- Advisor (after adjusting plan to ~90/month): “With this simpler plan, the premium is around 90 dollars a month. It mainly protects you from large hospital bills.”  
+- Client: “That sounds better, but I still want to discuss with my daughter at home and think about it.”  
+- Daughter: “Mum, I think it could help, but yes, we can discuss.”
+
+**Copilot whisper**
+
+- **[KA-PSY-03] Handling “I Need to Think About It”**  
+  - **Next move:** Clarify what she wants to think about and secure a clear follow-up.  
+  - **Suggested question:** “Of course, you should take time. To help you think clearly, what is the main part you want to discuss at home: the price, the hospital choices, or something else?”
+
+- **[KA-ETH-01] Vulnerable Client Safeguards**  
+  - **Next move:** Offer written summary as a memory aid.  
+  - **Suggested phrase:** “I will prepare a one-page summary in simple language for you and your daughter. You can read it at home and write down any questions. Then next week we can talk again before you decide.”
+
+---
+
+## 3.3 Post-Meeting Debrief & Coaching
+
+After the meeting, the advisor writes short notes:
+
+> “Explained current national health cover vs private plan. Showed two options, 150/month and 90/month. She felt 150 was too high. She still wants to think about the 90 one. I explained in simple language, involved the daughter, and offered to send a summary. Follow-up call planned next week.”
+
+The copilot then evaluates which atoms were used and where improvement is possible.
+
+### A. Atoms Applied
+
+- **KA-PROD-01 – Protection-First Ordering**  
+  - Evidence: Focused on hospitalisation risk only; did not introduce savings or investment products.
+
+- **KA-FNA-02 – Needs Prioritisation Under Budget Constraint**  
+  - Evidence: Adjusted from 150/month to 90/month after budget concern.
+
+- **KA-ETH-01 – Vulnerable Client Safeguards**  
+  - Evidence: Used simple explanations, involved daughter, offered summary.
+
+### B. Potentially Missing or Underused Atoms
+
+- **KA-FNA-01 – Comprehensive Fact-Find Checklist**  
+  - **Why it matters:**  
+    - Notes do not show a structured record of her monthly expenses, savings goals, or other obligations.  
+    - That information would strengthen the suitability record.
+  - **Follow-up action:**  
+    - During the next call, ask 3–4 short questions about expenses, savings, and other support she receives. Update her FNA file.
+
+- **KA-PSY-03 – Handling “I Need to Think About It”** (partial)  
+  - **Why it matters:**  
+    - You respected her decision to think, which is good.  
+    - However, it is not clear you identified her *main* worry (price vs benefits vs trust).  
+  - **Follow-up action:**  
+    - In the next call, ask: “What did you think about most after our meeting: the cost, the coverage, or something else?”  
+    - Address that specific concern before asking her to decide.
+
+### C. Short Coaching Summary to Advisor
+
+> You did well to focus on hospital protection and adjust the premium to her budget.  
+> You also handled her as a vulnerable client, which is important.  
+> For your next step, improve your fact-find notes and be more specific about her concern when she says she wants to think. This will make your follow-up clearer and more helpful.
+
+---
+
+## Closing Note
+
+This markdown file combines:
+
+- **Realistic scenarios** (Phase 4 scenario pack),
+- A **modular knowledge atom index**, and
+- A **worked copilot example** (pre / during / post meeting).
+
+You can now:
+
+- Turn each scenario into **role plays or simulations**.
+- Turn each knowledge atom into **5–10 minute micro-learning “espresso” modules**.
+- Wire the atom IDs into prompts for an **AI copilot** that coaches advisors in Singapore and Malaysia in a way that reflects expert behaviour, regulatory guardrails, and client-first ethics.

@@ -1,0 +1,49 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Event or task title"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Task",
+        "Appointment"
+      ],
+      "default": "Task"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "time": {
+      "type": "string"
+    },
+    "duration": {
+      "type": "string",
+      "description": "Duration in minutes"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Client-side and server-side completion state"
+    },
+    "linked_lead_id": {
+      "type": "string",
+      "description": "Reference to Lead entity"
+    },
+    "linked_lead_name": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "type",
+    "date"
+  ]
+}

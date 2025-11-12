@@ -1,0 +1,73 @@
+{
+  "name": "Policy",
+  "type": "object",
+  "properties": {
+    "policy_number": {
+      "type": "string"
+    },
+    "lead_id": {
+      "type": "string",
+      "description": "Reference to Lead entity"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "coverage_type": {
+      "type": "string",
+      "enum": [
+        "Hospitalisation",
+        "Death",
+        "Critical Illness",
+        "TPD",
+        "Disability Income",
+        "Accidental",
+        "Savings",
+        "Lifestyle",
+        "Travel"
+      ]
+    },
+    "product_name": {
+      "type": "string"
+    },
+    "sum_assured": {
+      "type": "number"
+    },
+    "premium_amount": {
+      "type": "number"
+    },
+    "premium_frequency": {
+      "type": "string",
+      "enum": [
+        "Monthly",
+        "Quarterly",
+        "Semi-Annual",
+        "Annual"
+      ]
+    },
+    "policy_start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "policy_end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Lapsed",
+        "Surrendered",
+        "Matured"
+      ],
+      "default": "Active"
+    }
+  },
+  "required": [
+    "policy_number",
+    "lead_id",
+    "client_name",
+    "coverage_type",
+    "product_name"
+  ]
+}

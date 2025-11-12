@@ -1,0 +1,19 @@
+skills:
+  system_help:
+    skill: system_help
+  capture_update_data:
+    skill: capture_update_data
+  case_overview:
+    skill: case_overview
+  risk_nudge:
+    skill: risk_nudge
+  prepare_meeting:
+    skill: prepare_meeting
+  post_meeting_wrap:
+    skill: post_meeting_wrap
+  sales_help_explicit:
+    skill: sales_help_explicit
+
+default_skill:
+  skill: system_help
+

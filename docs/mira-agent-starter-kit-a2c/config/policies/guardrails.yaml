@@ -1,0 +1,9 @@
+version: 1
+defaults:
+  continue_on_error: false
+  max_retries: 1
+pipelines:
+  input:    [pii_detect, moderation, jailbreak]
+  toolcall: [permission_gate]
+  output:   [pii_leak, moderation]
+

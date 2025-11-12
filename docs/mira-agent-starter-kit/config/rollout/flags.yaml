@@ -1,0 +1,6 @@
+flags:
+  visualizer_enabled:
+    default: false
+    overrides:
+      - tenant: "AdviseU"
+        percent: 50

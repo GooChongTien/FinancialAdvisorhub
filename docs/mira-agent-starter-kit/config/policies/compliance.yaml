@@ -1,0 +1,6 @@
+fund_eligibility:
+  engine: jsonlogic
+  rule:
+    and:
+      - gte: [ { var: client.emergency_months }, 6 ]
+      - lte: [ { var: fund.risk_level }, { var: client.risk_profile } ]

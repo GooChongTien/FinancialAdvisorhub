@@ -1,0 +1,33 @@
+{
+  "name": "Broadcast",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Announcement",
+        "Training",
+        "Campaign"
+      ]
+    },
+    "is_pinned": {
+      "type": "boolean",
+      "default": false
+    },
+    "published_date": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "title",
+    "content",
+    "category"
+  ]
+}

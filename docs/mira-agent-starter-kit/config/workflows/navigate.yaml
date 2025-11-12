@@ -1,0 +1,7 @@
+id: navigate
+version: 1
+entry: go
+states:
+  go:
+    run: skill.navigator.navigate
+    end: true

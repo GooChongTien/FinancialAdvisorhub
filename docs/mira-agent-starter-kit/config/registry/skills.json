@@ -1,0 +1,14 @@
+{
+  "navigator": {
+    "module": "src/skills/navigator.ts"
+  },
+  "scheduler": {
+    "module": "src/skills/scheduler.ts"
+  },
+  "crm": {
+    "module": "src/skills/crm.ts"
+  },
+  "knowledge": {
+    "module": "src/skills/knowledge.ts"
+  }
+}

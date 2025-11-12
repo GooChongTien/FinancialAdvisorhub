@@ -1,0 +1,42 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "product_name": {
+      "type": "string"
+    },
+    "product_code": {
+      "type": "string"
+    },
+    "need_type": {
+      "type": "string",
+      "enum": [
+        "Protection",
+        "Savings",
+        "Investment",
+        "Health",
+        "Retirement"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "min_age": {
+      "type": "number"
+    },
+    "max_age": {
+      "type": "number"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "product_name",
+    "product_code",
+    "need_type"
+  ]
+}

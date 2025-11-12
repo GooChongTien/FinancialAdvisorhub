@@ -1,0 +1,187 @@
+// Deno Edge Function: production-summary
+// Returns production analytics summary for a given scope and period.
+// Request: POST { scope: 'personal'|'direct'|'group', period: 'mtd'|'qtd'|'ytd' }
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const SUPA_URL = Deno.env.get("ANALYTICS_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL");
+const SERVICE_KEY = Deno.env.get("ANALYTICS_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+if (!SUPA_URL || !SERVICE_KEY) {
+  throw new Error("Missing ANALYTICS_SUPABASE_URL or ANALYTICS_SERVICE_ROLE_KEY env");
+}
+
+const admin = createClient(SUPA_URL!, SERVICE_KEY!, { auth: { persistSession: false } });
+const corsHeaders = {\n  "Access-Control-Allow-Origin": "*",\n  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",\n  "Access-Control-Allow-Methods": "OPTIONS, POST",\n};
+
+type Period = "mtd" | "qtd" | "ytd";
+
+function getPeriod(kind: Period) {
+  const now = new Date();
+  if (kind === "qtd") {
+    const q = Math.floor(now.getMonth() / 3);
+    const curStart = new Date(Date.UTC(now.getFullYear(), q * 3, 1));
+    const curEnd = new Date(Date.UTC(now.getFullYear(), q * 3 + 3, 0, 23, 59, 59, 999));
+    const prevQ = q - 1;
+    const prevYear = prevQ < 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const prevQuarter = (prevQ + 4) % 4;
+    const prevStart = new Date(Date.UTC(prevYear, prevQuarter * 3, 1));
+    const prevEnd = new Date(Date.UTC(prevYear, prevQuarter * 3 + 3, 0, 23, 59, 59, 999));
+    return { curStart, curEnd, prevStart, prevEnd };
+  }
+  if (kind === "ytd") {
+    const curStart = new Date(Date.UTC(now.getFullYear(), 0, 1));
+    const curEnd = new Date(Date.UTC(now.getFullYear(), 11, 31, 23, 59, 59, 999));
+    const prevStart = new Date(Date.UTC(now.getFullYear() - 1, 0, 1));
+    const prevEnd = new Date(Date.UTC(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999));
+    return { curStart, curEnd, prevStart, prevEnd };
+  }
+  // mtd
+  const curStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+  const curEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999));
+  const prevStart = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1));
+  const prevEnd = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999));
+  return { curStart, curEnd, prevStart, prevEnd };
+}
+
+function annualizePremium(p: { premium_amount: number | null; premium_frequency: string | null }) {
+  const freq = (p.premium_frequency || "Annual").toString();
+  const mult = { Monthly: 12, Quarterly: 4, "Semi-Annual": 2, Annual: 1 }[freq] || 1;
+  const amt = Number(p.premium_amount || 0);
+  return amt * mult;
+}
+
+export default async function handler(req: Request) {
+  try {
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+    const body = (req.method === "POST" ? await req.json().catch(() => ({})) : {}) as Partial<{ scope: string; period: Period; }>;
+    const scope = (body.scope || "personal").toString();
+    const period = (body.period || "mtd") as Period;
+    const { curStart, curEnd, prevStart, prevEnd } = getPeriod(period);
+    // Auth-aware client (RLS) if token provided
+    const authHeader = req.headers.get("Authorization") || "";
+    const useRls = !!ANON_KEY && !!authHeader;
+    const supabase = useRls ? createClient(SUPA_URL!, ANON_KEY!, { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } }) : admin;
+    // Extract user id from JWT (sub)
+    let userId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      const parts = token.split(".");
+      if (parts.length >= 2) {
+        try {
+          const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0))));
+          userId = payload?.sub || null;
+        } catch (_) {}
+      }
+    }
+
+    // Build scoped queries
+    let leadsQueryCur = supabase.from("leads").select("id, is_client, created_at, advisor_id" ).gte("created_at", curStart.toISOString()).lte("created_at", curEnd.toISOString());
+    let leadsQueryPrev = supabase.from("leads").select("id, is_client, created_at, advisor_id" ).gte("created_at", prevStart.toISOString()).lte("created_at", prevEnd.toISOString());
+    let policiesQueryCur = supabase.from("policies").select("id, premium_amount, premium_frequency, policy_start_date, status, created_at, advisor_id, premium_type").or(`policy_start_date.gte.${curStart.toISOString()},created_at.gte.${curStart.toISOString()}`).lte("created_at", curEnd.toISOString());
+    let policiesQueryPrev = supabase.from("policies").select("id, premium_amount, premium_frequency, policy_start_date, status, created_at, advisor_id, premium_type").or(`policy_start_date.gte.${prevStart.toISOString()},created_at.gte.${prevStart.toISOString()}`).lte("created_at", prevEnd.toISOString());
+    if (scope === 'personal' && userId) {
+      leadsQueryCur = leadsQueryCur.eq('advisor_id', userId);
+      leadsQueryPrev = leadsQueryPrev.eq('advisor_id', userId);
+      policiesQueryCur = policiesQueryCur.eq('advisor_id', userId);
+      policiesQueryPrev = policiesQueryPrev.eq('advisor_id', userId);
+    }
+
+    const [leadsCur, leadsPrev, policiesCur, policiesPrev] = await Promise.all([
+      leadsQueryCur, leadsQueryPrev, policiesQueryCur, policiesQueryPrev,
+    ]);
+
+    if (leadsCur.error) throw leadsCur.error;
+    if (leadsPrev.error) throw leadsPrev.error;
+    if (policiesCur.error) throw policiesCur.error;
+    if (policiesPrev.error) throw policiesPrev.error;
+
+    const curLeads = (leadsCur.data || []);
+    const prevLeads = (leadsPrev.data || []);
+    const curPolicies = (policiesCur.data || []);
+    const prevPolicies = (policiesPrev.data || []);
+
+    const sumBy = (rows: any[], predicate: (p: any) => boolean) => rows.reduce((s, p) => s + (predicate(p) ? annualizePremium(p) : 0), 0);
+    const rpIncepted = sumBy(curPolicies, (p) => (p.premium_type || 'RP') === 'RP');
+    const spIncepted = sumBy(curPolicies, (p) => (p.premium_type || 'RP') === 'SP');
+    const rpPrevIncepted = sumBy(prevPolicies, (p) => (p.premium_type || 'RP') === 'RP');
+    const spPrevIncepted = sumBy(prevPolicies, (p) => (p.premium_type || 'RP') === 'SP');
+    const newClients = curLeads.filter((l: any) => l.is_client).length;
+    const prevNewClients = prevLeads.filter((l: any) => l.is_client).length;
+    const conversionRate = curLeads.length ? (newClients / curLeads.length) * 100 : 0;
+    const prevConversionRate = prevLeads.length ? (prevNewClients / prevLeads.length) * 100 : 0;
+    const totalCur = rpIncepted + spIncepted;
+    const totalPrev = rpPrevIncepted + spPrevIncepted;
+    const avgDealSize = curPolicies.length ? (totalCur / curPolicies.length) : 0;
+    const prevAvgDealSize = prevPolicies.length ? (totalPrev / prevPolicies.length) : 0;
+
+    // Monthly series for current year
+    const year = new Date().getFullYear();
+    const monthly = Array.from({ length: 12 }).map((_, idx) => ({ month: new Date(year, idx, 1).toLocaleString('en', { month: 'short' }), rp: 0, sp: 0, total: 0 }));
+    for (const p of curPolicies as any[]) {
+      const d = p.policy_start_date ? new Date(p.policy_start_date) : (p.created_at ? new Date(p.created_at) : null);
+      if (d && d.getFullYear() === year) {
+        const i = d.getMonth();
+        const val = annualizePremium(p);
+        const isSP = p.premium_type === 'SP';
+        if (isSP) { monthly[i].sp += val; } else { monthly[i].rp += val; }
+        monthly[i].total += val;
+      }
+    }
+
+    // Naive funnel based on available tables
+    const { data: proposals, error: proposalsErr } = await supabase.from("proposals").select("stage, created_at, advisor_id").gte("created_at", curStart.toISOString()).lte("created_at", curEnd.toISOString());
+    if (proposalsErr) throw proposalsErr;
+    const leadsCount = curLeads.length;
+    const factFind = (proposals || []).filter((p: any) => (p.stage || '').toLowerCase().includes('fact')).length;
+    const fna = (proposals || []).filter((p: any) => (p.stage || '').toLowerCase().includes('fna')).length;
+    const quote = (proposals || []).filter((p: any) => (p.stage || '').toLowerCase().includes('quot')).length;
+    const application = (proposals || []).filter((p: any) => (p.stage || '').toLowerCase().includes('app')).length;
+    const issued = (curPolicies as any[]).filter((p) => (p.status || '').toLowerCase() === 'active').length;
+    const funnel = [
+      { stage: "Lead", count: leadsCount },
+      { stage: "Contacted", count: leadsCount },
+      { stage: "Fact Find", count: factFind },
+      { stage: "FNA", count: fna },
+      { stage: "Quotation", count: quote },
+      { stage: "Application", count: application },
+      { stage: "Issued", count: issued },
+    ];
+
+    const payload = {
+      scope,
+      period,
+      rp: { target: 0, incepted: Math.round(rpIncepted), pending: 0, completedPct: 0, prevIncepted: Math.round(rpPrevIncepted) },
+      sp: { target: 0, incepted: Math.round(spIncepted), pending: 0, completedPct: 0, prevIncepted: Math.round(spPrevIncepted) },
+      newClients,
+      prevNewClients,
+      conversionRate: Math.round(conversionRate * 10) / 10,
+      prevConversionRate: Math.round(prevConversionRate * 10) / 10,
+      avgDealSize: Math.round(avgDealSize),
+      prevAvgDealSize: Math.round(prevAvgDealSize),
+      monthly,
+      funnel,
+      productMix: [],
+      productPerformance: [],
+      teamVsIndividual: [],
+      lastUpdated: new Date().toISOString(),
+    };
+
+    return new Response(JSON.stringify(payload), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String((e as Error)?.message || e) }), { status: 500, headers: corsHeaders });
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+const maybeServe: any = (globalThis as any).Deno?.serve;
+if (maybeServe) {
+  maybeServe(handler);
+}
+
+
+
+

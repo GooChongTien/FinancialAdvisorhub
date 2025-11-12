@@ -1,0 +1,7 @@
+id: fund_mapping
+version: 1
+entry: inform
+states:
+  inform:
+    emit_message: "I can’t advise on trades. I can map eligible funds based on the customer’s risk profile."
+    end: true

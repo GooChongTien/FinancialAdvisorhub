@@ -1,0 +1,25 @@
+{
+  "navigate": {
+    "desc": "Navigate SmartPOS",
+    "params": {
+      "route": "string",
+      "section?": "string",
+      "anchor?": "string"
+    },
+    "rbac": [
+      "ui:navigate"
+    ]
+  },
+  "create_appointment": {
+    "desc": "Create a calendar appointment",
+    "params": {
+      "customerId": "string",
+      "start_at": "iso8601",
+      "location?": "string"
+    },
+    "rbac": [
+      "appt:create"
+    ],
+    "confirm": true
+  }
+}

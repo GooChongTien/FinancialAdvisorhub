@@ -1,0 +1,77 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.vite/
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+
+# Logs
+*.log
+*.err
+dev-server.log
+dev-server.err
+mcp-remote.log
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+.temp/
+nul
+
+# Backup files
+*.bak
+*.backup
+*_backup.*
+current_*.jsx
+
+# Patches and diffs
+*.patch
+*.diff
+temp*.txt
+temp_*.txt
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Supabase
+.supabase/
+
+# Scripts
+*.bat
+*.ps1
+
+# Other
+snapshot_tables.json

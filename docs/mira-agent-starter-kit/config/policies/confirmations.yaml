@@ -1,0 +1,6 @@
+rules:
+  - action: create_appointment
+    require: true
+    modes: ["banner_confirm"]
+  - action: navigate
+    require: false

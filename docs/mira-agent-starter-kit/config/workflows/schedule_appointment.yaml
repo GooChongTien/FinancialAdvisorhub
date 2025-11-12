@@ -1,0 +1,27 @@
+id: schedule_appointment
+version: 1
+entry: resolve_actor
+states:
+  resolve_actor:
+    run: skill.crm.resolve_contact
+    on_success: resolve_time
+    on_missing: ask_user_for_contact
+  resolve_time:
+    run: skill.scheduler.find_slots
+    on_success: propose_plan
+    on_conflict: ask_user_for_time
+  propose_plan:
+    emit_plan_card: true
+    require_confirmation: true
+    on_confirm: create
+    on_cancel: end
+  create:
+    run: skill.scheduler.create
+    on_success: summarize
+    on_error: retry_or_escalate
+  summarize:
+    emit_message: "Appointment scheduled for {{contact.name}} on {{start_at}}."
+    emit_action:
+      - type: navigate
+        route: "/appointments/{{appointment.id}}"
+    end: true

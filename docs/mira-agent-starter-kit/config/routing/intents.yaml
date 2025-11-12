@@ -1,0 +1,19 @@
+version: 1
+intents:
+  - name: schedule_appointment
+    match:
+      keywords: ["schedule","book","appointment","meeting"]
+      entities: ["person","datetime"]
+    threshold: 0.62
+  - name: fund_mapping
+    match:
+      keywords: ["fund","eligible","suitable","risk profile","map"]
+    threshold: 0.55
+  - name: navigate
+    match:
+      keywords: ["go to","open","show me","where is"]
+    threshold: 0.50
+  - name: answer
+    match:
+      keywords: []
+    threshold: 0.45

@@ -1,0 +1,37 @@
+version: 1
+intents:
+  - name: system_help
+    match:
+      keywords: ["where do i", "how do i", "open ", "go to", "show me"]
+    threshold: 0.6
+
+  - name: capture_update_data
+    match:
+      keywords: ["set ", "update ", "change ", "add child", "add dependant", "add dependent"]
+    threshold: 0.55
+
+  - name: case_overview
+    match:
+      keywords: ["summarise this client", "summarize this client", "what are the main gaps", "client overview"]
+    threshold: 0.55
+
+  - name: risk_nudge
+    match:
+      keywords: ["risk nudge demo"]
+    threshold: 0.5
+
+  - name: prepare_meeting
+    match:
+      keywords: ["prepare meeting", "meeting with", "help me prepare"]
+    threshold: 0.55
+
+  - name: post_meeting_wrap
+    match:
+      keywords: ["summarise this meeting", "summarize this meeting", "wrap up", "follow up tasks"]
+    threshold: 0.55
+
+  - name: sales_help_explicit
+    match:
+      keywords: ["give me a script", "how should i position", "how to handle this objection"]
+    threshold: 0.55
+

@@ -1,0 +1,887 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "metadata": {
+    "created_at": "2025-11-11",
+    "last_updated": "2025-11-11",
+    "description": "Mira Co-Pilot Topic Taxonomy for AdvisorHub ePOS - Complete taxonomy for all 7 modules",
+    "modules": 7,
+    "total_intents": 38
+  },
+  "topics": [
+    {
+      "topic": "customer",
+      "display_name": "Customer Management",
+      "description": "Managing leads and client relationships",
+      "subtopics": [
+        {
+          "subtopic": "lead_management",
+          "display_name": "Lead Management",
+          "description": "Operations for creating, searching, filtering, and managing leads in the pipeline",
+          "intents": [
+            {
+              "intent_name": "create_lead",
+              "display_name": "Create New Lead",
+              "description": "Create a new lead record with contact information and lead source",
+              "required_fields": ["name", "contact_number"],
+              "optional_fields": ["email", "lead_source", "national_id", "date_of_birth", "gender", "occupation", "address"],
+              "ui_actions": [{"action": "open_dialog", "target": "new_lead_dialog"}],
+              "example_phrases": [
+                "Add a new lead named John Tan with contact 91234567",
+                "Create lead for Sarah Lee, phone number 98765432, email sarah@example.com",
+                "I met someone at an event, can you help me add them as a lead?",
+                "Register new prospect Michael Wong from referral",
+                "Add John from the networking event yesterday"
+              ]
+            },
+            {
+              "intent_name": "search_leads",
+              "display_name": "Search Leads",
+              "description": "Search and filter leads by name, contact number, email, or national ID",
+              "required_fields": ["search_term"],
+              "optional_fields": ["status", "source", "last_contacted", "relationship_type"],
+              "ui_actions": [
+                {"action": "navigate", "target": "customer_list", "params": ["search"]},
+                {"action": "set_filter", "target": "search_input"}
+              ],
+              "example_phrases": [
+                "Find lead with phone number 91234567",
+                "Search for leads named David",
+                "Show me all leads from Social Media source",
+                "Find the customer with NRIC S1234567A",
+                "Look up leads I contacted last week"
+              ]
+            },
+            {
+              "intent_name": "filter_leads",
+              "display_name": "Filter Leads",
+              "description": "Filter leads by status, source, relationship type, or last contacted date",
+              "required_fields": ["filter_type"],
+              "optional_fields": ["filter_value"],
+              "ui_actions": [
+                {"action": "navigate", "target": "customer_list", "params": ["filters"]},
+                {"action": "apply_filter", "target": "filter_panel"}
+              ],
+              "example_phrases": [
+                "Show me all hot leads",
+                "Filter leads by Referral source",
+                "Display only leads with Proposal status",
+                "Show leads I haven't contacted in over 90 days",
+                "List all leads that are clients",
+                "Find warm leads from the last 30 days",
+                "Show me leads in Not Initiated status"
+              ]
+            },
+            {
+              "intent_name": "schedule_appointment",
+              "display_name": "Schedule Appointment with Lead",
+              "description": "Schedule a meeting or call with a lead",
+              "required_fields": ["lead_id", "date", "time"],
+              "optional_fields": ["type", "location", "notes"],
+              "ui_actions": [{"action": "open_dialog", "target": "schedule_event_dialog"}],
+              "example_phrases": [
+                "Schedule a meeting with Sarah Lee tomorrow at 2pm",
+                "Book appointment with John Tan for next Monday",
+                "Set up a call with David at 10am Friday",
+                "Add follow-up appointment with this lead",
+                "Schedule fact-find meeting with client"
+              ]
+            },
+            {
+              "intent_name": "update_lead_status",
+              "display_name": "Update Lead Status",
+              "description": "Change lead status through the pipeline stages (Not Initiated → Contacted → Proposal)",
+              "required_fields": ["lead_id", "new_status"],
+              "optional_fields": ["notes"],
+              "ui_actions": [{"action": "update_field", "target": "lead_status"}],
+              "example_phrases": [
+                "Mark John Tan as Contacted",
+                "Update Sarah's status to Proposal",
+                "Change this lead status to Contacted",
+                "Move lead to Proposal stage",
+                "Set status as Not Initiated"
+              ]
+            },
+            {
+              "intent_name": "view_lead_details",
+              "display_name": "View Lead Details",
+              "description": "Navigate to detailed view of a specific lead showing full profile, appointments, and history",
+              "required_fields": ["lead_identifier"],
+              "optional_fields": ["tab"],
+              "ui_actions": [{"action": "navigate", "target": "customer_detail", "params": ["id"]}],
+              "example_phrases": [
+                "Show me details for John Tan",
+                "Open Sarah Lee's profile",
+                "View full information for this lead",
+                "Display customer record for Michael Wong",
+                "Take me to David's profile page"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "customer_profile",
+          "display_name": "Customer Profile",
+          "description": "Viewing and managing detailed customer information for existing clients",
+          "intents": [
+            {
+              "intent_name": "view_customer_portfolio",
+              "display_name": "View Customer Portfolio",
+              "description": "Display all active policies and insurance coverage for a client",
+              "required_fields": ["customer_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "navigate", "target": "customer_detail", "params": ["id", "tab:portfolio"]}],
+              "example_phrases": [
+                "Show me John's policy portfolio",
+                "What policies does Sarah have?",
+                "Display all active coverage for this client",
+                "View Michael's insurance portfolio",
+                "Show me all policies for David Wong"
+              ]
+            },
+            {
+              "intent_name": "view_gap_analysis",
+              "display_name": "View Gap Analysis",
+              "description": "Display insurance coverage gaps and opportunities for cross-selling to existing clients",
+              "required_fields": ["customer_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "navigate", "target": "customer_detail", "params": ["id", "tab:gap"]}],
+              "example_phrases": [
+                "What coverage gaps does John have?",
+                "Show opportunities for Sarah",
+                "Analyze this client's insurance needs",
+                "Display gap analysis for Michael",
+                "What additional coverage should I recommend?"
+              ]
+            },
+            {
+              "intent_name": "update_customer_info",
+              "display_name": "Update Customer Information",
+              "description": "Edit customer demographic and contact information",
+              "required_fields": ["customer_id"],
+              "optional_fields": ["field_name", "new_value"],
+              "ui_actions": [{"action": "open_edit_mode", "target": "customer_overview"}],
+              "example_phrases": [
+                "Update John's phone number to 91234567",
+                "Change Sarah's email address",
+                "Edit contact information for this client",
+                "Update Michael's occupation",
+                "Modify customer address details"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "new_business",
+      "display_name": "New Business",
+      "description": "Managing proposals and sales process from fact-finding to application",
+      "subtopics": [
+        {
+          "subtopic": "proposal_creation",
+          "display_name": "Proposal Creation",
+          "description": "Creating and managing insurance proposals through the sales stages",
+          "intents": [
+            {
+              "intent_name": "create_proposal",
+              "display_name": "Create New Proposal",
+              "description": "Start a new proposal for a lead with initial fact-finding stage",
+              "required_fields": ["lead_id", "proposer_name"],
+              "optional_fields": ["initial_stage"],
+              "ui_actions": [{"action": "navigate", "target": "proposal_wizard", "params": ["leadId", "action:new"]}],
+              "example_phrases": [
+                "Start a new proposal for John Tan",
+                "Create proposal for lead Sarah Lee",
+                "Begin fact-finding for this customer",
+                "I want to create a new insurance proposal",
+                "Start the sales process for Michael Wong"
+              ]
+            },
+            {
+              "intent_name": "view_proposals",
+              "display_name": "View Proposals List",
+              "description": "Display all proposals with filtering by stage or status",
+              "required_fields": [],
+              "optional_fields": ["stage", "status", "lead_id"],
+              "ui_actions": [{"action": "navigate", "target": "new_business_list"}],
+              "example_phrases": [
+                "Show me all my proposals",
+                "Display proposals in Quotation stage",
+                "List all pending proposals",
+                "Show proposals for John Tan",
+                "What proposals do I have in progress?"
+              ]
+            },
+            {
+              "intent_name": "navigate_to_stage",
+              "display_name": "Navigate to Proposal Stage",
+              "description": "Jump to a specific stage of an existing proposal (Fact Finding, Financial Planning, Recommendation, Quotation, Application)",
+              "required_fields": ["proposal_id", "stage"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "navigate", "target": "proposal_detail", "params": ["id", "stage"]}],
+              "example_phrases": [
+                "Go to Quotation stage for this proposal",
+                "Jump to Financial Planning for John's proposal",
+                "Open the Recommendation stage",
+                "Take me to Application for proposal #12345",
+                "Navigate to Fact Finding"
+              ]
+            },
+            {
+              "intent_name": "update_proposal_stage",
+              "display_name": "Update Proposal Stage",
+              "description": "Move proposal to the next stage in the sales process",
+              "required_fields": ["proposal_id", "new_stage"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "update_field", "target": "proposal_stage"}],
+              "example_phrases": [
+                "Move this proposal to Quotation",
+                "Advance to Financial Planning stage",
+                "Complete Fact Finding and move forward",
+                "Progress to Application stage",
+                "Change stage to Recommendation"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "underwriting",
+          "display_name": "Underwriting",
+          "description": "Managing underwriting submissions and approvals",
+          "intents": [
+            {
+              "intent_name": "submit_for_underwriting",
+              "display_name": "Submit for Underwriting",
+              "description": "Submit a proposal for underwriting review and approval",
+              "required_fields": ["proposal_id"],
+              "optional_fields": ["medical_info", "financial_info"],
+              "ui_actions": [{"action": "submit_action", "target": "underwriting_submission"}],
+              "example_phrases": [
+                "Submit this proposal for underwriting",
+                "Send to underwriting team",
+                "Request underwriting approval for John's application",
+                "Submit for medical review",
+                "Send this case to underwriters"
+              ]
+            },
+            {
+              "intent_name": "check_underwriting_status",
+              "display_name": "Check Underwriting Status",
+              "description": "Check the current status of underwriting for a proposal",
+              "required_fields": ["proposal_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_status", "target": "underwriting_status"}],
+              "example_phrases": [
+                "What's the underwriting status for this proposal?",
+                "Check if underwriting is complete for John's case",
+                "Has this been approved by underwriting?",
+                "Show underwriting decision",
+                "Is the medical review done?"
+              ]
+            },
+            {
+              "intent_name": "view_underwriting_comments",
+              "display_name": "View Underwriting Comments",
+              "description": "Display comments and requirements from underwriting team",
+              "required_fields": ["proposal_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_details", "target": "underwriting_comments"}],
+              "example_phrases": [
+                "Show underwriting comments for this case",
+                "What did the underwriters say?",
+                "Display underwriting requirements",
+                "Show me the underwriting notes",
+                "What additional documents do they need?"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "quote_generation",
+          "display_name": "Quote Generation",
+          "description": "Creating and managing insurance quotations",
+          "intents": [
+            {
+              "intent_name": "generate_quote",
+              "display_name": "Generate Quick Quote",
+              "description": "Create a quick quotation for insurance products",
+              "required_fields": ["product_selection"],
+              "optional_fields": ["coverage_amount", "premium_term", "customer_age"],
+              "ui_actions": [{"action": "navigate", "target": "quick_quote"}],
+              "example_phrases": [
+                "Generate a quick quote for term life",
+                "Create quotation for whole life insurance",
+                "Calculate premium for protection plan",
+                "I need a quote for critical illness coverage",
+                "Show me pricing for endowment plan"
+              ]
+            },
+            {
+              "intent_name": "compare_quotes",
+              "display_name": "Compare Quote Options",
+              "description": "Compare multiple quotations or product options side by side",
+              "required_fields": ["quote_ids"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_comparison", "target": "quote_comparison"}],
+              "example_phrases": [
+                "Compare these quotes",
+                "Show me the difference between these options",
+                "Compare term life vs whole life quotes",
+                "Which quote has better value?",
+                "Display quote comparison"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "product",
+      "display_name": "Product Catalog",
+      "description": "Searching and comparing insurance products",
+      "subtopics": [
+        {
+          "subtopic": "product_search",
+          "display_name": "Product Search",
+          "description": "Finding insurance products based on customer needs and criteria",
+          "intents": [
+            {
+              "intent_name": "search_products_by_need",
+              "display_name": "Search Products by Need Type",
+              "description": "Find insurance products matching a specific need type (Protection, Savings, Investment, Health, Retirement)",
+              "required_fields": ["need_type"],
+              "optional_fields": ["age_range", "budget"],
+              "ui_actions": [{"action": "navigate", "target": "product_catalog", "params": ["need_type"]}],
+              "example_phrases": [
+                "Show me all Protection products",
+                "Find Savings plans for age 35",
+                "What Investment products do we have?",
+                "Display Health insurance options",
+                "Show Retirement plans"
+              ]
+            },
+            {
+              "intent_name": "search_products_by_name",
+              "display_name": "Search Products by Name",
+              "description": "Search for insurance products by product name or code",
+              "required_fields": ["search_term"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "search_action", "target": "product_search"}],
+              "example_phrases": [
+                "Find product PruLife",
+                "Search for term life products",
+                "Show me products with 'shield' in the name",
+                "Look up product code PRU123",
+                "Find whole life insurance"
+              ]
+            },
+            {
+              "intent_name": "filter_products",
+              "display_name": "Filter Products",
+              "description": "Apply filters to product list based on age eligibility, category, or features",
+              "required_fields": ["filter_criteria"],
+              "optional_fields": ["filter_value"],
+              "ui_actions": [{"action": "apply_filter", "target": "product_filters"}],
+              "example_phrases": [
+                "Filter products for age 45",
+                "Show only Life insurance products",
+                "Filter by minimum age 21",
+                "Display products with investment component",
+                "Show products suitable for seniors"
+              ]
+            },
+            {
+              "intent_name": "view_product_details",
+              "display_name": "View Product Details",
+              "description": "Display detailed information about a specific insurance product",
+              "required_fields": ["product_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_details", "target": "product_detail_modal"}],
+              "example_phrases": [
+                "Show details for PruLife plan",
+                "What are the features of this product?",
+                "Display product information",
+                "Tell me more about this insurance plan",
+                "Show product brochure"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "product_comparison",
+          "display_name": "Product Comparison",
+          "description": "Comparing multiple insurance products side by side",
+          "intents": [
+            {
+              "intent_name": "compare_products",
+              "display_name": "Compare Products",
+              "description": "Compare features, benefits, and pricing of multiple products",
+              "required_fields": ["product_ids"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_comparison", "target": "product_comparison"}],
+              "example_phrases": [
+                "Compare PruLife with PruTerm",
+                "Show me the difference between these products",
+                "Compare term life and whole life",
+                "Which product is better for my client?",
+                "Display product comparison"
+              ]
+            },
+            {
+              "intent_name": "recommend_product",
+              "display_name": "Get Product Recommendation",
+              "description": "Get AI-powered product recommendations based on customer profile and needs",
+              "required_fields": ["customer_profile"],
+              "optional_fields": ["need_type", "budget"],
+              "ui_actions": [{"action": "get_recommendation", "target": "product_recommender"}],
+              "example_phrases": [
+                "What products should I recommend for this customer?",
+                "Suggest suitable products for age 35 with family",
+                "Recommend protection products for young professional",
+                "Which product matches this customer's needs?",
+                "Help me choose the right product"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "analytics",
+      "display_name": "Analytics & Performance",
+      "description": "Tracking sales performance, conversion metrics, and team comparisons",
+      "subtopics": [
+        {
+          "subtopic": "personal_performance",
+          "display_name": "Personal Performance",
+          "description": "Viewing individual advisor performance metrics and trends",
+          "intents": [
+            {
+              "intent_name": "view_performance_dashboard",
+              "display_name": "View Performance Dashboard",
+              "description": "Display personal sales performance metrics and KPIs",
+              "required_fields": [],
+              "optional_fields": ["time_range"],
+              "ui_actions": [{"action": "navigate", "target": "analytics_dashboard"}],
+              "example_phrases": [
+                "Show me my performance dashboard",
+                "How am I doing this month?",
+                "Display my sales metrics",
+                "Show my KPIs for the last 90 days",
+                "What's my performance this year?"
+              ]
+            },
+            {
+              "intent_name": "view_sales_trend",
+              "display_name": "View Sales Trend",
+              "description": "Display sales trends over time with charts and graphs",
+              "required_fields": [],
+              "optional_fields": ["time_range", "metric_type"],
+              "ui_actions": [{"action": "view_chart", "target": "sales_trend_chart"}],
+              "example_phrases": [
+                "Show my sales trend for the last 12 months",
+                "How have my sales been trending?",
+                "Display monthly performance chart",
+                "Show year-over-year comparison",
+                "What's my sales pattern this quarter?"
+              ]
+            },
+            {
+              "intent_name": "view_commission_summary",
+              "display_name": "View Commission Summary",
+              "description": "Display commission earnings and projections",
+              "required_fields": [],
+              "optional_fields": ["time_range"],
+              "ui_actions": [{"action": "view_details", "target": "commission_summary"}],
+              "example_phrases": [
+                "Show my commission this month",
+                "How much commission have I earned?",
+                "Display my earnings summary",
+                "What's my projected commission?",
+                "Show commission breakdown"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "conversion_funnel",
+          "display_name": "Conversion Funnel",
+          "description": "Analyzing lead-to-client conversion rates and pipeline metrics",
+          "intents": [
+            {
+              "intent_name": "view_conversion_funnel",
+              "display_name": "View Conversion Funnel",
+              "description": "Display conversion rates through sales pipeline stages",
+              "required_fields": [],
+              "optional_fields": ["time_range"],
+              "ui_actions": [{"action": "view_chart", "target": "conversion_funnel"}],
+              "example_phrases": [
+                "Show my conversion funnel",
+                "What's my lead-to-client conversion rate?",
+                "Display pipeline conversion metrics",
+                "How many leads convert to proposals?",
+                "Show funnel analysis"
+              ]
+            },
+            {
+              "intent_name": "analyze_drop_offs",
+              "display_name": "Analyze Drop-off Points",
+              "description": "Identify where leads are dropping off in the sales process",
+              "required_fields": [],
+              "optional_fields": ["time_range"],
+              "ui_actions": [{"action": "view_analysis", "target": "drop_off_analysis"}],
+              "example_phrases": [
+                "Where are my leads dropping off?",
+                "Show me pipeline bottlenecks",
+                "Why are proposals not converting?",
+                "Analyze my lost opportunities",
+                "Which stage has the most drop-offs?"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "team_comparison",
+          "display_name": "Team Comparison",
+          "description": "Comparing performance with team members and agency benchmarks",
+          "intents": [
+            {
+              "intent_name": "compare_with_team",
+              "display_name": "Compare with Team",
+              "description": "Compare personal performance with team averages and rankings",
+              "required_fields": [],
+              "optional_fields": ["metric_type", "time_range"],
+              "ui_actions": [{"action": "view_comparison", "target": "team_comparison"}],
+              "example_phrases": [
+                "How do I rank against my team?",
+                "Compare my performance with team average",
+                "Show team leaderboard",
+                "Am I above or below team average?",
+                "Display team performance comparison"
+              ]
+            },
+            {
+              "intent_name": "view_agency_benchmarks",
+              "display_name": "View Agency Benchmarks",
+              "description": "Display agency-wide performance benchmarks and targets",
+              "required_fields": [],
+              "optional_fields": ["metric_type"],
+              "ui_actions": [{"action": "view_details", "target": "agency_benchmarks"}],
+              "example_phrases": [
+                "Show agency benchmarks",
+                "What's the agency target this month?",
+                "Display performance standards",
+                "Am I meeting agency expectations?",
+                "Show top performer metrics"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "todo",
+      "display_name": "To-Do & Calendar",
+      "description": "Managing tasks, appointments, and daily planner",
+      "subtopics": [
+        {
+          "subtopic": "task_management",
+          "display_name": "Task Management",
+          "description": "Creating, viewing, and completing tasks and to-dos",
+          "intents": [
+            {
+              "intent_name": "create_task",
+              "display_name": "Create New Task",
+              "description": "Create a new task or reminder",
+              "required_fields": ["title", "date"],
+              "optional_fields": ["time", "linked_lead_id", "notes"],
+              "ui_actions": [{"action": "open_dialog", "target": "new_task_dialog"}],
+              "example_phrases": [
+                "Add task to follow up with John tomorrow",
+                "Create reminder to submit documents",
+                "Add to-do: call Sarah next week",
+                "Remind me to review proposal on Friday",
+                "Create task for policy delivery"
+              ]
+            },
+            {
+              "intent_name": "view_tasks",
+              "display_name": "View Tasks List",
+              "description": "Display all tasks and appointments, optionally filtered by date or completion status",
+              "required_fields": [],
+              "optional_fields": ["date_filter", "completed"],
+              "ui_actions": [{"action": "navigate", "target": "todo_list"}],
+              "example_phrases": [
+                "Show me my tasks for today",
+                "What's on my to-do list?",
+                "Display upcoming tasks this week",
+                "Show incomplete tasks",
+                "What do I need to do today?"
+              ]
+            },
+            {
+              "intent_name": "mark_task_complete",
+              "display_name": "Mark Task as Complete",
+              "description": "Mark a task or appointment as completed",
+              "required_fields": ["task_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "update_status", "target": "task_completion"}],
+              "example_phrases": [
+                "Mark this task as done",
+                "Complete this task",
+                "I finished the follow-up call",
+                "Check off this to-do",
+                "Mark as completed"
+              ]
+            },
+            {
+              "intent_name": "reschedule_task",
+              "display_name": "Reschedule Task",
+              "description": "Change the date or time of a task or appointment",
+              "required_fields": ["task_id", "new_date"],
+              "optional_fields": ["new_time"],
+              "ui_actions": [{"action": "update_field", "target": "task_schedule"}],
+              "example_phrases": [
+                "Reschedule this task to tomorrow",
+                "Move appointment to next Monday",
+                "Change meeting time to 3pm",
+                "Postpone this task to next week",
+                "Update appointment to Friday"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "calendar_view",
+          "display_name": "Calendar View",
+          "description": "Viewing and navigating appointments and tasks in calendar format",
+          "intents": [
+            {
+              "intent_name": "view_calendar",
+              "display_name": "View Calendar",
+              "description": "Display calendar view with all appointments and tasks",
+              "required_fields": [],
+              "optional_fields": ["view_mode", "date"],
+              "ui_actions": [{"action": "navigate", "target": "calendar_view"}],
+              "example_phrases": [
+                "Show me my calendar",
+                "Display this week's appointments",
+                "Open calendar view",
+                "What's on my schedule?",
+                "Show monthly calendar"
+              ]
+            },
+            {
+              "intent_name": "find_available_slot",
+              "display_name": "Find Available Time Slot",
+              "description": "Find free time slots for scheduling appointments",
+              "required_fields": [],
+              "optional_fields": ["date_range", "duration"],
+              "ui_actions": [{"action": "search_action", "target": "available_slots"}],
+              "example_phrases": [
+                "When am I free tomorrow?",
+                "Find available time this week",
+                "Show me open slots for appointment",
+                "What times are available on Friday?",
+                "When can I schedule a meeting?"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "broadcast",
+      "display_name": "Broadcast & Communications",
+      "description": "Managing broadcast messages, announcements, and campaigns",
+      "subtopics": [
+        {
+          "subtopic": "campaign_creation",
+          "display_name": "Campaign Creation",
+          "description": "Creating and managing broadcast messages and campaigns",
+          "intents": [
+            {
+              "intent_name": "create_broadcast",
+              "display_name": "Create Broadcast Message",
+              "description": "Create a new broadcast announcement, training notice, or campaign message",
+              "required_fields": ["title", "content", "category"],
+              "optional_fields": ["is_pinned"],
+              "ui_actions": [{"action": "open_dialog", "target": "new_broadcast_dialog"}],
+              "example_phrases": [
+                "Create a new announcement",
+                "Send broadcast about new product launch",
+                "Create training notice for team",
+                "Post campaign message",
+                "Broadcast important update"
+              ]
+            },
+            {
+              "intent_name": "view_broadcasts",
+              "display_name": "View Broadcast Messages",
+              "description": "Display all broadcast messages with filtering by category",
+              "required_fields": [],
+              "optional_fields": ["category", "is_pinned"],
+              "ui_actions": [{"action": "navigate", "target": "broadcast_list"}],
+              "example_phrases": [
+                "Show me all broadcasts",
+                "Display announcements",
+                "What training notices do we have?",
+                "Show pinned messages",
+                "View campaign broadcasts"
+              ]
+            },
+            {
+              "intent_name": "pin_broadcast",
+              "display_name": "Pin/Unpin Broadcast",
+              "description": "Pin or unpin important broadcast messages",
+              "required_fields": ["broadcast_id", "pin_status"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "update_field", "target": "broadcast_pin_status"}],
+              "example_phrases": [
+                "Pin this announcement",
+                "Make this message sticky",
+                "Unpin this broadcast",
+                "Remove from pinned messages",
+                "Highlight this announcement"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "campaign_analytics",
+          "display_name": "Campaign Analytics",
+          "description": "Tracking broadcast message reach and engagement",
+          "intents": [
+            {
+              "intent_name": "view_broadcast_reach",
+              "display_name": "View Broadcast Reach",
+              "description": "Display reach and engagement metrics for broadcast messages",
+              "required_fields": ["broadcast_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_analytics", "target": "broadcast_metrics"}],
+              "example_phrases": [
+                "How many people saw this broadcast?",
+                "Show engagement metrics for this announcement",
+                "Display broadcast analytics",
+                "What's the reach of this campaign?",
+                "Show broadcast performance"
+              ]
+            },
+            {
+              "intent_name": "track_campaign_responses",
+              "display_name": "Track Campaign Responses",
+              "description": "Monitor responses and actions taken from campaign broadcasts",
+              "required_fields": ["campaign_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_details", "target": "campaign_responses"}],
+              "example_phrases": [
+                "Show responses to this campaign",
+                "How many leads from this broadcast?",
+                "Track campaign conversions",
+                "Display response rate",
+                "Show campaign results"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "visualizer",
+      "display_name": "Financial Planning Tools",
+      "description": "Using financial planning calculators and scenario visualizers",
+      "subtopics": [
+        {
+          "subtopic": "financial_planning",
+          "display_name": "Financial Planning",
+          "description": "Running needs analysis and portfolio reviews using planning tools",
+          "intents": [
+            {
+              "intent_name": "run_needs_analysis",
+              "display_name": "Run Needs Analysis",
+              "description": "Calculate insurance needs based on customer financial situation",
+              "required_fields": ["customer_data"],
+              "optional_fields": ["need_type"],
+              "ui_actions": [{"action": "open_tool", "target": "needs_calculator"}],
+              "example_phrases": [
+                "Run needs analysis for this customer",
+                "Calculate insurance requirements",
+                "Determine coverage needs",
+                "Analyze financial protection gaps",
+                "Run needs calculator"
+              ]
+            },
+            {
+              "intent_name": "view_portfolio_analytics",
+              "display_name": "View Portfolio Analytics",
+              "description": "Display detailed analysis of customer's insurance portfolio",
+              "required_fields": ["customer_id"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "open_tool", "target": "portfolio_analyzer"}],
+              "example_phrases": [
+                "Show portfolio analysis for this client",
+                "Analyze customer's coverage",
+                "Display portfolio breakdown",
+                "Review insurance holdings",
+                "Show portfolio visualizer"
+              ]
+            },
+            {
+              "intent_name": "generate_financial_report",
+              "display_name": "Generate Financial Report",
+              "description": "Create comprehensive financial planning report for customer",
+              "required_fields": ["customer_id"],
+              "optional_fields": ["report_type"],
+              "ui_actions": [{"action": "generate_report", "target": "financial_report"}],
+              "example_phrases": [
+                "Generate financial plan report",
+                "Create needs analysis report for client",
+                "Produce portfolio review document",
+                "Generate planning presentation",
+                "Create customer financial summary"
+              ]
+            }
+          ]
+        },
+        {
+          "subtopic": "scenario_modeling",
+          "display_name": "Scenario Modeling",
+          "description": "Creating and comparing financial scenarios and projections",
+          "intents": [
+            {
+              "intent_name": "create_scenario",
+              "display_name": "Create Financial Scenario",
+              "description": "Model a financial scenario with different assumptions and parameters",
+              "required_fields": ["scenario_parameters"],
+              "optional_fields": ["customer_id"],
+              "ui_actions": [{"action": "open_tool", "target": "scenario_modeler"}],
+              "example_phrases": [
+                "Create retirement scenario",
+                "Model future income projection",
+                "What if customer increases coverage?",
+                "Show retirement savings projection",
+                "Create scenario for early retirement"
+              ]
+            },
+            {
+              "intent_name": "compare_scenarios",
+              "display_name": "Compare Scenarios",
+              "description": "Compare multiple financial scenarios side by side",
+              "required_fields": ["scenario_ids"],
+              "optional_fields": [],
+              "ui_actions": [{"action": "view_comparison", "target": "scenario_comparison"}],
+              "example_phrases": [
+                "Compare these retirement scenarios",
+                "Show difference between scenarios",
+                "Which scenario is better?",
+                "Compare investment options",
+                "Display scenario comparison"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

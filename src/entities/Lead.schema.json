@@ -1,0 +1,101 @@
+{
+  "name": "Lead",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Lead/Client name"
+    },
+    "contact_number": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "national_id": {
+      "type": "string",
+      "description": "National ID or NRIC"
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date"
+    },
+    "gender": {
+      "type": "string",
+      "enum": [
+        "Male",
+        "Female",
+        "Other"
+      ]
+    },
+    "lead_source": {
+      "type": "string",
+      "enum": [
+        "Referral",
+        "Social Media",
+        "Walk-in",
+        "Cold Call",
+        "Website",
+        "Event",
+        "Other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Not Initiated",
+        "Contacted",
+        "Proposal"
+      ],
+      "default": "Not Initiated",
+      "description": "Lead status: 'Not Initiated' = no opportunity yet (purge after 90 days); 'Contacted' = appointment scheduled but no proposal; 'Proposal' = has active proposal"
+    },
+    "last_contacted": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_client": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this lead has become a client"
+    },
+    "active_policies_count": {
+      "type": "number",
+      "default": 0
+    },
+    "total_premium": {
+      "type": "number",
+      "default": 0
+    },
+    "marital_status": {
+      "type": "string",
+      "enum": [
+        "Single",
+        "Married",
+        "Divorced",
+        "Widowed"
+      ]
+    },
+    "occupation": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "nationality": {
+      "type": "string"
+    },
+    "smoker_status": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "contact_number"
+  ]
+}

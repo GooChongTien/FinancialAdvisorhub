@@ -1,0 +1,26 @@
+tests:
+  - name: system_help_navigation
+    user: "where do i update risk profile?"
+    expect:
+      intent: system_help
+
+  - name: capture_income
+    user: "set income to 4500"
+    expect:
+      intent: capture_update_data
+
+  - name: overview
+    user: "summarise this client for me"
+    expect:
+      intent: case_overview
+
+  - name: meeting_prep
+    user: "help me prepare for meeting with Jason"
+    expect:
+      intent: prepare_meeting
+
+  - name: sales_script
+    user: "give me a script to explain CI vs medical card"
+    expect:
+      intent: sales_help_explicit
+

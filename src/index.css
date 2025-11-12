@@ -1,0 +1,149 @@
+/* Swap this import to your chosen brand font if needed. */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Typography tokens */
+    --font-sans: 'Open Sans', sans-serif; /* Replace with your Figma font family */
+    --font-display: 'Open Sans', sans-serif; /* Replace with your display font if different */
+
+    /* 360F Color System - Primary Brand Colors */
+    --color-primary-50: #EBF1FF;
+    --color-primary-100: #D6E3FF;
+    --color-primary-200: #ADC7FF;
+    --color-primary-300: #85ABFF;
+    --color-primary-400: #5C8FFF;
+    --color-primary-500: #3373FF;
+    --color-primary-600: #0052E0;
+    --color-primary-700: #003DAD;
+    --color-primary-800: #002979;
+    --color-primary-900: #001446;
+
+    /* Neutral/Gray Scale */
+    --color-neutral-0: #FFFFFF;
+    --color-neutral-50: #F4F5F5;
+    --color-neutral-100: #E8EAEC;
+    --color-neutral-200: #D2D5D9;
+    --color-neutral-300: #B5BAC0;
+    --color-neutral-400: #98A0A8;
+    --color-neutral-500: #7C858F;
+    --color-neutral-600: #636B75;
+    --color-neutral-700: #4A515A;
+    --color-neutral-850: #2C2F32;
+    --color-neutral-900: #202326;
+    --color-neutral-1000: #020303;
+
+    /* Success (Green) */
+    --color-green-50: #DDFAEB;
+    --color-green-100: #BBF5D7;
+    --color-green-200: #77EBAF;
+    --color-green-300: #33E187;
+    --color-green-400: #0ACB69;
+    --color-green-500: #00A854;
+    --color-green-600: #008644;
+    --color-green-700: #006433;
+    --color-green-800: #004322;
+    --color-green-900: #002111;
+
+    /* Warning (Orange) */
+    --color-orange-50: #FFF4E5;
+    --color-orange-100: #FFE9CC;
+    --color-orange-200: #FFD399;
+    --color-orange-300: #FFBD66;
+    --color-orange-400: #FFA733;
+    --color-orange-500: #FF9100;
+    --color-orange-600: #E07400;
+    --color-orange-700: #AD5700;
+    --color-orange-800: #7A3A00;
+    --color-orange-900: #471D00;
+
+    /* Error/Danger (Red) */
+    --color-red-50: #FFE5E7;
+    --color-red-100: #FFCCCF;
+    --color-red-200: #FF999F;
+    --color-red-300: #FF666F;
+    --color-red-400: #FF333F;
+    --color-red-500: #F8333C;
+    --color-red-600: #DC0010;
+    --color-red-700: #A9000C;
+    --color-red-800: #760008;
+    --color-red-900: #430004;
+
+    /* Info (Yellow) */
+    --color-yellow-50: #FFF9E5;
+    --color-yellow-100: #FFF3CC;
+    --color-yellow-200: #FFE799;
+    --color-yellow-300: #FFDB66;
+    --color-yellow-400: #FFCF33;
+    --color-yellow-500: #FFC300;
+    --color-yellow-600: #E0A600;
+    --color-yellow-700: #AD8000;
+    --color-yellow-800: #7A5A00;
+    --color-yellow-900: #473300;
+
+    /* Cyan/Teal Accent */
+    --color-cyan-50: #E5F9FF;
+    --color-cyan-100: #CCF3FF;
+    --color-cyan-200: #99E7FF;
+    --color-cyan-300: #66DBFF;
+    --color-cyan-400: #33CFFF;
+    --color-cyan-500: #00C3FF;
+    --color-cyan-600: #009FCC;
+    --color-cyan-700: #007B99;
+    --color-cyan-800: #005766;
+    --color-cyan-900: #003333;
+
+    /* Semantic Foreground Colors */
+    --color-foreground-primary: #020303;
+    --color-foreground-secondary: #4A515A;
+    --color-foreground-tertiary: #7C858F;
+    --color-foreground-disabled: #B5BAC0;
+    --color-foreground-success: #00A854;
+    --color-foreground-warning: #FF9100;
+    --color-foreground-error: #F8333C;
+
+    /* Semantic Background Colors */
+    --color-background-primary: #FFFFFF;
+    --color-background-secondary: #EBF1FF;
+    --color-background-tertiary: #F4F5F5;
+    --color-background-elevated: #FFFFFF;
+    --color-background-muted: #E8EAEC;
+    --color-background-success: #DDFAEB;
+    --color-background-warning: #FFF4E5;
+    --color-background-error: #FFE5E7;
+    --color-background-info: #FFF9E5;
+
+    /* Semantic Border Colors */
+    --color-border-default: #D2D5D9;
+    --color-border-accent: #3373FF;
+    --color-border-muted: #F4F5F5;
+
+    /* Link Colors */
+    --color-link-default: #3373FF;
+    --color-link-hover: #0052E0;
+    --color-link-visited: #003DAD;
+
+    /* 360F Spacing System */
+    --spacing-2xs: 4px;
+    --spacing-xs: 8px;
+    --spacing-s: 12px;
+    --spacing-m: 16px;
+    --spacing-l: 20px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+    --spacing-3xl: 40px;
+    --spacing-4xl: 48px;
+  }
+
+  body {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+    font-family: var(--font-sans);
+  }
+}

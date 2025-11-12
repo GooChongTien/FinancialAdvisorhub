@@ -1,0 +1,73 @@
+{
+  "name": "Proposal",
+  "type": "object",
+  "properties": {
+    "proposal_number": {
+      "type": "string",
+      "description": "Unique proposal identifier"
+    },
+    "lead_id": {
+      "type": "string",
+      "description": "Reference to Lead entity"
+    },
+    "proposer_name": {
+      "type": "string"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "Fact Finding",
+        "Financial Planning",
+        "Recommendation",
+        "Quotation",
+        "Application"
+      ],
+      "default": "Fact Finding"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "In Progress",
+        "Pending for UW",
+        "Pending for Payment",
+        "Pending for Approval",
+        "Completed",
+        "Cancelled"
+      ],
+      "default": "In Progress"
+    },
+    "fact_finding_data": {
+      "type": "object",
+      "description": "Personal details, dependents, CKA, RPQ data"
+    },
+    "fna_data": {
+      "type": "object",
+      "description": "Financial need analysis data"
+    },
+    "recommendation_data": {
+      "type": "object",
+      "description": "Product recommendations"
+    },
+    "quotation_data": {
+      "type": "object",
+      "description": "Quotation details"
+    },
+    "application_data": {
+      "type": "object",
+      "description": "Application, nomination, underwriting, payment"
+    },
+    "completion_percentage": {
+      "type": "number",
+      "default": 0
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "proposal_number",
+    "lead_id",
+    "proposer_name"
+  ]
+}

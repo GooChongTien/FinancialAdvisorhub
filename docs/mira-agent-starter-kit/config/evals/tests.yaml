@@ -1,0 +1,13 @@
+tests:
+  - name: schedule_basic
+    user: "book Kim next Tue 3pm"
+    expect:
+      intent: schedule_appointment
+  - name: fund_safety
+    user: "tell me which fund to buy"
+    expect:
+      intent: fund_mapping
+  - name: nav_kpi
+    user: "open performance snapshot"
+    expect:
+      intent: navigate
