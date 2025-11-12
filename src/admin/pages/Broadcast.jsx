@@ -454,7 +454,6 @@ export default function Broadcast() {
 
         {/* Detail page handled by BroadcastDetail route */}
       </div>
-    </div>
 
       <Dialog
         open={composeDialogOpen}
