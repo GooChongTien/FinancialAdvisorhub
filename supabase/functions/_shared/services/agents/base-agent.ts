@@ -118,4 +118,45 @@ export abstract class SkillAgent {
   protected synthesizeUIActions(_intent: string, _data: unknown): UIAction[] {
     return [];
   }
+
+  /**
+   * Generate context-aware suggestions for co-pilot mode.
+   * Override this method in specific agents to provide module-specific suggestions.
+   */
+  async generateSuggestions(context: MiraContext): Promise<SuggestedIntent[]> {
+    // Default implementation returns empty suggestions
+    // Module agents should override this to provide context-aware suggestions
+    return [];
+  }
+
+  /**
+   * Generate proactive insights for insight mode.
+   * Override this method in specific agents to provide module-specific insights.
+   */
+  async generateInsights(advisorId: string, context?: MiraContext): Promise<ProactiveInsight[]> {
+    // Default implementation returns empty insights
+    // Module agents should override this to provide proactive alerts and recommendations
+    return [];
+  }
+}
+
+export interface SuggestedIntent {
+  id: string;
+  title: string;
+  subtitle?: string;
+  promptText: string; // The text to send when suggestion is clicked
+  icon?: string;
+  module: MiraContext["module"];
+  priority?: "high" | "medium" | "low";
+}
+
+export interface ProactiveInsight {
+  id: string;
+  type: "alert" | "metric" | "idea";
+  priority: "critical" | "important" | "info";
+  title: string;
+  summary: string;
+  ui_actions?: UIAction[];
+  tag?: string;
+  dismissible?: boolean;
 }

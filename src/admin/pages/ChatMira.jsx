@@ -159,11 +159,11 @@ export default function ChatMira() {
         {/* Side panel for Co-pilot or Insights */}
         {mode !== "command" && (
           <div className="col-span-1 transition-all duration-300">
-            <div className="h-full rounded-lg border border-slate-200 bg-white/90 p-4">
+            <div className="h-full rounded-lg border border-slate-200 bg-white/90 p-4 overflow-auto">
               {mode === "copilot" ? (
-                <MiraCopilotPanel intent={null} execution={null} onRetry={() => { /* placeholder */ }} />
+                <MiraCopilotPanel />
               ) : (
-                <MiraInsightPanel insights={[]} />
+                <MiraInsightPanel advisorId="demo-advisor-1" />
               )}
             </div>
           </div>

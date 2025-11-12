@@ -22,8 +22,12 @@ import MiraQuickstart from "@/pages/MiraQuickstart.jsx";
 import MiraOps from "@/admin/pages/MiraOps.jsx";
 import { MiraContextProvider } from "@/admin/state/providers/MiraContextProvider.jsx";
 import { MiraConfirmProvider } from "@/lib/mira/useMiraConfirm";
+import { useGlobalKeyboardShortcuts } from "@/admin/hooks/useGlobalKeyboardShortcuts";
 
 function LayoutContainer() {
+  // Enable global keyboard shortcuts
+  useGlobalKeyboardShortcuts();
+
   return (
     <AdminLayout>
       <Outlet />

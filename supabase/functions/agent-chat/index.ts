@@ -519,6 +519,106 @@ function respondWithAgentResult(
     },
   );
 }
+
+async function handleSuggestMode(body: any, origin: string): Promise<Response> {
+  const corsHeaders = Object.fromEntries(createCorsHeaders(origin));
+
+  try {
+    const context = sanitizeContext(body.context);
+    if (!context) {
+      return new Response(JSON.stringify({ error: "Context required for suggest mode", suggestions: [] }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Import agent registry
+    const { agentRegistry } = await import("../_shared/services/agents/registry.ts");
+    const agent = agentRegistry.getAgentByModule(context.module);
+
+    if (!agent) {
+      return new Response(JSON.stringify({ suggestions: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const suggestions = await agent.generateSuggestions(context);
+
+    await logAgentEvent("mira.agent.suggest.success", {
+      module: context.module,
+      page: context.page,
+      suggestionsCount: suggestions.length,
+    });
+
+    return new Response(JSON.stringify({ suggestions }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error) {
+    await logAgentError("mira.agent.suggest.error", error);
+    const message = error instanceof Error ? error.message : "Failed to generate suggestions";
+    return new Response(JSON.stringify({ error: message, suggestions: [] }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+}
+
+async function handleInsightsMode(body: any, origin: string): Promise<Response> {
+  const corsHeaders = Object.fromEntries(createCorsHeaders(origin));
+
+  try {
+    const advisorId = extractAdvisorId(body.metadata) || extractAdvisorId(body.context);
+    if (!advisorId) {
+      return new Response(JSON.stringify({ error: "Advisor ID required for insights mode", insights: [] }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const context = sanitizeContext(body.context);
+
+    // Import agent registry
+    const { agentRegistry } = await import("../_shared/services/agents/registry.ts");
+
+    // Gather insights from all agents
+    const allAgents = agentRegistry.getAllAgents();
+    const insightPromises = allAgents.map(agent =>
+      agent.generateInsights(advisorId, context).catch(() => [])
+    );
+
+    const insightArrays = await Promise.all(insightPromises);
+    const insights = insightArrays.flat();
+
+    // Sort by priority (critical > important > info)
+    const priorityOrder = { critical: 3, important: 2, info: 1 };
+    insights.sort((a, b) => {
+      const aPriority = priorityOrder[a.priority] || 0;
+      const bPriority = priorityOrder[b.priority] || 0;
+      return bPriority - aPriority;
+    });
+
+    await logAgentEvent("mira.agent.insights.success", {
+      advisorId,
+      insightsCount: insights.length,
+      criticalCount: insights.filter(i => i.priority === "critical").length,
+    });
+
+    return new Response(JSON.stringify({ insights }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  } catch (error) {
+    await logAgentError("mira.agent.insights.error", error);
+    const message = error instanceof Error ? error.message : "Failed to generate insights";
+    return new Response(JSON.stringify({ error: message, insights: [] }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+}
+
 async function handleRequest(req: Request): Promise<Response> {
   const origin = req.headers.get("origin") || "";
 
@@ -547,6 +647,14 @@ async function handleRequest(req: Request): Promise<Response> {
 
     if (body?.mode === "health") {
       return await handleHealthCheck(origin);
+    }
+
+    if (body?.mode === "suggest") {
+      return await handleSuggestMode(body, origin);
+    }
+
+    if (body?.mode === "insights") {
+      return await handleInsightsMode(body, origin);
     }
     // get_client_secret is no longer supported (native agent)
 
