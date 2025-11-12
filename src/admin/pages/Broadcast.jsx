@@ -28,7 +28,6 @@ import {
 } from "@/admin/components/ui/popover";
 import { ArrowUpDown, Filter as FilterIcon, Plus } from "lucide-react";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
-import { Input } from "@/admin/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -118,6 +117,12 @@ export default function Broadcast() {
       String(b.title || "").toLowerCase().includes(q) ||
       String(b.content || "").toLowerCase().includes(q)
     );
+  };
+
+  const highlight = (text) => {
+    if (!search || !text) return text;
+    // Simple text return for now - could enhance with actual highlighting
+    return text;
   };
 
   const filteredBroadcasts = React.useMemo(() => {
@@ -274,7 +279,8 @@ export default function Broadcast() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="Broadcast Center"
@@ -507,5 +513,6 @@ export default function Broadcast() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
   );
 }
