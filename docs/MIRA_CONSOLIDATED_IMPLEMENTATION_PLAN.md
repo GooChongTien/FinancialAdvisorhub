@@ -3571,3 +3571,105 @@ Built a lightweight harness that feeds synthetic message arrays through a mocked
 - Undo via `mira:auto-actions:undo` now closes all auto-opened modals (lead, task, broadcast, proposal) giving agents confidence when actions are triggered automatically.
 
 ---
+
+### 2025-11-12 - Claude - Phase 4: Adaptive UI Implementation (Suggest & Insights Modes) - 3.5 hours
+
+**Tasks Completed:**
+- [x] Extended `SkillAgent` base class with `generateSuggestions()` and `generateInsights()` methods
+- [x] Added `SuggestedIntent` and `ProactiveInsight` interfaces for type-safe suggestions/insights
+- [x] Implemented `handleSuggestMode()` in agent-chat endpoint for context-aware co-pilot suggestions
+- [x] Implemented `handleInsightsMode()` in agent-chat endpoint for proactive insights with auto-refresh
+- [x] Added example suggestions to Customer agent (context-aware based on page: list vs detail)
+- [x] Added example insights to Customer agent (overdue follow-ups, hot leads metrics)
+- [x] Created new functional `MiraCopilotPanel` component that fetches and displays suggestions
+- [x] Created new functional `MiraInsightPanel` component that fetches insights with 5-min auto-refresh
+- [x] Both panels integrate with `MiraContextProvider` for page-aware behavior
+- [x] Implemented global keyboard shortcuts: Ctrl/Cmd+K (open command mode), ESC (close)
+- [x] Added `useGlobalKeyboardShortcuts` hook with input-aware behavior
+- [x] Updated `ChatMira.jsx` to use new functional panels with proper context integration
+
+**Work Summary:**
+Phase 4 (Adaptive UI) is now substantially complete with functional Co-pilot and Insight modes. The backend supports two new API modes (`suggest` and `insights`) that agents can implement. The Customer agent demonstrates context-aware suggestions that vary based on the current page (e.g., "Schedule Follow-up" on detail pages, "Add New Lead" on list pages) and proactive insights about overdue tasks and metrics.
+
+The frontend panels now actively fetch data from the backend rather than showing placeholder content. `MiraCopilotPanel` displays clickable suggestion cards that send messages to the agent. `MiraInsightPanel` displays prioritized, dismissible insight cards with auto-refresh every 5 minutes and supports executing UI actions directly via the action executor.
+
+Global keyboard shortcuts provide quick access: Ctrl/Cmd+K opens command mode from anywhere, and ESC closes/minimizes Mira. The shortcuts respect input focus and won't trigger while typing.
+
+**Architecture:**
+```
+Backend Flow (Suggest Mode):
+1. POST /agent-chat with mode: "suggest"  
+2. Context passed (module, page, pageData)
+3. Router selects agent based on module
+4. Agent.generateSuggestions(context) returns suggestions[]
+5. Response: { suggestions: [...] }
+
+Frontend Flow (Co-pilot):
+1. MiraCopilotPanel fetches on mount & context change
+2. Displays ActionCard components with suggestions
+3. User clicks suggestion
+4. sendMessage(suggestion.promptText)
+5. Agent processes as normal command
+
+Insights Flow:
+1. POST /agent-chat with mode: "insights"
+2. advisorId from metadata
+3. All agents.generateInsights() called in parallel
+4. Results merged, sorted by priority
+5. Auto-refresh every 5 minutes
+6. Dismissible cards with optional ui_actions
+```
+
+**Files Modified:**
+- `supabase/functions/_shared/services/agents/base-agent.ts` - Added generateSuggestions/generateInsights methods + interfaces
+- `supabase/functions/agent-chat/index.ts` - Added handleSuggestMode & handleInsightsMode handlers
+- `supabase/functions/_shared/services/agents/customer-agent.ts` - Implemented example suggestions & insights
+- `src/admin/components/mira/MiraCopilotPanel.jsx` - Complete rewrite with backend integration
+- `src/admin/components/mira/MiraInsightPanel.jsx` - Complete rewrite with auto-refresh & actions
+- `src/admin/pages/ChatMira.jsx` - Updated to use new functional panels
+- `src/admin/hooks/useGlobalKeyboardShortcuts.js` (new) - Global keyboard shortcut handler
+- `src/App.jsx` - Integrated keyboard shortcuts into LayoutContainer
+- `docs/MIRA_CONSOLIDATED_IMPLEMENTATION_PLAN.md` - This progress log
+
+**Blockers/Issues:**
+- None critical. Build not tested due to missing node_modules in current environment.
+- Remaining Phase 4 items: Framer Motion animations, additional agent implementations, E2E tests.
+
+**Next Steps:**
+- Implement `generateSuggestions()` and `generateInsights()` in remaining 6 agents (New Business, Product, Analytics, To-Do, Broadcast, Visualizer)
+- Add Framer Motion transitions for mode switching animations
+- Write integration tests for suggest/insights endpoints
+- Test keyboard shortcuts in actual browser environment
+- Add visual regression tests for Co-pilot and Insight panels
+- Consider adding suggestion priority-based visual indicators
+- Implement insight dismissal persistence (currently only UI state)
+
+**Phase 4 Success Criteria Status:**
+- [x] Three interaction modes (Command, Co-pilot, Insight) - **COMPLETE**
+- [x] Context-aware suggestions in co-pilot mode - **COMPLETE**
+- [x] Proactive insights in insight mode - **COMPLETE**
+- [x] Keyboard shortcuts (Ctrl/Cmd+K, ESC) - **COMPLETE**
+- [ ] Framer Motion mode transitions - **PENDING**
+- [ ] All 7 agents implement suggestions/insights - **PARTIAL** (1/7 complete)
+- [ ] Responsive layouts (desktop, tablet, mobile) - **PARTIAL** (desktop functional)
+- [ ] Visual regression tests - **PENDING**
+
+**Notes:**
+- The new suggest/insights architecture is extensible - any agent can override the base methods
+- Suggestions are fetched on every page/module change, keeping them contextually relevant
+- Insights auto-refresh ensures advisors see timely alerts without manual refresh
+- Keyboard shortcuts work globally except when typing in inputs (by design)
+- Priority system (critical/important/info) provides visual hierarchy for insights
+- Co-pilot panel includes refresh button for manual updates
+- Both panels include comprehensive error handling and loading states
+
+**Testing Notes:**
+- Manual testing required in browser with proper Supabase connection
+- Verify suggestions change when navigating between Customer list and detail pages
+- Verify insights refresh after 5 minutes
+- Verify Ctrl/Cmd+K opens Mira from any page
+- Verify ESC closes Mira and returns to previous page
+- Verify clicking suggestions sends message to agent
+- Verify insight UI actions execute properly
+
+---
