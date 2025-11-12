@@ -119,6 +119,12 @@ export default function Broadcast() {
     );
   };
 
+  const highlight = (text) => {
+    if (!search || !text) return text;
+    // Simple text return for now - could enhance with actual highlighting
+    return text;
+  };
+
   const filteredBroadcasts = React.useMemo(() => {
     let result = selectedCategory === "all"
       ? regularBroadcasts
@@ -275,7 +281,7 @@ export default function Broadcast() {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
-        <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="Broadcast Center"
           subtitle="Stay updated with the latest news and announcements"
@@ -447,7 +453,6 @@ export default function Broadcast() {
           )}
 
         {/* Detail page handled by BroadcastDetail route */}
-        </div>
       </div>
 
       <Dialog
