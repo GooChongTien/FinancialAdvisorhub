@@ -28,7 +28,6 @@ import {
 } from "@/admin/components/ui/popover";
 import { ArrowUpDown, Filter as FilterIcon, Plus } from "lucide-react";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
-import { Input } from "@/admin/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -274,8 +273,9 @@ export default function Broadcast() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
+        <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="Broadcast Center"
           subtitle="Stay updated with the latest news and announcements"
@@ -447,8 +447,8 @@ export default function Broadcast() {
           )}
 
         {/* Detail page handled by BroadcastDetail route */}
+        </div>
       </div>
-    </div>
 
       <Dialog
         open={composeDialogOpen}
@@ -507,5 +507,6 @@ export default function Broadcast() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
   );
 }
