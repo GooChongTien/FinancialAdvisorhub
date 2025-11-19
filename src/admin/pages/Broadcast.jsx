@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
 import { Badge } from "@/admin/components/ui/badge";
@@ -15,7 +15,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Skeleton } from "@/admin/components/ui/skeleton";
-import { Input } from "@/admin/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/admin/utils";
 import PageHeader from "@/admin/components/ui/page-header.jsx";
@@ -26,6 +25,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/admin/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/admin/components/ui/select";
 import { ArrowUpDown, Filter as FilterIcon, Plus } from "lucide-react";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
 import {
@@ -36,6 +42,7 @@ import {
   DialogFooter,
 } from "@/admin/components/ui/dialog";
 import { Textarea } from "@/admin/components/ui/textarea";
+import { Input } from "@/admin/components/ui/input";
 import { useToast } from "@/admin/components/ui/toast";
 import useMiraPopupListener from "@/admin/hooks/useMiraPopupListener.js";
 import { MIRA_POPUP_TARGETS } from "@/lib/mira/popupTargets.ts";
@@ -52,6 +59,7 @@ export default function Broadcast() {
     window.sessionStorage.setItem(categoryStorageKey, selectedCategory);
   }, [selectedCategory, categoryStorageKey]);
 
+  const queryClient = useQueryClient();
   const { data: broadcasts = [], isLoading } = useQuery({
     queryKey: ["broadcasts"],
     queryFn: () => adviseUAdminApi.entities.Broadcast.list("-published_date"),
@@ -73,7 +81,28 @@ export default function Broadcast() {
   const [composeForm, setComposeForm] = useState({
     title: "",
     audience: "All Advisors",
+    category: "Announcement",
     message: "",
+  });
+  const composeMutation = useMutation({
+    mutationFn: async (draft) => adviseUAdminApi.entities.Broadcast.create(draft),
+    onSuccess: () => {
+      showToast({
+        type: "success",
+        title: "Draft saved",
+        description: "Your broadcast draft is ready for review.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["broadcasts"] }).catch(() => {});
+      setComposeDialogOpen(false);
+      resetComposeForm();
+    },
+    onError: (error) => {
+      showToast({
+        type: "error",
+        title: "Unable to save broadcast",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
   });
 
   useMiraPopupListener(MIRA_POPUP_TARGETS.BROADCAST_COMPOSER, ({ action }) => {
@@ -83,6 +112,7 @@ export default function Broadcast() {
       title: typeof payload.title === "string" ? payload.title : prev.title,
       audience: typeof payload.audience === "string" ? payload.audience : prev.audience,
       message: typeof payload.message === "string" ? payload.message : prev.message,
+      category: typeof payload.category === "string" ? payload.category : prev.category,
     }));
     setComposeDialogOpen(true);
     return () => setComposeDialogOpen(false);
@@ -92,19 +122,22 @@ export default function Broadcast() {
     setComposeForm({
       title: "",
       audience: "All Advisors",
+      category: "Announcement",
       message: "",
     });
   }, []);
 
   const submitComposeForm = () => {
-    showToast({
-      type: "success",
-      title: "Broadcast draft prepared",
-      description: "Review the draft and publish when ready.",
-    });
-    setComposeDialogOpen(false);
-    resetComposeForm();
+    const draft = {
+      title: composeForm.title.trim() || "Untitled broadcast",
+      audience: composeForm.audience || "All Advisors",
+      category: composeForm.category || "Announcement",
+      content: composeForm.message.trim(),
+      status: "draft",
+    };
+    composeMutation.mutate(draft);
   };
+  const isSavingDraft = composeMutation.isPending;
 
   // Search across title and content
   const [search, setSearch] = useState("");
@@ -117,12 +150,6 @@ export default function Broadcast() {
       String(b.title || "").toLowerCase().includes(q) ||
       String(b.content || "").toLowerCase().includes(q)
     );
-  };
-
-  const highlight = (text) => {
-    if (!search || !text) return text;
-    // Simple text return for now - could enhance with actual highlighting
-    return text;
   };
 
   const filteredBroadcasts = React.useMemo(() => {
@@ -248,11 +275,8 @@ export default function Broadcast() {
                   {broadcast.category}
                 </Badge>
               </div>
-              <CardTitle className="text-xl text-foreground-primary group-hover:text-primary-600 transition-colors">{search ? (
-                <>{/* highlight title */}{highlight(broadcast.title)}</>
-              ) : (
-                broadcast.title
-              )}
+              <CardTitle className="text-xl text-foreground-primary group-hover:text-primary-600 transition-colors">
+                {broadcast.title}
               </CardTitle>
               <div className="mt-2 flex items-center gap-2 text-sm text-foreground-secondary">
                 <Calendar className="h-4 w-4" />
@@ -271,7 +295,7 @@ export default function Broadcast() {
         </CardHeader>
         <CardContent className="pt-6">
           <p className="whitespace-pre-wrap leading-relaxed text-foreground-secondary line-clamp-3">
-            {search ? highlight(broadcast.content) : broadcast.content}
+            {broadcast.content}
           </p>
         </CardContent>
       </Card>
@@ -279,8 +303,7 @@ export default function Broadcast() {
   };
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="Broadcast Center"
@@ -453,15 +476,15 @@ export default function Broadcast() {
           )}
 
         {/* Detail page handled by BroadcastDetail route */}
-      </div>
 
-      <Dialog
-        open={composeDialogOpen}
-        onOpenChange={(open) => {
-          setComposeDialogOpen(open);
-          if (!open) resetComposeForm();
-        }}
-      >
+        {/* Compose Dialog */}
+        <Dialog
+          open={composeDialogOpen}
+          onOpenChange={(open) => {
+            setComposeDialogOpen(open);
+            if (!open) resetComposeForm();
+          }}
+        >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Create Broadcast</DialogTitle>
@@ -490,6 +513,22 @@ export default function Broadcast() {
               />
             </div>
             <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">Category</label>
+              <Select
+                value={composeForm.category}
+                onValueChange={(value) => setComposeForm((prev) => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Announcement">Announcement</SelectItem>
+                  <SelectItem value="Training">Training</SelectItem>
+                  <SelectItem value="Campaign">Campaign</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700" htmlFor="broadcast-message">
                 Message
               </label>
@@ -506,12 +545,17 @@ export default function Broadcast() {
             <Button variant="outline" onClick={() => { setComposeDialogOpen(false); resetComposeForm(); }}>
               Cancel
             </Button>
-            <Button className="bg-primary-600 text-white hover:bg-primary-700" onClick={submitComposeForm}>
-              Save Draft
+            <Button
+              className="bg-primary-600 text-white hover:bg-primary-700"
+              onClick={submitComposeForm}
+              disabled={isSavingDraft}
+            >
+              {isSavingDraft ? "Saving..." : "Save Draft"}
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
-    </>
+        </Dialog>
+      </div>
+    </div>
   );
 }

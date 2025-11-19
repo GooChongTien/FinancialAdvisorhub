@@ -236,6 +236,34 @@ export async function sendAgentChat(messages, options) {
 }
 
 /**
+ * Helper for JSON agent-chat requests (non-streaming)
+ * @param {object} payload
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<any>}
+ */
+export async function requestAgentJson(payload, options = {}) {
+  const config = DEFAULT_CONFIG;
+  const url = `${config.baseUrl}/agent-chat`;
+  const headers = await buildAuthHeaders();
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      error: { message: `HTTP ${response.status}` },
+    }));
+    throw new Error(errorData.error?.message || "Agent request failed");
+  }
+
+  return response.json();
+}
+
+/**
  * Build tool result message
  * @param {string} toolCallId
  * @param {string} result
@@ -266,6 +294,7 @@ export default {
   sendAgentChat,
   createToolResultMessage,
   createUserMessage,
+  requestAgentJson,
 };
 
 

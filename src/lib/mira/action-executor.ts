@@ -209,12 +209,30 @@ export class UIActionExecutor {
       typeof window !== "undefined"
         ? `${window.location.pathname}${window.location.search}${window.location.hash}`
         : null;
+
+    // Check if we're in a chat context - if so, activate split view
+    const inChatContext = typeof window !== "undefined" &&
+      (window.location.pathname.includes("/chat") ||
+       window.location.search.includes("from="));
+
+    // Navigate to the target URL
     this.navigate(url);
-    this.notify?.({
-      type: "success",
-      title: "Navigated",
-      description: action.description || url,
-    });
+
+    // If in chat context, trigger split view mode via custom event
+    if (inChatContext && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("mira:open-split-view"));
+      this.notify?.({
+        type: "success",
+        title: "Opened in split view",
+        description: action.description || url,
+      });
+    } else {
+      this.notify?.({
+        type: "success",
+        title: "Navigated",
+        description: action.description || url,
+      });
+    }
 
     if (previousUrl) {
       registerUndoCallback(correlationId, () => {

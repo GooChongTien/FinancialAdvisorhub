@@ -25,6 +25,24 @@ import type { MiraContext, MiraResponse, MiraModule } from "../_shared/services/
 import { logSkillExecution } from "../_shared/services/telemetry.ts";
 import * as skills from "../_shared/services/skills/index.ts";
 import { ensureConversationRecord } from "../_shared/services/conversations.ts";
+import { getAgentRegistry } from "../_shared/services/agents/registry.ts";
+import { generateProactiveInsights } from "../_shared/services/insights.ts";
+import {
+  validateUserMessage,
+  validateContext,
+  validateMetadata,
+  checkRateLimit,
+} from "../_shared/services/security/input-validation.ts";
+import {
+  formatAgentChatIssues,
+  parseAgentChatBody,
+  type AgentChatBody,
+} from "../_shared/services/security/agent-request-schema.ts";
+import {
+  isMiraEnabled,
+  isModeEnabled,
+  isAgentEnabled,
+} from "../_shared/services/feature-flags.ts";
 
 interface AialMetadata {
   requestId: string;
@@ -222,25 +240,21 @@ async function handleHealthCheck(origin: string): Promise<Response> {
   });
 }
 
-function validateRequest(body: any): { valid: boolean; error?: string } {
-  if (!body || typeof body !== "object") {
-    return { valid: false, error: "Request body must be a JSON object" };
+function validateRequest(
+  body: unknown,
+): { valid: true; value: AgentChatBody } | { valid: false; error: { message: string; code: string; details: unknown } } {
+  const parsed = parseAgentChatBody(body ?? {});
+  if (!parsed.success) {
+    return {
+      valid: false,
+      error: {
+        message: "Invalid request payload",
+        code: "validation_error",
+        details: formatAgentChatIssues(parsed.error.issues),
+      },
+    };
   }
-  if (!Array.isArray(body.messages)) {
-    return { valid: false, error: "messages must be an array" };
-  }
-  if (body.messages.length === 0) {
-    return { valid: false, error: "messages array cannot be empty" };
-  }
-  for (const msg of body.messages) {
-    if (!msg.role || !["user", "assistant", "tool", "system"].includes(msg.role)) {
-      return { valid: false, error: `Invalid message role: ${msg.role}` };
-    }
-    if (msg.content === undefined) {
-      return { valid: false, error: "Each message must have content" };
-    }
-  }
-  return { valid: true };
+  return { valid: true, value: parsed.data };
 }
 
 const VALID_MODULES = new Set([
@@ -298,16 +312,20 @@ function lastUserMessageFromRequest(req: AgentChatRequest): string {
 function sanitizeRequest(body: any): AgentChatRequest {
   const maxMessages = 100;
   const maxContentLength = 50000; // 50KB per message
-  const messages = body.messages.slice(0, maxMessages).map((msg: any) => {
+  const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+  const messages = rawMessages.slice(0, maxMessages).map((msg: any) => {
     let content = msg.content;
     if (typeof content === "string" && content.length > maxContentLength) {
       content = content.slice(0, maxContentLength) + "... [truncated]";
     }
     return { role: msg.role, content, name: msg.name, tool_call_id: msg.tool_call_id };
   });
+  const requestedMode = typeof body.mode === "string" ? body.mode : undefined;
+  const allowedModes = new Set(["batch", "stream", "suggest", "insights"]);
+  const mode = allowedModes.has(requestedMode ?? "") ? (requestedMode as AgentChatRequest["mode"]) : "stream";
   return {
     messages,
-    mode: body.mode === "batch" ? "batch" : "stream",
+    mode,
     metadata: body.metadata || {},
     context: sanitizeContext(body.context),
     temperature: typeof body.temperature === "number" ? body.temperature : undefined,
@@ -519,106 +537,6 @@ function respondWithAgentResult(
     },
   );
 }
-
-async function handleSuggestMode(body: any, origin: string): Promise<Response> {
-  const corsHeaders = Object.fromEntries(createCorsHeaders(origin));
-
-  try {
-    const context = sanitizeContext(body.context);
-    if (!context) {
-      return new Response(JSON.stringify({ error: "Context required for suggest mode", suggestions: [] }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    // Import agent registry
-    const { agentRegistry } = await import("../_shared/services/agents/registry.ts");
-    const agent = agentRegistry.getAgentByModule(context.module);
-
-    if (!agent) {
-      return new Response(JSON.stringify({ suggestions: [] }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    const suggestions = await agent.generateSuggestions(context);
-
-    await logAgentEvent("mira.agent.suggest.success", {
-      module: context.module,
-      page: context.page,
-      suggestionsCount: suggestions.length,
-    });
-
-    return new Response(JSON.stringify({ suggestions }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  } catch (error) {
-    await logAgentError("mira.agent.suggest.error", error);
-    const message = error instanceof Error ? error.message : "Failed to generate suggestions";
-    return new Response(JSON.stringify({ error: message, suggestions: [] }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  }
-}
-
-async function handleInsightsMode(body: any, origin: string): Promise<Response> {
-  const corsHeaders = Object.fromEntries(createCorsHeaders(origin));
-
-  try {
-    const advisorId = extractAdvisorId(body.metadata) || extractAdvisorId(body.context);
-    if (!advisorId) {
-      return new Response(JSON.stringify({ error: "Advisor ID required for insights mode", insights: [] }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    const context = sanitizeContext(body.context);
-
-    // Import agent registry
-    const { agentRegistry } = await import("../_shared/services/agents/registry.ts");
-
-    // Gather insights from all agents
-    const allAgents = agentRegistry.getAllAgents();
-    const insightPromises = allAgents.map(agent =>
-      agent.generateInsights(advisorId, context).catch(() => [])
-    );
-
-    const insightArrays = await Promise.all(insightPromises);
-    const insights = insightArrays.flat();
-
-    // Sort by priority (critical > important > info)
-    const priorityOrder = { critical: 3, important: 2, info: 1 };
-    insights.sort((a, b) => {
-      const aPriority = priorityOrder[a.priority] || 0;
-      const bPriority = priorityOrder[b.priority] || 0;
-      return bPriority - aPriority;
-    });
-
-    await logAgentEvent("mira.agent.insights.success", {
-      advisorId,
-      insightsCount: insights.length,
-      criticalCount: insights.filter(i => i.priority === "critical").length,
-    });
-
-    return new Response(JSON.stringify({ insights }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  } catch (error) {
-    await logAgentError("mira.agent.insights.error", error);
-    const message = error instanceof Error ? error.message : "Failed to generate insights";
-    return new Response(JSON.stringify({ error: message, insights: [] }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
-  }
-}
-
 async function handleRequest(req: Request): Promise<Response> {
   const origin = req.headers.get("origin") || "";
 
@@ -635,7 +553,7 @@ async function handleRequest(req: Request): Promise<Response> {
   let requestContext: Record<string, unknown> = {};
 
   try {
-    const body = await req.json();
+    let body = await req.json();
     requestContext = {
       mode: body?.mode ?? "stream",
       source: body?.metadata?.source ?? "web",
@@ -648,15 +566,90 @@ async function handleRequest(req: Request): Promise<Response> {
     if (body?.mode === "health") {
       return await handleHealthCheck(origin);
     }
-
-    if (body?.mode === "suggest") {
-      return await handleSuggestMode(body, origin);
-    }
-
-    if (body?.mode === "insights") {
-      return await handleInsightsMode(body, origin);
-    }
     // get_client_secret is no longer supported (native agent)
+
+    // Extract advisor ID for rate limiting
+    const advisorIdCandidate = extractAdvisorId(body?.metadata);
+    const rateLimitIdentifier = advisorIdCandidate ?? req.headers.get("x-forwarded-for") ?? "anonymous";
+
+    // Rate limiting check (60 requests per minute per advisor)
+    const rateLimitResult = checkRateLimit(rateLimitIdentifier, 60, 60000);
+    if (!rateLimitResult.allowed) {
+      await logAgentEvent("mira.agent.rate_limit.exceeded", {
+        identifier: advisorIdCandidate ? "advisor:" + advisorIdCandidate : "ip:" + rateLimitIdentifier,
+        remaining: rateLimitResult.remaining,
+        resetAt: rateLimitResult.resetAt,
+      });
+      return new Response(
+        JSON.stringify({
+          error: {
+            message: "Too many requests. Please try again later.",
+            code: "rate_limit_exceeded",
+            retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)),
+            ...Object.fromEntries(createCorsHeaders(origin)),
+          },
+        },
+      );
+    }
+
+    // Validate context if provided
+    if (body?.context !== undefined) {
+      const contextValidation = validateContext(body.context);
+      if (!contextValidation.isValid) {
+        await logAgentEvent("mira.agent.validation.context_invalid", {
+          errors: contextValidation.errors,
+        });
+        return new Response(
+          JSON.stringify({
+            error: {
+              message: "Invalid context",
+              code: "validation_error",
+              details: contextValidation.errors,
+            },
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+          },
+        );
+      }
+    }
+
+    // Validate metadata if provided
+    if (body?.metadata !== undefined) {
+      const metadataValidation = validateMetadata(body.metadata);
+      if (!metadataValidation.isValid) {
+        await logAgentEvent("mira.agent.validation.metadata_invalid", {
+          errors: metadataValidation.errors,
+        });
+        return new Response(
+          JSON.stringify({
+            error: {
+              message: "Invalid metadata",
+              code: "validation_error",
+              details: metadataValidation.errors,
+            },
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+          },
+        );
+      }
+      // Log warnings if any
+      if (metadataValidation.warnings.length > 0) {
+        await logAgentEvent("mira.agent.validation.metadata_warnings", {
+          warnings: metadataValidation.warnings,
+        });
+      }
+    }
 
     const validation = validateRequest(body);
     if (!validation.valid) {
@@ -665,6 +658,50 @@ async function handleRequest(req: Request): Promise<Response> {
         headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
       });
     }
+    body = {
+      ...(typeof body === "object" && body !== null ? body : {}),
+      ...validation.value,
+      messages: validation.value.messages,
+    };
+
+    // Validate user messages for XSS and injection attempts
+    if (Array.isArray(body.messages)) {
+      for (const msg of body.messages) {
+        if (msg?.role === "user" && typeof msg.content === "string") {
+          const messageValidation = validateUserMessage(msg.content);
+          if (!messageValidation.isValid) {
+            await logAgentEvent("mira.agent.validation.message_blocked", {
+              errors: messageValidation.errors,
+              advisorId: advisorIdCandidate,
+            });
+            return new Response(
+              JSON.stringify({
+                error: {
+                  message: "Message contains invalid content",
+                  code: "validation_error",
+                  details: messageValidation.errors,
+                },
+              }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+              },
+            );
+          }
+          // Log warnings if any (e.g., SQL-like patterns)
+          if (messageValidation.warnings.length > 0) {
+            await logAgentEvent("mira.agent.validation.message_warnings", {
+              warnings: messageValidation.warnings,
+              advisorId: advisorIdCandidate,
+            });
+          }
+          // Replace message content with sanitized version
+          if (messageValidation.sanitized) {
+            msg.content = messageValidation.sanitized;
+          }
+        }
+      }
+    }
 
     const chatRequest = sanitizeRequest(body);
     const metadata = (chatRequest.metadata ?? {}) as Record<string, unknown>;
@@ -672,6 +709,26 @@ async function handleRequest(req: Request): Promise<Response> {
     const miraContext: MiraContext = chatRequest.context ?? deriveContextFromMetadata(metadata);
     const userMessage = lastUserMessageFromRequest(chatRequest);
     const prompts = buildRouterPrompts(userMessage, miraContext);
+
+    // Check if MIRA is enabled globally for this advisor
+    if (!isMiraEnabled(advisorIdCandidate ?? undefined)) {
+      await logAgentEvent("mira.agent.feature_disabled", {
+        flag: "MIRA_COPILOT_ENABLED",
+        advisorId: advisorIdCandidate,
+      });
+      return new Response(
+        JSON.stringify({
+          error: {
+            message: "MIRA Co-Pilot is currently disabled for your account",
+            code: "feature_disabled",
+          },
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+        },
+      );
+    }
 
     let conversationId = extractConversationId(metadata);
     try {
@@ -766,6 +823,110 @@ async function handleRequest(req: Request): Promise<Response> {
       userMessage,
     });
     const classificationMetadata = { ...baseClassificationMetadata, agent: decision.next_agent };
+
+    if (chatRequest.mode === "suggest") {
+      // Check if Copilot mode is enabled
+      if (!isModeEnabled("suggest", advisorIdCandidate ?? undefined)) {
+        await logAgentEvent("mira.agent.mode_disabled", {
+          mode: "suggest",
+          advisorId: advisorIdCandidate,
+        });
+        return new Response(
+          JSON.stringify({
+            error: {
+              message: "Copilot mode is currently disabled",
+              code: "mode_disabled",
+            },
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+          },
+        );
+      }
+
+      const registry = getAgentRegistry();
+      const moduleAgent = registry.getAgentByModule(miraContext.module);
+      const suggestions =
+        moduleAgent && typeof moduleAgent.generateSuggestions === "function"
+          ? await moduleAgent.generateSuggestions(miraContext)
+          : [];
+      classificationMetadata.agent = moduleAgent?.id ?? agentSelection.agentId;
+      const intentLogResult = await logIntentClassification({
+        conversationId,
+        topic: classification.topic,
+        subtopic: classification.subtopic,
+        intent: classification.intent,
+        confidence: classification.confidence,
+        confidenceTier: classification.confidenceTier ?? "low",
+        selectedAgent: classificationMetadata.agent,
+        selectedSkill: "suggestions",
+        userMessage,
+        metadata: {
+          candidateAgents: classification.candidateAgents,
+          shouldSwitchTopic: classification.shouldSwitchTopic ?? false,
+          decisionReason: "suggest_mode",
+          context: miraContext,
+          promptLengths: { system: prompts.system.length, classification: prompts.classification.length },
+        },
+      });
+      (classificationMetadata as Record<string, unknown>).intentLogStatus = intentLogResult.status;
+      if (intentLogResult.error) {
+        (classificationMetadata as Record<string, unknown>).intentLogError = intentLogResult.error;
+      }
+      await logAgentEvent("mira.agent.suggestions.generated", {
+        module: miraContext.module,
+        agent: moduleAgent?.id ?? agentSelection.agentId,
+        count: suggestions.length,
+        conversationId,
+        topic: classification.topic,
+        intent: classification.intent,
+      });
+      return new Response(
+        JSON.stringify({ suggestions }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+        },
+      );
+    }
+    if (chatRequest.mode === "insights") {
+      // Check if Insight mode is enabled
+      if (!isModeEnabled("insight", advisorIdCandidate ?? undefined)) {
+        await logAgentEvent("mira.agent.mode_disabled", {
+          mode: "insights",
+          advisorId: advisorIdCandidate,
+        });
+        return new Response(
+          JSON.stringify({
+            error: {
+              message: "Insight mode is currently disabled",
+              code: "mode_disabled",
+            },
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+          },
+        );
+      }
+
+      const advisorId = extractAdvisorId(metadata) ?? null;
+      const insights = await generateProactiveInsights(advisorId);
+      await logAgentEvent("mira.agent.insights.generated", {
+        advisorId,
+        module: miraContext.module,
+        conversationId,
+        count: insights.length,
+      });
+      return new Response(
+        JSON.stringify({ insights }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...Object.fromEntries(createCorsHeaders(origin)) },
+        },
+      );
+    }
     const clarificationNeeded = needsClarification(baseClassificationMetadata.confidenceTier) || shouldConfirmTopic;
     if (clarificationNeeded) {
       const clarificationMessage = buildClarificationMessage({
@@ -846,6 +1007,29 @@ async function handleRequest(req: Request): Promise<Response> {
     const moduleForAgent = VALID_MODULES.has(classification.topic as MiraModule)
       ? (classification.topic as MiraModule)
       : miraContext.module;
+
+    // Check if the selected agent is enabled
+    if (!isAgentEnabled(agentSelection.agentId, advisorIdCandidate ?? undefined)) {
+      await logAgentEvent("mira.agent.agent_disabled", {
+        agent: agentSelection.agentId,
+        advisorId: advisorIdCandidate,
+      });
+      // Fall back to a generic response rather than blocking entirely
+      const fallbackMessage = "I'm unable to help with that request at the moment. Please try again later or contact support.";
+      return respondWithAgentResult(
+        chatRequest.mode ?? "stream",
+        {
+          assistant_reply: fallbackMessage,
+          ui_actions: [],
+          metadata: {
+            ...classificationMetadata,
+            agent_disabled: true,
+          },
+        },
+        classificationMetadata,
+        origin,
+      );
+    }
 
     if (skills.hasModuleAgent(agentSelection.agentId, moduleForAgent)) {
       try {
@@ -1041,5 +1225,3 @@ if (import.meta.main) {
 }
 
 export default handleRequest;
-
-

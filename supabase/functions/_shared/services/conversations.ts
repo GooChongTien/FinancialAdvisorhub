@@ -1,5 +1,5 @@
-import { createServiceClient } from "../supabase.ts";
-import type { MiraContext } from "../types.ts";
+import { createServiceClient } from "./supabase.ts";
+import type { MiraContext } from "./types.ts";
 
 export interface ConversationBootstrap {
   conversationId?: string | null;

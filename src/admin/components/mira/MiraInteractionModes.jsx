@@ -18,11 +18,21 @@ const modes = [
   },
 ];
 
-export function MiraInteractionModes({ mode, onModeChange }) {
+export function MiraInteractionModes({
+  mode,
+  onModeChange,
+  availableModes = ["command", "copilot", "insight"],
+}) {
+  const activeModes = modes.filter((item) => availableModes.includes(item.id));
+  const description =
+    activeModes.find((item) => item.id === mode)?.description ??
+    activeModes[0]?.description ??
+    "Switch between modes.";
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
-        {modes.map((item) => (
+        {activeModes.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -38,10 +48,7 @@ export function MiraInteractionModes({ mode, onModeChange }) {
           </button>
         ))}
       </div>
-      <p className="text-xs text-slate-500">
-        {modes.find((item) => item.id === mode)?.description ??
-          "Switch between command, co-pilot, and insight modes."}
-      </p>
+      <p className="text-xs text-slate-500">{description}</p>
     </div>
   );
 }

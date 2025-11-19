@@ -38,10 +38,10 @@ import {
 import { Avatar, AvatarFallback } from "@/admin/components/ui/avatar";
 import { Button } from "@/admin/components/ui/button";
 import { MiraChatProvider, useMiraChat } from "@/admin/state/providers/MiraChatProvider.jsx";
-import { AgentChatProvider } from "@/admin/state/providers/AgentChatProvider.jsx";
 import { MiraDrawerProvider, useMiraDrawer } from "@/admin/state/MiraDrawerProvider.jsx";
 import InlineChatPanel from "@/admin/components/mira/InlineChatPanel.jsx";
 import { formatRelativeTime } from "@/lib/utils";
+import MiraActionTestPanel from "@/admin/components/MiraActionTestPanel.jsx";
 
 const navigationItems = [
   { title: "Home", url: "Home", icon: Home },
@@ -52,17 +52,17 @@ const navigationItems = [
   { title: "Analytics", url: "Analytics", icon: BarChart3 },
   { title: "To Do", url: "ToDo", icon: CheckSquare, showOverdue: true },
   { title: "Broadcast", url: "Broadcast", icon: Radio, showUnread: true },
-  { title: "Mira Ops", url: "MiraOps", icon: Activity },
+  // NOTE: Mira Ops page is accessible via direct URL (/mira/ops) but hidden from sidebar
+  // See MIRA_CONSOLIDATED_IMPLEMENTATION_PLAN.md - Future Sprint: Move to Admin Portal
+  // { title: "Mira Ops", url: "MiraOps", icon: Activity },
 ];
 
 export default function Layout({ children }) {
   return (
     <MiraChatProvider>
-      <AgentChatProvider>
-        <MiraDrawerProvider>
-          <LayoutWithChatProvider>{children}</LayoutWithChatProvider>
-        </MiraDrawerProvider>
-      </AgentChatProvider>
+      <MiraDrawerProvider>
+        <LayoutWithChatProvider>{children}</LayoutWithChatProvider>
+      </MiraDrawerProvider>
     </MiraChatProvider>
   );
 }
@@ -89,6 +89,28 @@ function LayoutWithChatProvider({ children }) {
       String(sidebarCollapsed),
     );
   }, [sidebarCollapsed]);
+
+  // Apply sidebar-collapsed class to body for CSS calculations
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (sidebarCollapsed) {
+      document.body.classList.add('sidebar-collapsed');
+    } else {
+      document.body.classList.remove('sidebar-collapsed');
+    }
+    return () => {
+      document.body.classList.remove('sidebar-collapsed');
+    };
+  }, [sidebarCollapsed]);
+
+  // Listen for auto-collapse event from chat panel
+  useEffect(() => {
+    const handleAutoCollapse = () => {
+      setSidebarCollapsed(true);
+    };
+    window.addEventListener("mira:auto-collapse-sidebar", handleAutoCollapse);
+    return () => window.removeEventListener("mira:auto-collapse-sidebar", handleAutoCollapse);
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ["current-user"],
@@ -248,7 +270,8 @@ function LayoutWithChatProvider({ children }) {
   };
 
   return (
-    <div className="min-h-screen bg-background-tertiary">
+    <>
+      <div className="min-h-screen bg-background-tertiary">
       {/* Sidebar - S360fMenu Style */}
       <aside
         className={cn(
@@ -520,7 +543,9 @@ function LayoutWithChatProvider({ children }) {
           }} />
         </div>
       )}
-    </div>
+      </div>
+      <MiraActionTestPanel />
+    </>
   );
 }
 

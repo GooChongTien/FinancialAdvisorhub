@@ -16,6 +16,7 @@ export function ChatInput({
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [isFocused, setIsFocused] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
@@ -87,23 +88,34 @@ export function ChatInput({
     return FileText;
   };
 
+  const canSend = !disabled && (currentMessage.trim() || attachments.length > 0);
+
   return (
-    <div className={clsx("rounded-2xl border border-slate-200 bg-white shadow-lg", className)}>
+    <div
+      className={clsx(
+        "rounded-2xl border-2 bg-white shadow-sm transition-all duration-200",
+        isFocused
+          ? "border-primary-500 shadow-lg shadow-primary-100"
+          : "border-neutral-200 hover:border-neutral-300",
+        className
+      )}
+    >
       {/* Attachments Preview */}
       {attachments.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-b border-slate-100 p-3">
+        <div className="flex flex-wrap gap-2 border-b border-neutral-100 p-3 bg-neutral-50">
           {attachments.map((att) => {
             const Icon = getFileIcon(att.type);
             return (
               <div
                 key={att.id}
-                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm shadow-sm transition-all hover:shadow"
               >
-                <Icon className="h-4 w-4 text-slate-500" />
-                <span className="max-w-[150px] truncate text-slate-700">{att.name}</span>
+                <Icon className="h-4 w-4 text-neutral-500" />
+                <span className="max-w-[150px] truncate text-neutral-700 font-medium">{att.name}</span>
                 <button
                   onClick={() => removeAttachment(att.id)}
-                  className="ml-1 text-slate-400 hover:text-slate-600"
+                  className="ml-1 text-neutral-400 hover:text-red-600 transition-colors font-semibold"
+                  aria-label={`Remove ${att.name}`}
                 >
                   ×
                 </button>
@@ -131,7 +143,7 @@ export function ChatInput({
             variant="ghost"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            className="h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            className="h-9 w-9 rounded-xl text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-all"
             title="Attach file"
             disabled={disabled}
           >
@@ -141,16 +153,17 @@ export function ChatInput({
 
         {/* Text Input */}
         <textarea
-        ref={textareaRef}
-        value={currentMessage}
-        onChange={handleTextareaChange}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        rows={1}
-        className="max-h-[200px] min-h-[40px] flex-1 resize-none rounded-xl border-0 bg-transparent px-4 py-2 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-0 disabled:text-slate-400 disabled:cursor-not-allowed"
-        style={{ lineHeight: "1.5" }}
-        disabled={disabled}
-      />
+          ref={textareaRef}
+          value={currentMessage}
+          onChange={handleTextareaChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder={placeholder}
+          rows={1}
+          className="max-h-[200px] min-h-[40px] flex-1 resize-none rounded-xl border-0 bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-0 disabled:text-neutral-400 disabled:cursor-not-allowed"
+          disabled={disabled}
+        />
 
         {/* Action Buttons - Right */}
         <div className="flex gap-1 pb-2">
@@ -160,10 +173,10 @@ export function ChatInput({
             size="icon"
             onClick={toggleRecording}
             className={clsx(
-              "h-9 w-9 rounded-full hover:bg-slate-100",
+              "h-9 w-9 rounded-xl transition-all",
               isRecording
                 ? "bg-red-50 text-red-600 hover:bg-red-100"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
             )}
             title={isRecording ? "Stop recording" : "Start voice input"}
             disabled={disabled}
@@ -175,8 +188,13 @@ export function ChatInput({
             type="button"
             size="icon"
             onClick={handleSend}
-            disabled={disabled || (!currentMessage.trim() && attachments.length === 0)}
-            className="h-9 w-9 rounded-full bg-primary-600 text-white hover:bg-primary-700 disabled:bg-slate-200 disabled:text-slate-400"
+            disabled={!canSend}
+            className={clsx(
+              "h-9 w-9 rounded-xl transition-all",
+              canSend
+                ? "bg-gradient-to-br from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 shadow-md hover:shadow-lg active:scale-95"
+                : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+            )}
             title="Send message"
           >
             <Send className="h-5 w-5" />

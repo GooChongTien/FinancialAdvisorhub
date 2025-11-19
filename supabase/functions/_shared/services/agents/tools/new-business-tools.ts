@@ -91,32 +91,32 @@ async function checkUnderwritingStatus(proposalId: string): Promise<UWStatus> {
 export function getNewBusinessTools(): AgentTool[] {
   return [
     {
-      name: "proposals.create",
+    name: "new_business__proposals.create",
       description: "Create a new proposal draft",
       handler: async (input: CreateProposalInput) => createProposal(input),
     },
     {
-      name: "proposals.list",
+    name: "new_business__proposals.list",
       description: "List proposals with filters",
       handler: async (input: ProposalFilters) => listProposals(input),
     },
     {
-      name: "proposals.get",
+    name: "new_business__proposals.get",
       description: "Fetch a proposal by id",
       handler: async (input: { id: string }) => getProposal(input.id),
     },
     {
-      name: "quotes.generate",
+    name: "new_business__quotes.generate",
       description: "Generate a quick quote for a product and customer",
       handler: async (input: { productId: string; customerId: string }) => generateQuote(input.productId, input.customerId),
     },
     {
-      name: "underwriting.submit",
+    name: "new_business__underwriting.submit",
       description: "Submit proposal to underwriting",
       handler: async (input: { proposalId: string }) => submitUnderwriting(input.proposalId),
     },
     {
-      name: "underwriting.checkStatus",
+    name: "new_business__underwriting.checkStatus",
       description: "Check underwriting decision status",
       handler: async (input: { proposalId: string }) => checkUnderwritingStatus(input.proposalId),
     },

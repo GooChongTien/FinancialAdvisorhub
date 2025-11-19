@@ -73,17 +73,17 @@ async function getCalendarEvents(startDate: string, endDate: string): Promise<Ca
 export function getTodoTools(): AgentTool[] {
   return [
     {
-      name: "tasks.list",
+      name: "todo__tasks.list",
       description: "List tasks with filters",
       handler: async (input: TaskFilters) => listTasks(input),
     },
     {
-      name: "tasks.create",
+      name: "todo__tasks.create",
       description: "Create a new task",
       handler: async (input: CreateTaskInput) => createTask(input),
     },
     {
-      name: "tasks.update",
+      name: "todo__tasks.update",
       description: "Update an existing task",
       handler: async (input: { id: string } & UpdateTaskInput) => updateTask(input.id, input),
     },

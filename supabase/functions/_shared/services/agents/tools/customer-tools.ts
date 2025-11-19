@@ -88,27 +88,27 @@ async function getCustomer(id: string): Promise<Customer> {
 export function getCustomerTools(): AgentTool[] {
   const tools: AgentTool[] = [
     {
-      name: "leads.list",
+      name: "customer__leads.list",
       description: "List leads filtered by status or source",
       handler: async (input: LeadFilters) => listLeads(input),
     },
     {
-      name: "leads.create",
+      name: "customer__leads.create",
       description: "Create a new lead record",
       handler: async (input: CreateLeadInput) => createLead(input),
     },
     {
-      name: "leads.update",
+      name: "customer__leads.update",
       description: "Update an existing lead by id",
       handler: async (input: { id: string } & UpdateLeadInput) => updateLead(input.id, input),
     },
     {
-      name: "leads.search",
+      name: "customer__leads.search",
       description: "Search leads by keyword",
       handler: async (input: { query: string }) => searchLead(input.query),
     },
     {
-      name: "customers.get",
+      name: "customer__customers.get",
       description: "Fetch customer summary",
       handler: async (input: { id: string }, _ctx: ToolExecutionContext) => getCustomer(input.id),
     },

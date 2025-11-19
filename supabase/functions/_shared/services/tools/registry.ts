@@ -1,172 +1,64 @@
-/**
- * Tool Registry - Centralized tool management with validation and error handling
- * Provides type-safe tool execution with Zod schema validation
- */
-
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-
-export interface ToolResult<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-}
-
-export interface Tool {
-  name: string;
-  description: string;
-  schema: z.ZodSchema;
-  handler: (params: unknown, context?: ToolContext) => Promise<unknown>;
-  module?: string;
-  requiresAuth?: boolean;
-}
-
-export interface ToolContext {
-  advisorId?: string;
-  tenantId?: string;
-  supabase?: unknown;
-  metadata?: Record<string, unknown>;
-}
+import { z } from "https://esm.sh/zod@3.25.76";
+import type { RegisteredTool, ToolContext, ToolResult } from "./types.ts";
 
 export class ToolRegistry {
-  private tools: Map<string, Tool> = new Map();
-  private static instance: ToolRegistry;
+  private tools = new Map<string, RegisteredTool>();
 
-  private constructor() {}
-
-  static getInstance(): ToolRegistry {
-    if (!ToolRegistry.instance) {
-      ToolRegistry.instance = new ToolRegistry();
+  registerTool(name: string, handler: RegisteredTool["handler"], schema?: RegisteredTool["schema"]) {
+    if (!name || typeof name !== "string") {
+      throw new Error("Tool name must be a non-empty string");
     }
-    return ToolRegistry.instance;
+    this.tools.set(name, { name, handler, schema });
   }
 
-  /**
-   * Register a tool with validation schema
-   */
-  registerTool(tool: Tool): void {
-    if (this.tools.has(tool.name)) {
-      console.warn(`[ToolRegistry] Tool ${tool.name} already registered, overwriting`);
-    }
-    this.tools.set(tool.name, tool);
-    console.log(`[ToolRegistry] Registered tool: ${tool.name}`);
+  getTool(name: string) {
+    return this.tools.get(name) ?? null;
   }
 
-  /**
-   * Execute a tool with validation and error handling
-   */
-  async executeTool<T = unknown>(
-    name: string,
-    params: unknown,
-    context?: ToolContext,
-  ): Promise<ToolResult<T>> {
-    const tool = this.tools.get(name);
-
-    if (!tool) {
-      return {
-        success: false,
-        error: {
-          code: "TOOL_NOT_FOUND",
-          message: `Tool "${name}" not found in registry`,
-          details: { availableTools: Array.from(this.tools.keys()) },
-        },
-      };
-    }
-
-    // Validate parameters with Zod
-    try {
-      const validatedParams = tool.schema.parse(params);
-
-      // Check auth requirements
-      if (tool.requiresAuth && !context?.advisorId) {
-        return {
-          success: false,
-          error: {
-            code: "AUTH_REQUIRED",
-            message: `Tool "${name}" requires authentication`,
-          },
-        };
-      }
-
-      // Execute tool handler
-      const result = await tool.handler(validatedParams, context);
-
-      return {
-        success: true,
-        data: result as T,
-      };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return {
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid parameters",
-            details: error.errors,
-          },
-        };
-      }
-
-      return {
-        success: false,
-        error: {
-          code: "EXECUTION_ERROR",
-          message: error instanceof Error ? error.message : "Tool execution failed",
-          details: error,
-        },
-      };
-    }
-  }
-
-  /**
-   * Get tool by name
-   */
-  getTool(name: string): Tool | null {
-    return this.tools.get(name) || null;
-  }
-
-  /**
-   * Get all registered tools
-   */
-  getAllTools(): Tool[] {
+  getAllTools() {
     return Array.from(this.tools.values());
   }
 
-  /**
-   * Get tools for a specific module
-   */
-  getToolsByModule(module: string): Tool[] {
-    return Array.from(this.tools.values()).filter((tool) => tool.module === module);
+  async executeTool(name: string, ctx: ToolContext): Promise<ToolResult> {
+    const entry = this.tools.get(name);
+    if (!entry) {
+      return {
+        success: false,
+        error: {
+          code: "tool_not_found",
+          message: `No tool registered under "${name}"`,
+        },
+      };
+    }
+    let validatedArgs = ctx.args;
+    if (entry.schema) {
+      try {
+        validatedArgs = entry.schema.parse(ctx.args);
+      } catch (err) {
+        const issues = err instanceof z.ZodError ? err.issues : undefined;
+        return {
+          success: false,
+          error: {
+            code: "validation_error",
+            message: "Tool arguments failed schema validation",
+            details: issues ?? err,
+          },
+        };
+      }
+    }
+    try {
+      return await entry.handler(ctx, validatedArgs);
+    } catch (err) {
+      return {
+        success: false,
+        error: {
+          code: "tool_failure",
+          message: err instanceof Error ? err.message : "Tool handler threw an error",
+          details: err,
+        },
+      };
+    }
   }
-
-  /**
-   * Clear all registered tools (for testing)
-   */
-  clear(): void {
-    this.tools.clear();
-  }
 }
 
-/**
- * Helper to create standardized success results
- */
-export function createSuccessResult<T>(data: T): ToolResult<T> {
-  return { success: true, data };
-}
-
-/**
- * Helper to create standardized error results
- */
-export function createErrorResult(
-  code: string,
-  message: string,
-  details?: unknown,
-): ToolResult<never> {
-  return {
-    success: false,
-    error: { code, message, details },
-  };
-}
+export const toolRegistry = new ToolRegistry();

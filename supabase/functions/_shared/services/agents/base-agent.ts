@@ -2,6 +2,7 @@ import type {
   AgentTool,
   MiraContext,
   MiraResponse,
+  SuggestedIntent,
   ToolCall,
   ToolExecutionContext,
   UIAction,
@@ -137,6 +138,13 @@ export abstract class SkillAgent {
     // Default implementation returns empty insights
     // Module agents should override this to provide proactive alerts and recommendations
     return [];
+  }
+
+  protected buildSuggestion(init: Omit<SuggestedIntent, "module"> & { module?: SuggestedIntent["module"] }): SuggestedIntent {
+    return {
+      module: init.module ?? this.module,
+      ...init,
+    };
   }
 }
 

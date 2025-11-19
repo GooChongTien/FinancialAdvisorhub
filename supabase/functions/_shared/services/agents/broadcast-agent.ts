@@ -33,7 +33,7 @@ export class BroadcastAgent extends SkillAgent {
 
   private async handleListCampaigns(context: MiraContext): Promise<MiraResponse> {
     const status = (context.pageData?.status as string) ?? undefined;
-    await this.invokeTool("broadcasts.list", { status }, { context });
+    await this.invokeTool("broadcast__broadcasts.list", { status }, { context });
     const actions = [createNavigateAction(context.module, "/broadcast", { status })];
     const reply = "Showing campaign list with the filters you specified.";
     return buildAgentResponse(this.id, "list_campaigns", context, reply, actions, {
@@ -46,7 +46,7 @@ export class BroadcastAgent extends SkillAgent {
       title: (context.pageData?.title as string) ?? "Nurture Series",
       audience: (context.pageData?.audience as string) ?? "Warm leads",
     };
-    await this.invokeTool("broadcasts.create", payload, { context });
+    await this.invokeTool("broadcast__broadcasts.create", payload, { context });
     const actions = createCRUDFlow("create", context.module, {
       page: "/broadcast/new",
       payload,
@@ -60,7 +60,7 @@ export class BroadcastAgent extends SkillAgent {
 
   private async handleViewStats(context: MiraContext): Promise<MiraResponse> {
     const campaignId = (context.pageData?.campaignId as string) ?? "B-1";
-    await this.invokeTool("broadcasts.getStats", { id: campaignId }, { context });
+    await this.invokeTool("broadcast__broadcasts.getStats", { id: campaignId }, { context });
     const actions = [
       createNavigateAction(context.module, `/broadcast/detail/${campaignId}/stats`),
       createPrefillAction({ campaignId }),
@@ -69,5 +69,44 @@ export class BroadcastAgent extends SkillAgent {
     return buildAgentResponse(this.id, "view_campaign_stats", context, reply, actions, {
       subtopic: "analytics",
     });
+  }
+
+  async generateSuggestions(context: MiraContext) {
+    const audience =
+      typeof context.pageData?.audience === "string" && context.pageData.audience.trim()
+        ? context.pageData.audience.trim()
+        : "warm leads";
+    const draftName =
+      typeof context.pageData?.title === "string" && context.pageData.title.trim()
+        ? context.pageData.title.trim()
+        : "Nurture touch";
+    const campaignId =
+      typeof context.pageData?.campaignId === "string" && context.pageData.campaignId.trim()
+        ? context.pageData.campaignId.trim()
+        : "B-1";
+
+    return [
+      this.buildSuggestion({
+        intent: "create_broadcast",
+        title: `Draft ${draftName}`,
+        description: "Spin up a new campaign with the current filters.",
+        promptText: `Create a broadcast titled "${draftName}" targeting ${audience}.`,
+        confidence: 0.8,
+      }),
+      this.buildSuggestion({
+        intent: "list_campaigns",
+        title: `Review ${audience} campaigns`,
+        description: "Pull up the latest sends for this audience.",
+        promptText: `Show my recent broadcasts targeting ${audience}.`,
+        confidence: 0.72,
+      }),
+      this.buildSuggestion({
+        intent: "view_campaign_stats",
+        title: `Check stats for ${campaignId}`,
+        description: "See opens, clicks, and bounce notes.",
+        promptText: `Open the analytics for campaign ${campaignId} and summarize open/click rate.`,
+        confidence: 0.69,
+      }),
+    ];
   }
 }

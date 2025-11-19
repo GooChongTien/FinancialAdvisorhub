@@ -218,13 +218,23 @@ async function requireOpsAccess(req: Request, supabase: ReturnType<typeof create
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") || "*";
   const corsOrigin = OPS_DASHBOARD_ORIGIN === "*" ? origin : OPS_DASHBOARD_ORIGIN;
-  const preflight = handleCors(req, Object.fromEntries(createCorsHeaders(corsOrigin)));
-  if (preflight) return preflight;
+
+  // Handle OPTIONS preflight request
+  if (req.method === "OPTIONS") {
+    const headers = createCorsHeaders(corsOrigin);
+    headers.set("Content-Type", "text/plain");
+    return new Response("ok", {
+      status: 200,
+      headers,
+    });
+  }
 
   if (req.method !== "GET") {
+    const headers = createCorsHeaders(corsOrigin);
+    headers.set("Content-Type", "application/json");
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: createCorsHeaders(corsOrigin),
+      headers,
     });
   }
 
@@ -255,6 +265,8 @@ Deno.serve(async (req) => {
       hasMore: filters.offset + filters.limit < total,
     };
 
+    const headers = createCorsHeaders(corsOrigin);
+    headers.set("Content-Type", "application/json");
     return new Response(
       JSON.stringify({
         events: rows.map(mapEvent),
@@ -263,20 +275,23 @@ Deno.serve(async (req) => {
       }),
       {
         status: 200,
-        headers: createCorsHeaders(corsOrigin),
+        headers,
       },
     );
   } catch (error) {
+    const headers = createCorsHeaders(corsOrigin);
+    headers.set("Content-Type", "application/json");
+
     if (error instanceof OpsAccessError) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: error.status,
-        headers: createCorsHeaders(corsOrigin),
+        headers,
       });
     }
     const message = error instanceof Error ? error.message : "Failed to load telemetry events";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: createCorsHeaders(corsOrigin),
+      headers,
     });
   }
 });

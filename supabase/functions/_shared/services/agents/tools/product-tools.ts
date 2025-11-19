@@ -83,23 +83,23 @@ async function listCategories(): Promise<Category[]> {
 export function getProductTools(): AgentTool[] {
   return [
     {
-      name: "products.search",
+      name: "product__products.search",
       description: "Search products by keyword and category",
       handler: async (input: { keyword: string; category?: string }) =>
         searchProducts(input.keyword, input.category),
     },
     {
-      name: "products.getDetails",
+      name: "product__products.getDetails",
       description: "Get product detail by id",
       handler: async (input: { id: string }) => getProductDetails(input.id),
     },
     {
-      name: "products.compare",
+      name: "product__products.compare",
       description: "Compare multiple products",
       handler: async (input: { ids: string[] }) => compareProducts(input.ids),
     },
     {
-      name: "products.listCategories",
+      name: "product__products.listCategories",
       description: "List product categories",
       handler: async () => listCategories(),
     },

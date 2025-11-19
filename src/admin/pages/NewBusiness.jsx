@@ -76,6 +76,12 @@ export default function NewBusiness() {
     const params = new URLSearchParams(location.search);
     const action = params.get("action");
     const leadId = params.get("leadId");
+    const search = params.get("search");
+
+    // If search param exists, set it to searchTerm
+    if (search && search.trim()) {
+      setSearchTerm(search.trim());
+    }
 
     if (action === "new" && leadId) {
       // Enforce single in-progress proposal per lead

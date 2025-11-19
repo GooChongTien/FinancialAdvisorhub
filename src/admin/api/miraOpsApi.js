@@ -1,4 +1,5 @@
 import supabase from "@/admin/api/supabaseClient.js";
+import { requestAgentJson } from "@/admin/api/agentClient.js";
 
 const API_BASE = (import.meta.env.VITE_AGENT_API_URL || "/api").replace(/\/+$/, "");
 
@@ -59,6 +60,17 @@ export async function fetchMiraEvents(params = {}) {
 
 export const miraOpsApi = {
   fetchMiraEvents,
+  fetchAdvisorInsights,
 };
 
 export { buildQuery as serializeMiraEventFilters };
+
+export async function fetchAdvisorInsights(advisorId) {
+  const trimmed = typeof advisorId === "string" ? advisorId.trim() : "";
+  if (!trimmed) return [];
+  const response = await requestAgentJson({
+    mode: "insights",
+    metadata: { advisorId: trimmed },
+  });
+  return Array.isArray(response?.insights) ? response.insights : [];
+}

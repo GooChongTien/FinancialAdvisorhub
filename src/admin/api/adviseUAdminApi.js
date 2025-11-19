@@ -529,17 +529,27 @@ const TaskEntity = {
     }
   },
   async create(payload) {
+    // Convert empty string to null for UUID fields (PostgreSQL compatibility)
+    const cleanedPayload = { ...payload };
+    if (cleanedPayload.linked_lead_id === "") {
+      cleanedPayload.linked_lead_id = null;
+    }
     const { data, error } = await supabase
       .from("tasks")
-      .insert([{ ...payload, advisor_id: await currentUserId() }])
+      .insert([{ ...cleanedPayload, advisor_id: await currentUserId() }])
       .select()
       .single();
     return readSingle({ data, error }, "create task");
   },
   async update(id, updates) {
+    // Convert empty string to null for UUID fields (PostgreSQL compatibility)
+    const cleanedUpdates = { ...updates };
+    if (cleanedUpdates.linked_lead_id === "") {
+      cleanedUpdates.linked_lead_id = null;
+    }
     const { data, error } = await supabase
       .from("tasks")
-      .update({ ...updates, advisor_id: await currentUserId() })
+      .update({ ...cleanedUpdates, advisor_id: await currentUserId() })
       .eq("id", id)
       .select()
       .single();
@@ -568,6 +578,22 @@ const BroadcastEntity = {
     query = applyFilters(query, criteria);
     const { data, error } = await query;
     return readData({ data, error }, "filter broadcasts");
+  },
+  async create(payload) {
+    const advisorId = await currentUserId();
+    const now = new Date().toISOString();
+    const record = {
+      title: payload.title ?? "Untitled broadcast",
+      content: payload.content ?? payload.message ?? "",
+      audience: payload.audience ?? "All Advisors",
+      category: payload.category ?? "Announcement",
+      is_pinned: Boolean(payload.is_pinned),
+      status: payload.status ?? "draft",
+      published_date: payload.published_date ?? now,
+      advisor_id: advisorId,
+    };
+    const { data, error } = await supabase.from("broadcasts").insert([record]).select().single();
+    return readSingle({ data, error }, "create broadcast");
   },
 };
 

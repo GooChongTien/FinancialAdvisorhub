@@ -1,0 +1,243 @@
+{
+  "dashboard": {
+    "title": "MIRA Co-Pilot - Unified Monitoring",
+    "tags": ["mira", "copilot", "overview"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 2,
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "timepicker": {
+      "refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Intent Classification Accuracy (Daily)",
+        "description": "Ratio of correct classifications to total classifications over the last 24h.",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "percent" } },
+        "targets": [
+          {
+            "expr": "sum(rate(mira_intent_correct_total[1d])) / sum(rate(mira_intent_classifications_total[1d])) * 100",
+            "legendFormat": "Accuracy %",
+            "refId": "A"
+          }
+        ],
+        "thresholds": [{ "value": 90, "color": "green" }]
+      },
+      {
+        "id": 2,
+        "title": "Confidence Score Distribution",
+        "description": "Share of high/medium/low confidence buckets (10m window).",
+        "type": "bargauge",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "options": { "orientation": "horizontal", "displayMode": "gradient" },
+        "targets": [
+          {
+            "expr": "sum by (confidence_tier) (rate(mira_intent_classifications_total[10m]))",
+            "legendFormat": "{{confidence_tier}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Top 10 Intents (1h)",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "topk(10, sum by (intent) (increase(mira_intent_classifications_total[1h])))",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": { "Time": true },
+              "indexByName": { "intent": 0, "Value": 1 },
+              "renameByName": { "intent": "Intent", "Value": "Requests" }
+            }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Misclassification Rate by Module",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "percent" } },
+        "targets": [
+          {
+            "expr": "sum by (module) (rate(mira_intent_misclassifications_total[15m])) / sum by (module) (rate(mira_intent_classifications_total[15m])) * 100",
+            "legendFormat": "{{module}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Action Execution Success Rate",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "percent" } },
+        "targets": [
+          {
+            "expr": "sum(rate(mira_action_success_total[5m])) / sum(rate(mira_action_attempt_total[5m])) * 100",
+            "legendFormat": "Success %",
+            "refId": "A"
+          }
+        ],
+        "thresholds": [{ "value": 95, "color": "yellow" }]
+      },
+      {
+        "id": 6,
+        "title": "Actions Executed by Type",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "ops" } },
+        "targets": [
+          {
+            "expr": "sum by (action_type) (rate(mira_action_attempt_total[5m]))",
+            "legendFormat": "{{action_type}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Top 10 Failing Actions (1h)",
+        "type": "table",
+        "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "topk(10, sum by (action_type) (increase(mira_action_error_total[1h])))",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": { "Time": true },
+              "indexByName": { "action_type": 0, "Value": 1 },
+              "renameByName": { "action_type": "Action Type", "Value": "Errors" }
+            }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Mode Usage (Count, 1h)",
+        "type": "piechart",
+        "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum by (mode) (rate(mira_agent_requests_total[1h]))",
+            "legendFormat": "{{mode}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Average Time per Mode (mins)",
+        "type": "bargauge",
+        "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "m" } },
+        "targets": [
+          {
+            "expr": "avg by (mode) (rate(mira_mode_active_seconds_total[5m])) / 60",
+            "legendFormat": "{{mode}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Mode Switches per Session",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(mira_mode_switch_events_total[5m])",
+            "legendFormat": "Switches",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Response Latency (p50/p95/p99)",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 40, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "s" } },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(mira_agent_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(mira_agent_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(mira_agent_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "API Error Rate",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 40, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "percent" } },
+        "targets": [
+          {
+            "expr": "rate(mira_api_errors_total[5m]) / rate(mira_api_requests_total[5m]) * 100",
+            "legendFormat": "API Errors %",
+            "refId": "A"
+          }
+        ],
+        "thresholds": [{ "value": 5, "color": "red" }]
+      },
+      {
+        "id": 13,
+        "title": "LLM Provider Usage",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 48, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum by (provider) (rate(mira_llm_tokens_total[5m]))",
+            "legendFormat": "{{provider}}",
+            "refId": "A"
+          }
+        ],
+        "stack": true
+      },
+      {
+        "id": 14,
+        "title": "Database Query Latency",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 48, "w": 12, "h": 8 },
+        "fieldConfig": { "defaults": { "unit": "ms" } },
+        "targets": [
+          {
+            "expr": "avg(rate(mira_db_query_duration_milliseconds_sum[5m]) / rate(mira_db_query_duration_milliseconds_count[5m]))",
+            "legendFormat": "DB p50",
+            "refId": "A"
+          }
+        ]
+      }
+    ]
+  }
+}

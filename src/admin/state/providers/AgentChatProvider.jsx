@@ -9,12 +9,18 @@ export function AgentChatProvider({ children }) {
   const [pendingAction, setPendingAction] = useState(null);
   const [trustedSkillsSession, setTrustedSkillsSession] = useState([]);
   const [clarificationPrompt, setClarificationPrompt] = useState(null);
+  const [debugData, setDebugData] = useState({
+    classification: null,
+    cacheStats: null,
+    executionLogs: []
+  });
   const { getContext } = useMiraContext();
 
   // Heuristic: which tool calls require confirmation
   const isSensitiveTool = useCallback((toolName) => {
     if (!toolName) return false;
     const n = String(toolName).toLowerCase();
+    if (n.startsWith("todo__") || n.startsWith("broadcast__") || n.startsWith("visualizer__")) return false;
     return (
       n.includes("navigate") ||
       n.includes("update") ||
@@ -40,8 +46,24 @@ export function AgentChatProvider({ children }) {
   const clearPending = useCallback(() => setPendingAction(null), []);
   const confirmPending = useCallback(() => setPendingAction(null), []);
   const executeTool = useCallback(async (tool, args) => {
+    const startTime = Date.now();
     const baseUrl = import.meta.env.VITE_AGENT_API_URL || "/api";
     const headers = { "Content-Type": "application/json" };
+
+    // Track execution start
+    setDebugData((prev) => ({
+      ...prev,
+      executionLogs: [
+        ...prev.executionLogs.slice(-9), // Keep last 10 logs
+        {
+          timestamp: startTime,
+          action: tool,
+          status: "pending",
+          args
+        }
+      ]
+    }));
+
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
@@ -49,17 +71,63 @@ export function AgentChatProvider({ children }) {
       if (anon) headers.apikey = anon;
       if (token) headers.Authorization = `Bearer ${token}`;
     } catch {}
-    const res = await fetch(`${baseUrl}/agent-tools`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ tool, args }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error || `Tool ${tool} failed`);
+
+    try {
+      const res = await fetch(`${baseUrl}/agent-tools`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ tool, args }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const errorMsg = err?.error || `Tool ${tool} failed`;
+
+        // Track execution failure
+        setDebugData((prev) => ({
+          ...prev,
+          executionLogs: prev.executionLogs.map((log) =>
+            log.timestamp === startTime && log.action === tool
+              ? { ...log, status: "error", error: errorMsg, duration: Date.now() - startTime }
+              : log
+          )
+        }));
+
+        throw new Error(errorMsg);
+      }
+
+      const data = await res.json();
+
+      // Track execution success
+      setDebugData((prev) => ({
+        ...prev,
+        executionLogs: prev.executionLogs.map((log) =>
+          log.timestamp === startTime && log.action === tool
+            ? { ...log, status: "success", duration: Date.now() - startTime }
+            : log
+        )
+      }));
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("mira:tool-executed", {
+            detail: { tool, args },
+          }),
+        );
+      }
+      return data?.result ?? {};
+    } catch (error) {
+      // Ensure error is tracked
+      setDebugData((prev) => ({
+        ...prev,
+        executionLogs: prev.executionLogs.map((log) =>
+          log.timestamp === startTime && log.action === tool
+            ? { ...log, status: "error", error: error.message, duration: Date.now() - startTime }
+            : log
+        )
+      }));
+      throw error;
     }
-    const data = await res.json();
-    return data?.result ?? {};
   }, []);
   const rejectPending = useCallback(() => setPendingAction(null), []);
   const trustSkillInSession = useCallback((toolName) => {
@@ -73,14 +141,33 @@ export function AgentChatProvider({ children }) {
     onEvent: (event) => {
       if (event?.type === "tool_call.created") {
         const tool = event?.data?.tool_call?.function?.name ?? null;
-        if (tool && isSensitiveTool(tool) && !isTrusted(tool)) {
-          requestConfirmation({
-            id: event?.data?.tool_call?.id ?? `confirm-${Date.now()}`,
-            intent: { type: `tool.${tool}` },
-            tool,
-            toolCall: event?.data?.tool_call,
-            message: `Allow Mira to run “${tool}”?`,
-          });
+        const toolCall = event?.data?.tool_call;
+        if (tool && toolCall) {
+          if (isSensitiveTool(tool) && !isTrusted(tool)) {
+            requestConfirmation({
+              id: toolCall.id ?? `confirm-${Date.now()}`,
+              intent: { type: `tool.${tool}` },
+              tool,
+              toolCall,
+              message: `Allow Mira to run “${tool}”?`,
+            });
+          } else {
+            if (process.env.NODE_ENV === "test") {
+              console.log("[AgentChatProvider] auto-executing tool", tool);
+            }
+            void (async () => {
+              let args = {};
+              try {
+                args = JSON.parse(toolCall.function?.arguments || "{}");
+              } catch {}
+              try {
+                const result = await executeTool(tool, args);
+                await chat.sendToolResult(toolCall.id, JSON.stringify(result ?? {}));
+              } catch (err) {
+                console.warn("[AgentChatProvider] tool execution failed", err);
+              }
+            })();
+          }
         }
       }
     },
@@ -116,6 +203,36 @@ export function AgentChatProvider({ children }) {
         originalUser: precedingUser?.content || "",
       };
     });
+  }, [chat.messages]);
+
+  // Track debug data from assistant message metadata
+  useEffect(() => {
+    if (!chat.messages || chat.messages.length === 0) return;
+
+    const latestAssistant = [...chat.messages]
+      .slice()
+      .reverse()
+      .find((msg) => msg.role === "assistant" && msg.metadata);
+
+    if (latestAssistant?.metadata) {
+      const metadata = latestAssistant.metadata;
+
+      // Extract classification info
+      if (metadata.topic || metadata.intent || typeof metadata.confidence !== "undefined") {
+        setDebugData((prev) => ({
+          ...prev,
+          classification: {
+            topic: metadata.topic,
+            subtopic: metadata.subtopic,
+            intent: metadata.intent,
+            confidence: metadata.confidence,
+            confidenceTier: metadata.confidence_tier,
+            shouldSwitchTopic: metadata.should_switch_topic,
+            candidateAgents: metadata.candidate_agents || []
+          }
+        }));
+      }
+    }
   }, [chat.messages]);
 
   const dismissClarification = useCallback(() => {
@@ -173,8 +290,9 @@ export function AgentChatProvider({ children }) {
       clarificationPrompt,
       confirmClarification,
       dismissClarification,
+      debugData,
     };
-  }, [chat, pendingAction, trustedSkillsSession, requestConfirmation, clearPending, rejectPending, trustSkillInSession, executeTool, clarificationPrompt, confirmClarification, dismissClarification]);
+  }, [chat, pendingAction, trustedSkillsSession, requestConfirmation, clearPending, rejectPending, trustSkillInSession, executeTool, clarificationPrompt, confirmClarification, dismissClarification, debugData]);
 
   return <AgentChatContext.Provider value={value}>{children}</AgentChatContext.Provider>;
 }

@@ -8,6 +8,7 @@ import type {
 import { scoreIntent, applyThresholds, type IntentScore } from "./confidence-scorer.ts";
 import { detectTopicSwitch } from "./topic-tracker.ts";
 import { buildSystemPrompt, buildClassificationPrompt } from "./prompts.ts";
+import { IntentCache, getIntentCache } from "./intent-cache.ts";
 
 type Taxonomy = {
   topics: Array<{
@@ -90,6 +91,28 @@ export class IntentRouterService implements IntentRouter {
       return this.buildFallback(context);
     }
 
+    // Check cache first to avoid expensive scoring
+    const cache = getIntentCache<IntentClassification>();
+    const cacheKey = IntentCache.generateKey(text, {
+      module: context.module,
+      page: context.page,
+    });
+
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      // Return cached result with updated topic switch detection
+      const detection = detectTopicSwitch(
+        opts.previousTopic ?? null,
+        cached.topic,
+        cached.confidence,
+      );
+      return {
+        ...cached,
+        shouldSwitchTopic: detection.shouldSwitch,
+      };
+    }
+
+    // Cache miss - perform intent scoring
     const scores = this.scoreAllIntents(text, context);
     const best = scores[0] ?? null;
     const candidates = scores.slice(0, 3).map((score) => this.toCandidateAgentScore(score));
@@ -105,7 +128,7 @@ export class IntentRouterService implements IntentRouter {
       best?.adjustedScore ?? 0,
     );
 
-    return {
+    const classification: IntentClassification = {
       topic: best?.topic ?? fallbackTopic,
       subtopic: best?.subtopic ?? fallbackSubtopic,
       intent: best?.intent ?? fallbackIntent,
@@ -114,6 +137,11 @@ export class IntentRouterService implements IntentRouter {
       shouldSwitchTopic: detection.shouldSwitch,
       confidenceTier: decision.threshold,
     };
+
+    // Store in cache for future requests
+    cache.set(cacheKey, classification);
+
+    return classification;
   }
 
   selectAgent(classification: IntentClassification): CandidateAgentScore {

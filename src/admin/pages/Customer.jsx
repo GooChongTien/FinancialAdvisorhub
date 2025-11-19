@@ -246,6 +246,10 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
 
   const totalLeads = leads?.length ?? 0;
 
+  // Simple client-side pagination for large lists
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
   useMiraPageData(
     () => ({
       view: "customer_list",
@@ -271,10 +275,6 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       totalLeads,
     ],
   );
-
-  // Simple client-side pagination for large lists
-  const PAGE_SIZE = 20;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

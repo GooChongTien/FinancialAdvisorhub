@@ -1,0 +1,304 @@
+# MIRA Co-Pilot Alert Configuration
+# Compatible with Prometheus AlertManager, Grafana Alerts, and similar systems
+
+groups:
+  - name: mira_copilot_critical
+    interval: 1m
+    rules:
+      # High Error Rate
+      - alert: MiraHighErrorRate
+        expr: |
+          (
+            rate(mira_agent_errors_total[5m]) /
+            rate(mira_agent_requests_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA Co-Pilot error rate is above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes. Check logs for recent errors."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-high-error-rate"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-overview"
+
+      # API Latency Spike
+      - alert: MiraHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(mira_agent_request_duration_seconds_bucket[5m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: critical
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA Co-Pilot p95 latency is above 3 seconds"
+          description: "95th percentile latency is {{ $value }}s. Users are experiencing slow responses."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-high-latency"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-performance"
+
+      # Low Confidence Rate Spike
+      - alert: MiraLowConfidenceSpike
+        expr: |
+          (
+            sum(rate(mira_intent_classifications_total{confidence_tier="low"}[10m])) /
+            sum(rate(mira_intent_classifications_total[10m]))
+          ) > 0.30
+        for: 10m
+        labels:
+          severity: warning
+          component: mira_copilot
+          team: ai
+        annotations:
+          summary: "MIRA low confidence classifications exceed 30%"
+          description: "{{ $value | humanizePercentage }} of classifications have low confidence. Intent router may need tuning."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-low-confidence"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-classification"
+
+      # OpenAI API Failures
+      - alert: MiraOpenAIFailures
+        expr: |
+          rate(mira_openai_api_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA is experiencing OpenAI API failures"
+          description: "OpenAI API error rate is {{ $value }} errors/sec. Check API key and quotas."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-openai-failures"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-external-deps"
+
+      # Rate Limit Exceeded Frequently
+      - alert: MiraRateLimitExceeded
+        expr: |
+          rate(mira_rate_limit_exceeded_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA rate limiting is triggering frequently"
+          description: "{{ $value }} advisors/sec are hitting rate limits. Consider increasing limits or investigating abuse."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-rate-limits"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-security"
+
+      # Agent Execution Failures
+      - alert: MiraAgentExecutionFailures
+        expr: |
+          rate(mira_agent_execution_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: mira_copilot
+          team: ai
+        annotations:
+          summary: "MIRA agents are failing to execute"
+          description: "Agent: {{ $labels.agent }}, Error rate: {{ $value }} failures/sec"
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-agent-failures"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-agents"
+
+      # Cache Hit Rate Drop
+      - alert: MiraCacheHitRateLow
+        expr: |
+          (
+            rate(mira_intent_cache_hits_total[10m]) /
+            (rate(mira_intent_cache_hits_total[10m]) + rate(mira_intent_cache_misses_total[10m]))
+          ) < 0.30
+        for: 10m
+        labels:
+          severity: info
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA intent cache hit rate is below 30%"
+          description: "Cache hit rate: {{ $value | humanizePercentage }}. Consider tuning cache TTL or size."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-cache-performance"
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-caching"
+
+  - name: mira_copilot_warnings
+    interval: 5m
+    rules:
+      # Input Validation Warnings
+      - alert: MiraValidationWarnings
+        expr: |
+          rate(mira_validation_warnings_total[10m]) > 1
+        for: 10m
+        labels:
+          severity: info
+          component: mira_copilot
+          team: security
+        annotations:
+          summary: "MIRA is detecting suspicious input patterns"
+          description: "{{ $value }} validation warnings/sec. Type: {{ $labels.warning_type }}"
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-security-warnings"
+
+      # Feature Flag Changes
+      - alert: MiraFeatureFlagChanged
+        expr: |
+          changes(mira_feature_flag_status[5m]) > 0
+        for: 1m
+        labels:
+          severity: info
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA feature flag changed"
+          description: "Flag {{ $labels.flag_name }} changed for advisorId {{ $labels.advisor_id }}"
+
+      # Clarification Rate High
+      - alert: MiraClarificationRateHigh
+        expr: |
+          (
+            sum(rate(mira_intent_clarifications_total[15m])) /
+            sum(rate(mira_agent_requests_total[15m]))
+          ) > 0.25
+        for: 15m
+        labels:
+          severity: info
+          component: mira_copilot
+          team: ai
+        annotations:
+          summary: "MIRA is requesting clarification frequently"
+          description: "{{ $value | humanizePercentage }} of requests need clarification. Intent router may need improvement."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-clarifications"
+
+      # Token Usage High
+      - alert: MiraTokenUsageHigh
+        expr: |
+          rate(mira_openai_tokens_used_total[1h]) > 100000
+        for: 30m
+        labels:
+          severity: warning
+          component: mira_copilot
+          team: platform
+        annotations:
+          summary: "MIRA token usage is high"
+          description: "Using {{ $value }} tokens/sec. Check for inefficient prompts or unexpected traffic."
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-token-usage"
+
+  - name: mira_copilot_business_metrics
+    interval: 10m
+    rules:
+      # Low Adoption Rate
+      - alert: MiraLowAdoptionRate
+        expr: |
+          (
+            count(count by (advisor_id) (mira_agent_requests_total)) /
+            count(advisors_active_total)
+          ) < 0.20
+        for: 1d
+        labels:
+          severity: info
+          component: mira_copilot
+          team: product
+        annotations:
+          summary: "MIRA adoption rate is below 20%"
+          description: "Only {{ $value | humanizePercentage }} of active advisors are using MIRA."
+          dashboard_url: "https://grafana.advisorhub.com/d/mira-adoption"
+
+      # UI Action Success Rate Low
+      - alert: MiraUIActionFailureRate
+        expr: |
+          (
+            rate(mira_ui_actions_failed_total[30m]) /
+            rate(mira_ui_actions_total[30m])
+          ) > 0.10
+        for: 30m
+        labels:
+          severity: warning
+          component: mira_copilot
+          team: frontend
+        annotations:
+          summary: "MIRA UI action failure rate is above 10%"
+          description: "{{ $value | humanizePercentage }} of UI actions are failing. Action: {{ $labels.action_type }}"
+          runbook_url: "https://docs.advisorhub.com/runbooks/mira-ui-actions"
+
+# Alert Routing Configuration
+route:
+  group_by: ['alertname', 'component']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'mira-team'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'mira-pagerduty'
+      continue: true
+
+    - match:
+        severity: warning
+      receiver: 'mira-slack'
+
+    - match:
+        severity: info
+      receiver: 'mira-email'
+
+# Receivers (Notification Channels)
+receivers:
+  - name: 'mira-team'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#mira-alerts'
+        title: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'mira-pagerduty'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: '{{ .CommonLabels.severity }}'
+        description: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        details:
+          runbook: '{{ range .Alerts }}{{ .Annotations.runbook_url }}{{ end }}'
+          dashboard: '{{ range .Alerts }}{{ .Annotations.dashboard_url }}{{ end }}'
+
+  - name: 'mira-slack'
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#mira-warnings'
+        title: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+
+  - name: 'mira-email'
+    email_configs:
+      - to: 'mira-team@advisorhub.com'
+        from: 'alerts@advisorhub.com'
+        smarthost: 'smtp.advisorhub.com:587'
+        auth_username: '${SMTP_USERNAME}'
+        auth_password: '${SMTP_PASSWORD}'
+        headers:
+          Subject: '[MIRA] {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        html: |
+          <!DOCTYPE html>
+          <html>
+          <body>
+            <h2>{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}</h2>
+            <p>{{ range .Alerts }}{{ .Annotations.description }}{{ end }}</p>
+            <p>
+              <a href="{{ range .Alerts }}{{ .Annotations.runbook_url }}{{ end }}">Runbook</a> |
+              <a href="{{ range .Alerts }}{{ .Annotations.dashboard_url }}{{ end }}">Dashboard</a>
+            </p>
+          </body>
+          </html>
+
+# Inhibition Rules (suppress less severe alerts when more severe ones are firing)
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'component']
+
+  - source_match:
+      severity: 'warning'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'component']

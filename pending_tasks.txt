@@ -1,0 +1,292 @@
+PHASE: ### Phase 0: Foundation (Week 1)
+  - [ ] Run migrations on local dev database _(blocked 2025-11-14: Docker Desktop missing on this runner; rerun `npm exec supabase -- db reset --local --yes` once Docker is available)_
+  - [ ] Verify schema with test data _(blocked until local Supabase instance is running)_
+
+PHASE: ### Phase 1: Intent Router (Week 2)
+
+PHASE: ### Phase 2: Skill Agents (Week 3-4)
+  - [ ] Contract tests: `mira-response-contract.test.ts`
+  - [ ] Validate all agent responses conform to `MiraResponse` schema
+  - [ ] Verify metadata is always present
+  - [ ] Test action types are valid
+  - [ ] Each agent handles all intents in its module
+  - [ ] All agents return valid `MiraResponse` with `ui_actions`
+  - [ ] Tools are mocked but have correct TypeScript signatures
+  - [ ] All tests passing with ≥85% code coverage
+
+PHASE: ### Phase 3: Context & Actions (Week 5)
+
+PHASE: ### Phase 4: Adaptive UI (Week 6-7)
+  - [ ] Smooth animations (300ms) between modes using Framer Motion
+  - [ ] Fade in/out for mode switches
+  - [ ] Slide transitions for sidebars
+  - [ ] Preserve chat history across modes
+  - [ ] Store `conversationId` in mode machine context
+  - [ ] Load history when switching back to command mode
+  - [ ] Visual regression tests: `mira-modes.visual.spec.ts`
+  - [ ] Capture screenshots of each mode
+  - [ ] Test mode transitions
+  - [ ] Integration tests: `mira-copilot-integration.test.tsx`
+  - [ ] Test suggestions update when page context changes
+  - [ ] Test clicking suggestion sends command and executes actions
+  - [ ] Integration tests: `mira-insight-integration.test.tsx`
+  - [ ] Test insights fetch and display
+  - [ ] Test clicking insight navigates to relevant page
+  - [ ] E2E tests: `mira-modes-e2e.spec.ts`
+  - [ ] Test opening command mode with Ctrl+K
+  - [ ] Test co-pilot suggestions appear on module pages
+  - [ ] Test insight feed updates and actions execute
+  - [ ] Advisors can switch between modes seamlessly
+  - [ ] Co-pilot suggestions are contextually relevant (>70% click-through rate in user testing)
+  - [ ] Insight feed updates automatically and insights are actionable
+  - [ ] All modes work on desktop, tablet, and mobile
+
+PHASE: ### Phase 5: Tool Implementation (Week 8)
+  - [ ] Unit tests per tool file: `customer-tools.test.ts`, etc.
+  - [ ] Test each tool function with mocked Supabase client
+  - [ ] Test success cases return correct data structure
+  - [ ] Test error cases return proper error in `ToolResult`
+  - [ ] Run tools against local Supabase instance with test data
+  - [ ] Verify CRUD operations actually modify database
+  - [ ] Test filters and search functionality
+  - [ ] Contract tests: `tool-schemas.test.ts`
+  - [ ] Validate tool Zod schemas are correct
+  - [ ] Test schema validation catches invalid inputs
+  - [ ] All tools can read and write to Supabase tables
+  - [ ] CRUD operations work correctly (create, read, update, delete)
+  - [ ] Errors are handled gracefully and logged
+  - [ ] All tests passing with ≥85% code coverage
+
+PHASE: ### Phase 6: Integration & Testing (Week 9)
+  - [ ] Target: p95 response latency < 2.5s _(telemetry emitter wired via `useAgentChat` to feed dashboards)_
+  - [ ] Skip to main content link
+  - [ ] High contrast mode support
+  - [ ] Test with Windows High Contrast Mode
+  - [ ] Ensure sufficient color contrast ratios (WCAG AA)
+  - [ ] Target: Lighthouse accessibility score ≥ 95
+  - [ ] Log all intents with confidence scores
+  - [ ] Table: `mira_intent_logs`
+  - [ ] Fields: `intent_id, confidence, context_module, selected_agent, timestamp`
+  - [ ] Track action execution success/failure
+  - [ ] Table: `mira_events`
+  - [ ] Fields: `event_type='action_execution', action_type, success, error_message, timestamp`
+  - [ ] Monitor mode usage
+  - [ ] Log mode changes: `event_type='mode_change', from_mode, to_mode, timestamp`
+  - [ ] Track time spent in each mode
+  - [ ] User satisfaction quick survey
+  - [ ] After action execution, show thumbs up/down
+  - [ ] Store feedback in `mira_feedback` table
+  - [ ] Playwright E2E tests for all 5 core flows
+  - [ ] `create-lead-flow.spec.ts`
+  - [ ] `view-analytics-flow.spec.ts`
+  - [ ] `create-task-flow.spec.ts`
+  - [ ] `product-search-flow.spec.ts`
+  - [ ] `broadcast-campaign-flow.spec.ts`
+  - [ ] Run on Chrome, Firefox, Safari
+  - [ ] Performance tests
+  - [ ] Use Playwright to measure response latency
+  - [ ] Test: Send message → receive response → execute action
+  - [ ] Target: p95 < 2.5s
+  - [ ] Run 100 iterations, collect metrics
+  - [ ] Load tests with k6
+  - [ ] Script: Simulate 50 concurrent advisors
+  - [ ] Each sends 10 messages over 5 minutes
+  - [ ] Target: Error rate < 1%, p95 latency < 2.5s
+  - [ ] Accessibility audit with axe-core
+  - [ ] Run axe DevTools on all modes
+  - [ ] Fix all violations and warnings
+  - [ ] Target: 0 violations
+  - [ ] All 5 core flows execute successfully without errors
+  - [ ] Response latency p95 < 2.5s (measured with Playwright)
+  - [ ] Lighthouse accessibility score ≥ 95
+  - [ ] 0 critical bugs in E2E tests
+  - [ ] Load test passes: 50 concurrent users, error rate < 1%
+
+PHASE: ### Phase 7: Production Readiness (Week 10)
+  - [ ] Create video tutorials for each mode
+  - [ ] Video 1: "Getting Started with Mira Command Mode" (3 min)
+  - [ ] Video 2: "Using Co-pilot Mode for Proactive Suggestions" (2 min)
+  - [ ] Video 3: "Staying Informed with Insight Mode" (2 min)
+  - [ ] Video 4: "Advanced Tips and Tricks" (5 min)
+  - [ ] Alert: Confidence score < 0.5 spike (> 20% of requests in 5 min)
+  - [ ] Severity: Warning
+  - [ ] Action: Notify AI Squad Lead
+  - [ ] Alert: Action execution failure > 5% (in 10 min window)
+  - [ ] Severity: Critical
+  - [ ] Action: Page on-call engineer
+  - [ ] Alert: API latency p95 > 3s (in 5 min window)
+  - [ ] Severity: Warning
+  - [ ] Action: Notify backend team
+  - [ ] Alert: API error rate > 5% (in 5 min window)
+  - [ ] Severity: Critical
+  - [ ] Action: Page on-call engineer
+  - [ ] Alert: LLM provider down (all requests failing)
+  - [ ] Severity: Critical
+  - [ ] Action: Page on-call engineer, trigger fallback
+  - [ ] Set up alert channels
+  - [ ] Slack: #mira-copilot-alerts
+  - [ ] PagerDuty: Integration for critical alerts
+  - [ ] Email: ai-squad@company.com for warnings
+  - [ ] Create k6 script: `tests/load/mira-copilot-load.js`
+  - [ ] Scenario: 100 concurrent advisors
+  - [ ] Each advisor:
+  - [ ] Opens command mode
+  - [ ] Sends 5 messages (varying complexity)
+  - [ ] Executes 2 actions
+  - [ ] Switches to copilot mode
+  - [ ] Clicks 1 suggestion
+  - [ ] Duration: 30 minutes
+  - [ ] Target metrics:
+  - [ ] p95 latency < 2.5s
+  - [ ] Error rate < 1%
+  - [ ] Throughput: ≥ 20 requests/second
+  - [ ] Run load test on staging environment
+  - [ ] Collect results and analyze
+  - [ ] Identify bottlenecks
+  - [ ] Optimize and re-run until targets met
+  - [ ] Run load test on production (read-only)
+  - [ ] Use feature flag to test in production without affecting users
+  - [ ] Verify production infrastructure can handle load
+  - [ ] Simulate OpenAI outage
+  - [ ] Test: Block OpenAI API calls
+  - [ ] Expected: Automatic fallback to Anthropic
+  - [ ] Verify: Check logs show fallback triggered
+  - [ ] Verify: Response latency increases slightly but requests succeed
+  - [ ] Simulate Supabase slow queries
+  - [ ] Test: Add artificial delay to database queries (10s)
+  - [ ] Expected: Requests timeout after 5s with proper error message
+  - [ ] Verify: Users see "Service temporarily unavailable, please retry"
+  - [ ] Simulate network failures
+  - [ ] Test: Drop 50% of requests randomly
+  - [ ] Expected: Retry logic kicks in, requests eventually succeed
+  - [ ] Verify: Max 3 retries, then user sees error with retry button
+  - [ ] Set up feature flag system (use LaunchDarkly or custom)
+  - [ ] `MIRA_COPILOT_ENABLED` - Global on/off (default: false)
+  - [ ] `MIRA_MODE_COMMAND_ENABLED` - Command mode toggle (default: true)
+  - [ ] `MIRA_MODE_COPILOT_ENABLED` - Copilot mode toggle (default: false)
+  - [ ] `MIRA_MODE_INSIGHT_ENABLED` - Insight mode toggle (default: false)
+  - [ ] Per-module flags:
+  - [ ] `MIRA_CUSTOMER_AGENT_ENABLED` (default: false)
+  - [ ] `MIRA_NEWBUSINESS_AGENT_ENABLED` (default: false)
+  - [ ] `MIRA_PRODUCT_AGENT_ENABLED` (default: false)
+  - [ ] `MIRA_ANALYTICS_AGENT_ENABLED` (default: false)
+  - [ ] `MIRA_TODO_AGENT_ENABLED` (default: false)
+  - [ ] `MIRA_BROADCAST_AGENT_ENABLED` (default: false)
+  - [ ] `MIRA_VISUALIZER_AGENT_ENABLED` (default: false)
+  - [ ] Implement flag checks in code
+  - [ ] Frontend: Check flags before rendering modes
+  - [ ] Backend: Check flags before routing to agents
+  - [ ] Test flag toggling in staging
+  - [ ] **Week 10 Day 1-2: Internal Beta (Team Only)**
+  - [ ] Enable `MIRA_COPILOT_ENABLED=true` for internal team emails
+  - [ ] Team uses Mira in production environment
+  - [ ] Collect feedback via Slack #mira-copilot-feedback
+  - [ ] Fix critical bugs immediately
+  - [ ] Criteria to proceed: 0 P0 bugs, NPS ≥ 30
+  - [ ] **Week 10 Day 3-4: Limited Release (10% of Advisors)**
+  - [ ] Enable copilot for 10% of advisors (randomly selected)
+  - [ ] Monitor dashboards closely (hourly)
+  - [ ] Watch for: intent accuracy, action failures, latency spikes
+  - [ ] Collect user feedback via in-app survey
+  - [ ] Criteria to proceed: Intent accuracy ≥ 85%, error rate < 2%
+  - [ ] **Week 10 Day 5: Expand to 25%**
+  - [ ] Increase rollout to 25% of advisors
+  - [ ] Continue monitoring
+  - [ ] Address any issues raised in first cohort
+  - [ ] Criteria to proceed: No regression in metrics
+  - [ ] **Week 11 Day 1: 50% Rollout**
+  - [ ] Expand to 50% of advisors
+  - [ ] Run another load test to verify infrastructure
+  - [ ] Check for regional or team-specific issues
+  - [ ] **Week 11 Day 2-3: 100% Rollout**
+  - [ ] Enable for all advisors if metrics are green
+  - [ ] Announce via email and in-app notification
+  - [ ] Continue monitoring for 1 week
+  - [ ] Criteria for success: Intent accuracy ≥ 90%, adoption ≥ 40% in week 1
+  - [ ] Record demo videos
+  - [ ] Video 1: "Getting Started with Mira Command Mode"
+  - [ ] How to open command mode (Ctrl+K)
+  - [ ] Example: Creating a new lead
+  - [ ] Example: Searching for a product
+  - [ ] Video 2: "Using Co-pilot Mode"
+  - [ ] How to activate copilot mode
+  - [ ] Clicking suggestions
+  - [ ] Example: Co-pilot suggests follow-up actions
+  - [ ] Video 3: "Insight Mode for Proactive Alerts"
+  - [ ] How to view insights
+  - [ ] Acting on insights
+  - [ ] Example: Overdue task alert → one-click navigate
+  - [ ] Video 4: "Advanced Tips and Tricks"
+  - [ ] Keyboard shortcuts
+  - [ ] Understanding confidence scores
+  - [ ] Debugging with ?debug=true
+  - [ ] Create interactive tutorial
+  - [ ] First-time user onboarding flow
+  - [ ] Step 1: "Welcome to Mira! Let's take a quick tour."
+  - [ ] Step 2: Guided command mode interaction
+  - [ ] Step 3: Show copilot suggestion, prompt to click
+  - [ ] Step 4: Show insight card, prompt to act
+  - [ ] Step 5: "You're all set! Start using Mira."
+  - [ ] Dismissible, but can be accessed via Help menu
+  - [ ] Host live training session for advisors
+  - [ ] Session 1: Week 10 Day 1 (internal team)
+  - [ ] Session 2: Week 10 Day 3 (10% rollout cohort)
+  - [ ] Session 3: Week 11 Day 1 (all advisors)
+  - [ ] Format: 30-min live demo + 15-min Q&A
+  - [ ] Record sessions and make available on demand
+  - [ ] Prepare FAQ document
+  - [ ] Q: What is Mira Co-Pilot?
+  - [ ] Q: How do I use command mode?
+  - [ ] Q: What are the three modes?
+  - [ ] Q: How accurate is Mira?
+  - [ ] Q: Can Mira access my data?
+  - [ ] Q: What if Mira makes a mistake?
+  - [ ] Q: How do I report feedback?
+  - [ ] Publish on internal wiki and link in app
+  - [ ] All E2E tests passing
+  - [ ] Performance benchmarks met (p95 < 2.5s, error rate < 1%)
+  - [ ] Dashboards and alerts configured and tested
+  - [ ] Runbook reviewed and approved by engineering manager
+  - [ ] Training materials published (videos, FAQ, user guide)
+  - [ ] Feature flags configured and tested in staging
+  - [ ] Stakeholder sign-off obtained (Product Manager, Engineering Lead, QA Lead, UX Designer)
+  - [ ] Go/No-Go meeting scheduled for Week 10 Day 1
+  - [ ] Communication plan ready (email, Slack announcement, in-app notification)
+  - [ ] Support team briefed on new feature and common issues
+  - [ ] All launch checklist items complete
+  - [ ] Load tests pass with target SLAs (p95 < 2.5s, error rate < 1%)
+  - [ ] Chaos tests demonstrate resilience (fallback, retry, error handling)
+  - [ ] Stakeholder approval obtained
+  - [ ] Successful rollout without P0/P1 incidents
+  - [ ] Adoption rate ≥ 40% in first week post-launch
+  - [ ] NPS ≥ 40 in first month
+  - [ ] Product Manager
+  - [ ] Engineering Lead
+  - [ ] UX Designer
+  - [ ] QA Lead
+  - [ ] New Business module (Proposal, Underwriting, Quote)
+  - [ ] Product module (Search, Comparison)
+  - [ ] Analytics module (Performance, Funnel, Team)
+  - [ ] To-Do module (Tasks, Calendar)
+  - [ ] Broadcast module (Campaigns, Analytics)
+  - [ ] Visualizer module (Planning, Scenarios)
+  - [ ] New Business module (Proposal, Underwriting, Quote)
+  - [ ] Product module (Search, Comparison)
+  - [ ] Analytics module (Performance, Funnel, Team)
+  - [ ] To-Do module (Tasks, Calendar)
+  - [ ] Broadcast module (Campaigns, Analytics)
+  - [ ] Visualizer module (Planning, Scenarios)
+  - [ ] Create database migrations for Mira tables:
+  - [ ] `20251111_create_mira_topics.sql`
+  - [ ] `20251111_create_mira_intents.sql`
+  - [ ] `20251111_create_mira_agent_configs.sql`
+  - [ ] `20251111_update_mira_conversations.sql`
+  - [ ] `20251111_create_mira_intent_logs.sql`
+  - [ ] Run migrations on local dev database
+  - [ ] Create TypeScript type definitions:
+  - [ ] `src/lib/mira/types.ts`
+  - [ ] `src/lib/mira/intent-catalog.ts`
+  - [ ] `supabase/functions/_shared/services/types.ts`
+  - [ ] Update documentation and create ADRs
+
+

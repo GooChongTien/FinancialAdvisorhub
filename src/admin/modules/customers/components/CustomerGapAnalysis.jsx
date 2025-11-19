@@ -31,6 +31,29 @@ import {
 import { Badge } from "@/admin/components/ui/badge";
 import { Progress } from "@/admin/components/ui/progress";
 
+// Icon mapping for restoring after localStorage
+const iconMap = {
+  death: Heart,
+  disability: Shield,
+  critical_illness: AlertTriangle,
+  hospitalization: Home,
+  retirement: Briefcase,
+  education: GraduationCap,
+};
+
+// Restore icons after loading from localStorage
+const restoreIcons = (analysis) => {
+  if (!analysis || !analysis.gaps) return analysis;
+
+  return {
+    ...analysis,
+    gaps: analysis.gaps.map(gap => ({
+      ...gap,
+      icon: iconMap[gap.type] || AlertCircle,
+    })),
+  };
+};
+
 export default function CustomerGapAnalysis({ lead }) {
   const [gapAnalysis, setGapAnalysis] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -45,12 +68,15 @@ export default function CustomerGapAnalysis({ lead }) {
     const savedAnalysis = localStorage.getItem(`gap_analysis_${lead?.id}`);
     if (savedAnalysis) {
       const parsed = JSON.parse(savedAnalysis);
-      setGapAnalysis(parsed);
+      const restored = restoreIcons(parsed);
+      setGapAnalysis(restored);
     }
 
     const savedHistory = localStorage.getItem(`gap_history_${lead?.id}`);
     if (savedHistory) {
-      setAnalysisHistory(JSON.parse(savedHistory));
+      const parsedHistory = JSON.parse(savedHistory);
+      const restoredHistory = parsedHistory.map(restoreIcons);
+      setAnalysisHistory(restoredHistory);
     }
   }, [lead?.id]);
 

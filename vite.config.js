@@ -18,7 +18,8 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "node",
+    environment: "jsdom",
+    setupFiles: ["./tests/setup/jest-dom.ts"],
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "tests/**/*.spec.ts", "tests/**/*.spec.tsx"],
     exclude: [
       ...configDefaults.exclude,

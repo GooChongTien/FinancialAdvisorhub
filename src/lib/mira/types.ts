@@ -140,7 +140,23 @@ export interface SuggestedIntent {
   title: string;
   description: string;
   promptText: string;
+  module?: MiraModule | string;
   confidence?: number;
+}
+
+export type InsightPriority = "critical" | "important" | "info";
+
+export interface ProactiveInsight {
+  id: string;
+  title: string;
+  summary: string;
+  priority: InsightPriority;
+  module: MiraModule | string;
+  tag?: string;
+  updated_at?: string;
+  ctaLabel?: string;
+  dismissible?: boolean;
+  ui_actions?: UIAction[];
 }
 
 export interface UIActionResult {

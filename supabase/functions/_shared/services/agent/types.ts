@@ -36,7 +36,7 @@ export interface ToolResult {
 // Chat request from frontend
 export interface AgentChatRequest {
   messages: ChatMessage[];
-  mode?: "stream" | "batch";
+  mode?: "stream" | "batch" | "suggest" | "insights";
   metadata?: Record<string, unknown>;
   context?: MiraContext;
   temperature?: number;

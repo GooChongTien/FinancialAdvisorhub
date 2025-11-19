@@ -1,11 +1,6 @@
-// @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import React, { act, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
-
-// Signal act support for React 18 warnings.
-// @ts-ignore
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+import React, { useEffect, useState } from "react";
+import { cleanup, render, waitFor } from "@testing-library/react";
 
 const useAgentChatMock = vi.fn();
 
@@ -24,15 +19,26 @@ import {
   useAgentChatStore,
 } from "@/admin/state/providers/AgentChatProvider.jsx";
 
-function mountAgentChatProvider(initialMessages = []) {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  const latestStoreRef = { current: null };
-  const sendMessageMock = vi.fn();
-  const baseChat = {
-    messages: initialMessages,
-    sendMessage: sendMessageMock,
+let latestStore = null;
+
+function StoreProbe() {
+  const store = useAgentChatStore();
+  latestStore = store;
+  return (
+    <div>
+      {store.clarificationPrompt && (
+        <div data-testid="clarification-text">
+          {store.clarificationPrompt.assistantText}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function createChatMock(messages) {
+  return {
+    messages,
+    sendMessage: vi.fn(),
     sendToolResult: vi.fn(),
     undoAutoActions: vi.fn(),
     abort: vi.fn(),
@@ -41,66 +47,42 @@ function mountAgentChatProvider(initialMessages = []) {
     error: null,
     isStreaming: false,
   };
+}
 
-  function Observer() {
-    const store = useAgentChatStore();
-    latestStoreRef.current = store;
-    return null;
-  }
+function renderProvider(initialMessages = []) {
+  const baseChat = createChatMock(initialMessages);
+  useAgentChatMock.mockReturnValue(baseChat);
 
-  function Harness() {
-    const [messages, setMessages] = useState(initialMessages);
-    const setMessagesRef = useRef(setMessages);
-    setMessagesRef.current = setMessages;
-    baseChat.messages = messages;
-    useAgentChatMock.mockReturnValue(baseChat);
+  function Harness({ msgs }) {
+    const [localMessages, setLocalMessages] = useState(msgs);
+    useEffect(() => setLocalMessages(msgs), [msgs]);
+    baseChat.messages = localMessages;
     return (
       <AgentChatProvider>
-        <Observer />
-        <MessageController setMessagesRef={setMessagesRef} />
+        <StoreProbe />
       </AgentChatProvider>
     );
   }
 
-  function MessageController({ setMessagesRef }) {
-    // Expose imperative setter for tests
-    baseChat.__setMessages = (updater) => {
-      act(() => {
-        setMessagesRef.current((prev) =>
-          typeof updater === "function" ? updater(prev) : updater,
-        );
-      });
-    };
-    return null;
-  }
-
-  act(() => {
-    root.render(<Harness />);
-  });
+  const utils = render(<Harness msgs={initialMessages} />);
 
   return {
-    cleanup: () => {
-      act(() => root.unmount());
-      container.remove();
-    },
-    setMessages: (updater) => baseChat.__setMessages?.(updater),
-    getStore: () => latestStoreRef.current,
-    sendMessageMock,
+    rerenderMessages: (messages) => utils.rerender(<Harness msgs={messages} />),
+    getStore: () => latestStore,
+    sendMessageMock: baseChat.sendMessage,
+    unmount: () => utils.unmount(),
   };
 }
 
 describe("AgentChatProvider clarification prompt logic", () => {
-  let cleanup = () => {};
-
   afterEach(() => {
     cleanup();
-    cleanup = () => {};
+    latestStore = null;
     useAgentChatMock.mockReset();
   });
 
   it("derives clarification prompt from assistant metadata", () => {
-    const harness = mountAgentChatProvider([]);
-    cleanup = harness.cleanup;
+    const harness = renderProvider([]);
     const userMessage = { id: "user-1", role: "user", content: "Need help" };
     const assistantMessage = {
       id: "assistant-clarify",
@@ -113,19 +95,16 @@ describe("AgentChatProvider clarification prompt logic", () => {
         topic_history: ["customer"],
       },
     };
-    harness.setMessages([userMessage, assistantMessage]);
+    harness.rerenderMessages([userMessage, assistantMessage]);
     const store = harness.getStore();
-    expect(store?.clarificationPrompt).toMatchObject({
-      messageId: "assistant-clarify",
-      assistantText: "Can you confirm?",
-      originalUser: "Need help",
-    });
+    expect(store?.clarificationPrompt?.messageId).toBe("assistant-clarify");
+    expect(store?.clarificationPrompt?.assistantText).toBe("Can you confirm?");
+    expect(store?.clarificationPrompt?.originalUser).toBe("Need help");
   });
 
-  it("dismissClarification clears prompt", () => {
-    const harness = mountAgentChatProvider([]);
-    cleanup = harness.cleanup;
-    harness.setMessages([
+  it("dismissClarification clears prompt", async () => {
+    const harness = renderProvider([]);
+    harness.rerenderMessages([
       { id: "user-1", role: "user", content: "Hello" },
       {
         id: "assistant-clarify",
@@ -136,17 +115,15 @@ describe("AgentChatProvider clarification prompt logic", () => {
     ]);
     let store = harness.getStore();
     expect(store?.clarificationPrompt).not.toBeNull();
-    act(() => {
-      store.dismissClarification();
+    store.dismissClarification();
+    await waitFor(() => {
+      expect(harness.getStore()?.clarificationPrompt).toBeNull();
     });
-    store = harness.getStore();
-    expect(store?.clarificationPrompt).toBeNull();
   });
 
   it("confirmClarification resends the previous user message with metadata", async () => {
-    const harness = mountAgentChatProvider([]);
-    cleanup = harness.cleanup;
-    harness.setMessages([
+    const harness = renderProvider([]);
+    harness.rerenderMessages([
       { id: "user-1", role: "user", content: "Open tasks" },
       {
         id: "assistant-clarify",
@@ -161,9 +138,7 @@ describe("AgentChatProvider clarification prompt logic", () => {
       },
     ]);
     let store = harness.getStore();
-    await act(async () => {
-      await store.confirmClarification();
-    });
+    await store.confirmClarification();
     expect(harness.sendMessageMock).toHaveBeenCalledWith(
       "Open tasks",
       expect.objectContaining({
@@ -173,7 +148,8 @@ describe("AgentChatProvider clarification prompt logic", () => {
         topic_history: ["todo"],
       }),
     );
-    store = harness.getStore();
-    expect(store?.clarificationPrompt).toBeNull();
+    await waitFor(() => {
+      expect(harness.getStore()?.clarificationPrompt).toBeNull();
+    });
   });
 });

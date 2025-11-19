@@ -13,6 +13,7 @@ import { getClientSecret, getClientSecretFromAdapter } from "../services/agent/s
 import { fetchTenantModelConfig } from "../services/config/model-config.ts";
 import { createRequestLogger, type RequestLogger } from "../utils/logger.ts";
 import type { AgentChatRequest, AgentEvent, AgentRequestMode } from "../services/agent/types.ts";
+import { generateProactiveInsights } from "../../supabase/functions/_shared/services/insights.ts";
 
 const STREAMING_MODES: AgentRequestMode[] = ["stream", "batch"];
 const SPECIAL_MODES = new Set(["health", "get_client_secret", "aial"]);
@@ -260,6 +261,21 @@ async function handleRequest(req: Request): Promise<Response> {
 
     if (mode === "aial") {
       return handleAialMode(body, origin, requestLogger);
+    }
+
+    if (mode === "insights") {
+      const contextAdvisorId =
+        typeof body?.context?.advisorId === "string" && body.context.advisorId.trim().length > 0
+          ? body.context.advisorId
+          : undefined;
+      const metadataAdvisorId =
+        typeof body?.metadata?.advisorId === "string" && body.metadata.advisorId.trim().length > 0
+          ? body.metadata.advisorId
+          : undefined;
+      const advisorId = contextAdvisorId ?? metadataAdvisorId ?? null;
+      const insights = await generateProactiveInsights(advisorId);
+      requestLogger.info("mode.insights", { advisorId, count: insights.length });
+      return makeJsonResponse({ insights }, origin, 200);
     }
 
     if (!isStreamingMode(mode)) {

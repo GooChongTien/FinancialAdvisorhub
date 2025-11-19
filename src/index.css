@@ -147,3 +147,54 @@
     font-family: var(--font-sans);
   }
 }
+
+/* Chat split view layout - shift main content to accommodate sidebar + chat */
+body.chat-split-view #root {
+  margin-left: calc(256px + var(--chat-panel-width, 30%));
+  transition: margin-left 0.3s ease-out;
+}
+
+/* When sidebar is collapsed, use collapsed width */
+body.chat-split-view.sidebar-collapsed #root {
+  margin-left: calc(74px + var(--chat-panel-width, 30%));
+  transition: margin-left 0.3s ease-out;
+}
+
+/* Chat-specific animations and utilities */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Smooth scrolling for chat containers */
+.chat-scroll-container {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for chat */
+.chat-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 4px;
+}
+
+.chat-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
+}

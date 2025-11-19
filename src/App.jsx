@@ -15,6 +15,7 @@ import BroadcastDetail from "@/admin/pages/BroadcastDetail.jsx";
 import ToDo from "@/admin/pages/ToDo.jsx";
 import ChatMira from "@/admin/pages/ChatMira.jsx";
 import AllChats from "@/admin/pages/AllChats.jsx";
+import ChatPanelOverlay from "@/admin/components/mira/ChatPanelOverlay.jsx";
 import { pageRoutes } from "@/admin/utils";
 import Register from "@/admin/pages/Register.jsx";
 import Login from "@/admin/pages/Login.jsx";
@@ -23,11 +24,11 @@ import MiraOps from "@/admin/pages/MiraOps.jsx";
 import { MiraContextProvider } from "@/admin/state/providers/MiraContextProvider.jsx";
 import { MiraConfirmProvider } from "@/lib/mira/useMiraConfirm";
 import { useGlobalKeyboardShortcuts } from "@/admin/hooks/useGlobalKeyboardShortcuts";
+import { AgentChatProvider } from "@/admin/state/providers/AgentChatProvider.jsx";
 
 function LayoutContainer() {
   // Enable global keyboard shortcuts
   useGlobalKeyboardShortcuts();
-
   return (
     <AdminLayout>
       <Outlet />
@@ -39,7 +40,8 @@ export default function App() {
   return (
     <MiraConfirmProvider>
       <MiraContextProvider>
-        <Routes>
+        <AgentChatProvider>
+          <Routes>
           {/* Public routes (no side menu) */}
           <Route path={pageRoutes.Login} element={<Login />} />
           <Route path={pageRoutes.Register} element={<Register />} />
@@ -71,7 +73,11 @@ export default function App() {
             <Route path={pageRoutes.MiraOps} element={<MiraOps />} />
           </Route>
           <Route path="*" element={<Navigate to={pageRoutes.Home} replace />} />
-        </Routes>
+          </Routes>
+
+          {/* Global chat panel overlay */}
+          <ChatPanelOverlay />
+        </AgentChatProvider>
       </MiraContextProvider>
     </MiraConfirmProvider>
   );

@@ -1,7 +1,7 @@
-import React, { useDeferredValue, useMemo, useState } from "react";
+import React, { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { fetchMiraEvents } from "@/admin/api/miraOpsApi.js";
+import { fetchMiraEvents, fetchAdvisorInsights } from "@/admin/api/miraOpsApi.js";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
 import { createPageUrl } from "@/admin/utils";
 import {
@@ -32,6 +32,7 @@ import {
   Activity,
   TrendingDown,
   TrendingUp,
+  Loader2,
 } from "lucide-react";
 
 const MODULE_OPTIONS = [
@@ -70,6 +71,11 @@ const PAGE_SIZE = 25;
 const ALERT_THRESHOLD = 0.05;
 const ALERT_WINDOW_MINUTES = 10;
 const MIN_ALERT_EVENTS = DEFAULT_MIN_ALERT_EVENTS;
+const INSIGHT_PRIORITY_STYLES = {
+  critical: "bg-rose-100 text-rose-700 border border-rose-200",
+  important: "bg-amber-100 text-amber-700 border border-amber-200",
+  info: "bg-slate-100 text-slate-600 border border-slate-200",
+};
 
 function computeRangeStart(rangeValue) {
   if (rangeValue === "all") return null;
@@ -103,6 +109,53 @@ function OutcomeBadge({ success }) {
       <AlertTriangle className="mr-1 h-3.5 w-3.5" />
       Failed
     </Badge>
+  );
+}
+
+function AdvisorInsightsList({ insights = [] }) {
+  if (!insights.length) {
+    return (
+      <div className="rounded-lg border border-slate-200 p-3 text-xs text-slate-500">
+        No active insights for this advisor.
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {insights.map((insight) => {
+        const priorityStyle = INSIGHT_PRIORITY_STYLES[insight.priority] ?? INSIGHT_PRIORITY_STYLES.info;
+        return (
+          <div key={insight.id} className="rounded-lg border border-slate-200 bg-white/70 p-3">
+            <div className="flex items-center justify-between text-[11px] text-slate-500">
+              <span className={`rounded-full px-2 py-0.5 font-semibold ${priorityStyle}`}>
+                {insight.priority === "critical"
+                  ? "Critical"
+                  : insight.priority === "important"
+                    ? "Important"
+                    : "Info"}
+              </span>
+              {insight.updated_at ? <span>{formatTimestamp(insight.updated_at)}</span> : null}
+            </div>
+            <div className="mt-2">
+              <p className="text-sm font-semibold text-slate-900">{insight.title}</p>
+              {insight.summary ? (
+                <p className="text-xs text-slate-600">{insight.summary}</p>
+              ) : null}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium uppercase tracking-wide">
+                {insight.module}
+              </span>
+              {insight.tag && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium uppercase tracking-wide">
+                  {insight.tag}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -203,7 +256,7 @@ function TopFailingActionsList({ actions }) {
   );
 }
 
-function EventsTable({ events = [], loading, navigate }) {
+function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) {
   if (loading) {
     return (
       <div className="rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
@@ -231,6 +284,7 @@ function EventsTable({ events = [], loading, navigate }) {
             <th className="px-3 py-2">Entity</th>
             <th className="px-3 py-2">Correlation</th>
             <th className="px-3 py-2">Details</th>
+            <th className="px-3 py-2">Advisor</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -288,6 +342,23 @@ function EventsTable({ events = [], loading, navigate }) {
                 <td className="px-3 py-3 text-xs text-slate-500">
                   {event.error_message || event.metadata?.error_message || fieldKeys.join(", ") || "—"}
                 </td>
+                <td className="px-3 py-3 text-xs text-slate-600">
+                  {event.advisor_id ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="break-all text-[11px] text-slate-500">{event.advisor_id}</span>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="px-0 text-primary-600"
+                        onClick={() => onViewAdvisorInsights?.(event.advisor_id)}
+                      >
+                        View insights
+                      </Button>
+                    </div>
+                  ) : (
+                    "—"
+                  )}
+                </td>
               </tr>
             );
           })}
@@ -305,6 +376,8 @@ export default function MiraOps() {
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearch = useDeferredValue(searchTerm);
+  const [insightAdvisorInput, setInsightAdvisorInput] = useState("");
+  const [insightAdvisorTarget, setInsightAdvisorTarget] = useState("");
 
   const tableParams = useMemo(() => {
     const base = {
@@ -321,6 +394,19 @@ export default function MiraOps() {
     }
     return base;
   }, [moduleFilter, statusFilter, rangeFilter, page, deferredSearch]);
+
+  const handleAdvisorInsightsLookup = useCallback((advisorId) => {
+    if (!advisorId) return;
+    const trimmed = advisorId.trim();
+    if (!trimmed) return;
+    setInsightAdvisorInput(trimmed);
+    setInsightAdvisorTarget(trimmed);
+  }, []);
+
+  const clearAdvisorInsights = useCallback(() => {
+    setInsightAdvisorInput("");
+    setInsightAdvisorTarget("");
+  }, []);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["mira-events", tableParams],
@@ -359,6 +445,17 @@ export default function MiraOps() {
     refetchInterval: 60_000,
   });
 
+  const {
+    data: advisorInsightsData,
+    isFetching: advisorInsightsFetching,
+    error: advisorInsightsError,
+  } = useQuery({
+    queryKey: ["ops-insights", insightAdvisorTarget],
+    queryFn: () => fetchAdvisorInsights(insightAdvisorTarget),
+    enabled: Boolean(insightAdvisorTarget),
+    staleTime: 60_000,
+  });
+
   useMiraPageData(
     () => ({
       view: "mira_ops",
@@ -374,6 +471,7 @@ export default function MiraOps() {
   const events = data?.events ?? [];
   const pagination = data?.pagination ?? { total: 0, hasMore: false };
   const summary = data?.summary ?? { success: 0, failure: 0 };
+  const advisorInsights = insightAdvisorTarget ? advisorInsightsData ?? [] : [];
 
   const metricsSummary = metricsQuery.data?.summary ?? { success: 0, failure: 0 };
   const metricsEvents = metricsQuery.data?.events ?? [];
@@ -545,9 +643,65 @@ export default function MiraOps() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <EventsTable events={events} loading={isLoading && !events.length} navigate={navigate} />
+          <EventsTable
+            events={events}
+            loading={isLoading && !events.length}
+            navigate={navigate}
+            onViewAdvisorInsights={handleAdvisorInsightsLookup}
+          />
         </div>
         <div className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base text-slate-800">Advisor insight preview</CardTitle>
+              <p className="text-xs text-slate-500">
+                Enter an advisor ID or click “View insights” in the telemetry table to mirror their feed.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-col gap-2">
+                <Input
+                  placeholder="Advisor UUID…"
+                  value={insightAdvisorInput}
+                  onChange={(event) => setInsightAdvisorInput(event.target.value)}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => handleAdvisorInsightsLookup(insightAdvisorInput)}
+                    disabled={!insightAdvisorInput.trim()}
+                  >
+                    Load insights
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={clearAdvisorInsights}
+                    disabled={!insightAdvisorTarget}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+              {advisorInsightsError ? (
+                <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                  {advisorInsightsError.message || "Unable to load advisor insights."}
+                </div>
+              ) : null}
+              {!insightAdvisorTarget ? (
+                <p className="text-xs text-slate-500">
+                  Select an advisor to preview exactly what their ChatMira sidebar shows.
+                </p>
+              ) : advisorInsightsFetching ? (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Loading insights…
+                </div>
+              ) : (
+                <AdvisorInsightsList insights={advisorInsights} />
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base text-slate-800 flex items-center gap-2">

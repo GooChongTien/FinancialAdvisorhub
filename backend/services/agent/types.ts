@@ -33,7 +33,7 @@ export interface ToolResult {
   content: string;
 }
 
-export type AgentRequestMode = "stream" | "batch";
+export type AgentRequestMode = "stream" | "batch" | "suggest" | "insights";
 
 // Chat request from frontend
 export interface AgentChatRequest {

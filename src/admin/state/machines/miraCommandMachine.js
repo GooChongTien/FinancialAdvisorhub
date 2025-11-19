@@ -12,13 +12,13 @@ const pushHistory = (history, prompt) => {
 };
 
 const prepareSubmit = assign({
-  lastPrompt: (_, event) => event.prompt,
-  history: (ctx, event) => pushHistory(ctx.history, event.prompt),
+  lastPrompt: (_, event) => (event && typeof event.prompt === 'string' ? event.prompt : ''),
+  history: (ctx, event) => pushHistory(ctx.history, event?.prompt),
   response: () => null,
   intent: () => null,
   execution: () => null,
   error: () => null,
-  submittedAt: (_, event) => event.timestamp ?? Date.now(),
+  submittedAt: (_, event) => (event && event.timestamp) ? event.timestamp : Date.now(),
   feedback: () => null,
   pendingAction: () => null,
 });
@@ -107,7 +107,13 @@ export const miraCommandMachine = createMachine({
         SUBMIT: {
           target: "#miraCommandCenter.running",
           actions: prepareSubmit,
-          guard: (_, event) => Boolean(event.prompt?.trim().length),
+          guard: (_, event) => {
+            try {
+              return Boolean(event && event.prompt && typeof event.prompt === 'string' && event.prompt.trim().length > 0);
+            } catch {
+              return false;
+            }
+          },
         },
       },
     },

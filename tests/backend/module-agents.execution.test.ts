@@ -15,6 +15,24 @@ vi.mock("../../backend/api/supabase.ts", () => ({
   }),
 }));
 
+vi.mock(
+  "../../supabase/functions/_shared/services/agents/tools/analytics-tools.ts",
+  () => {
+    const makeTool = (name: string) => ({
+      name,
+      description: name,
+      handler: async () => ({ success: true, data: {} }),
+    });
+    return {
+      getAnalyticsTools: () => [
+        makeTool("analytics__overview.summary"),
+        makeTool("analytics__overview.trend"),
+        makeTool("analytics__overview.drilldown"),
+      ],
+    };
+  },
+);
+
 async function loadSkills() {
   return import("../../backend/services/skills/index.ts");
 }

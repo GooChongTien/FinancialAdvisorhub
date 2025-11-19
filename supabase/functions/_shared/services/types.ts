@@ -127,6 +127,30 @@ export interface MiraResponse {
   trace?: Record<string, unknown>;
 }
 
+export interface SuggestedIntent {
+  intent: string;
+  title: string;
+  description: string;
+  promptText: string;
+  module?: MiraModule | string;
+  confidence?: number;
+}
+
+export type InsightPriority = "critical" | "important" | "info";
+
+export interface ProactiveInsight {
+  id: string;
+  title: string;
+  summary: string;
+  priority: InsightPriority;
+  module: MiraModule | string;
+  tag?: string;
+  updated_at?: string;
+  ctaLabel?: string;
+  dismissible?: boolean;
+  ui_actions?: UIAction[];
+}
+
 export interface IntentClassification {
   topic: MiraModule | string;
   subtopic: string;
@@ -173,4 +197,5 @@ export interface SkillAgent {
   systemPrompt: string;
   tools: AgentTool[];
   execute(intent: string, context: MiraContext, userMessage: string): Promise<MiraResponse>;
+  generateSuggestions?(context: MiraContext): Promise<SuggestedIntent[]>;
 }

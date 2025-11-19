@@ -64,22 +64,22 @@ async function getStats(id: string): Promise<CampaignStats> {
 export function getBroadcastTools(): AgentTool[] {
   return [
     {
-      name: "broadcasts.list",
+      name: "broadcast__broadcasts.list",
       description: "List broadcast campaigns",
       handler: async (input: BroadcastFilters) => listBroadcasts(input),
     },
     {
-      name: "broadcasts.create",
+      name: "broadcast__broadcasts.create",
       description: "Create a new broadcast campaign",
       handler: async (input: CreateBroadcastInput) => createBroadcast(input),
     },
     {
-      name: "broadcasts.get",
+      name: "broadcast__broadcasts.get",
       description: "Fetch broadcast by id",
       handler: async (input: { id: string }) => getBroadcast(input.id),
     },
     {
-      name: "broadcasts.getStats",
+      name: "broadcast__broadcasts.getStats",
       description: "Retrieve campaign performance stats",
       handler: async (input: { id: string }) => getStats(input.id),
     },

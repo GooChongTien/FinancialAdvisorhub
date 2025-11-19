@@ -57,17 +57,17 @@ async function compareScenarios(scenarioIds: string[]): Promise<Comparison> {
 export function getVisualizerTools(): AgentTool[] {
   return [
     {
-      name: "visualizer.generatePlan",
+      name: "visualizer__generatePlan",
       description: "Generate financial plan summary for a customer",
       handler: async (input: { customerId: string }) => generatePlan(input.customerId),
     },
     {
-      name: "visualizer.getScenarios",
+      name: "visualizer__getScenarios",
       description: "Fetch saved scenarios for a customer",
       handler: async (input: { customerId: string }) => getScenarios(input.customerId),
     },
     {
-      name: "visualizer.compareScenarios",
+      name: "visualizer__compareScenarios",
       description: "Compare multiple scenarios",
       handler: async (input: { scenarioIds: string[] }) => compareScenarios(input.scenarioIds),
     },

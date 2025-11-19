@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { act } from "react-dom/test-utils";
 import { ChatMessage } from "@/admin/components/ui/chat-message.jsx";
 
 describe("ChatMessage component", () => {
@@ -25,7 +26,9 @@ describe("ChatMessage component", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    root.render(<ChatMessage message={message} {...props} />);
+    act(() => {
+      root.render(<ChatMessage message={message} {...props} />);
+    });
     return container;
   }
 
@@ -39,6 +42,8 @@ describe("ChatMessage component", () => {
         agent: "customer_agent",
         intent: "create_lead",
         topic: "customer",
+        confidence: 0.82,
+        confidenceTier: "high",
       },
       plannedActions: [
         { id: "a1", action: "navigate", page: "/customer" },
@@ -53,7 +58,7 @@ describe("ChatMessage component", () => {
     const node = renderMessage(message);
     const html = node.innerHTML;
     expect(html).toContain("Planned actions");
-    expect(html).toContain("customer_agent · create_lead");
+    expect(html).toContain("82% confident");
     expect(html).toContain("Navigate");
     expect(html).toContain("/customer");
     expect(html).toContain("Prefill");

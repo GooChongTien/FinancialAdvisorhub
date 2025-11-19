@@ -1,6 +1,6 @@
 import type { MiraContext, MiraResponse } from "../types.ts";
 import { buildAgentResponse } from "./response-builder.ts";
-import { SkillAgent, type SuggestedIntent, type ProactiveInsight } from "./base-agent.ts";
+import { SkillAgent } from "./base-agent.ts";
 import {
   createCRUDFlow,
   createNavigateAction,
@@ -47,7 +47,7 @@ export class CustomerAgent extends SkillAgent {
       lead_source: (context.pageData?.leadSource as string) ?? "Manual Entry",
     };
 
-    await this.invokeTool("leads.create", payload, { context });
+    await this.invokeTool("customer__leads.create", payload, { context });
 
     const actions = createCRUDFlow("create", context.module, {
       page: "/customer",
@@ -70,7 +70,7 @@ export class CustomerAgent extends SkillAgent {
       lead_source: (context.pageData?.lead_source as string) ?? undefined,
     };
 
-    await this.invokeTool("leads.list", filters, { context });
+    await this.invokeTool("customer__leads.list", filters, { context });
 
     const actions = createCRUDFlow("read", context.module, {
       page: "/customer",
@@ -89,7 +89,7 @@ export class CustomerAgent extends SkillAgent {
     const query =
       (context.pageData?.searchTerm as string) ?? userMessage.match(/(?:find|search)\s+(?<value>.+)$/i)?.groups?.value ?? "";
 
-    await this.invokeTool("leads.search", { query }, { context });
+    await this.invokeTool("customer__leads.search", { query }, { context });
 
     const actions = [
       createNavigateAction(context.module, "/customer", { search: query }),
@@ -103,7 +103,7 @@ export class CustomerAgent extends SkillAgent {
 
   private async handleViewLeadDetail(context: MiraContext): Promise<MiraResponse> {
     const leadId = (context.pageData?.leadId as string) ?? "L-1001";
-    await this.invokeTool("customers.get", { id: leadId }, { context });
+    await this.invokeTool("customer__customers.get", { id: leadId }, { context });
 
     const actions = [createNavigateAction(context.module, `/customer/detail/${leadId}`)];
     const reply = `Opening the lead record ${leadId} so you can review notes, tasks, and history.`;
@@ -115,7 +115,7 @@ export class CustomerAgent extends SkillAgent {
   private async handleUpdateLeadStatus(context: MiraContext): Promise<MiraResponse> {
     const leadId = (context.pageData?.leadId as string) ?? "L-1001";
     const status = (context.pageData?.status as string) ?? "qualified";
-    await this.invokeTool("leads.update", { id: leadId, status }, { context });
+    await this.invokeTool("customer__leads.update", { id: leadId, status }, { context });
 
     const actions = createCRUDFlow("update", context.module, {
       page: `/customer/detail/${leadId}`,
@@ -130,95 +130,42 @@ export class CustomerAgent extends SkillAgent {
     });
   }
 
-  async generateSuggestions(context: MiraContext): Promise<SuggestedIntent[]> {
-    const suggestions: SuggestedIntent[] = [];
+  async generateSuggestions(context: MiraContext) {
+    const leadName =
+      typeof context.pageData?.leadName === "string" && context.pageData.leadName.trim()
+        ? context.pageData.leadName.trim()
+        : "a new prospect";
+    const warmFilter =
+      typeof context.pageData?.status === "string" && context.pageData.status.trim()
+        ? context.pageData.status.trim()
+        : "warm";
+    const overdueStatus =
+      typeof context.pageData?.followUpStatus === "string" && context.pageData.followUpStatus.trim()
+        ? context.pageData.followUpStatus.trim()
+        : "overdue";
 
-    // If on customer detail page, suggest next steps
-    if (context.page.includes("/customer/detail")) {
-      suggestions.push({
-        id: "schedule_followup",
-        title: "Schedule Follow-up",
-        subtitle: "Book next appointment with this lead",
-        promptText: "Schedule a follow-up appointment with this customer",
-        icon: "calendar",
-        module: "customer",
-        priority: "high",
-      });
-
-      suggestions.push({
-        id: "start_proposal",
-        title: "Start New Proposal",
-        subtitle: "Begin the sales process",
-        promptText: "Create a new proposal for this customer",
-        icon: "file-text",
-        module: "customer",
-        priority: "medium",
-      });
-    }
-
-    // If on customer list page, suggest common actions
-    if (context.page === "/customer" || context.page.includes("/customers")) {
-      suggestions.push({
-        id: "create_new_lead",
-        title: "Add New Lead",
-        subtitle: "Capture a new prospect",
-        promptText: "Create a new lead",
-        icon: "user-plus",
-        module: "customer",
-        priority: "high",
-      });
-
-      suggestions.push({
-        id: "view_hot_leads",
-        title: "View Hot Leads",
-        subtitle: "See recently active prospects",
-        promptText: "Show me hot leads from the last 7 days",
-        icon: "flame",
-        module: "customer",
-        priority: "medium",
-      });
-
-      suggestions.push({
-        id: "filter_qualified_leads",
-        title: "Filter Qualified Leads",
-        subtitle: "Focus on ready prospects",
-        promptText: "Show me qualified leads",
-        icon: "filter",
-        module: "customer",
-        priority: "medium",
-      });
-    }
-
-    return suggestions;
-  }
-
-  async generateInsights(advisorId: string, context?: MiraContext): Promise<ProactiveInsight[]> {
-    const insights: ProactiveInsight[] = [];
-
-    // Example: Overdue follow-ups (in real implementation, would query database)
-    insights.push({
-      id: "overdue_followups",
-      type: "alert",
-      priority: "important",
-      title: "3 overdue follow-ups",
-      summary: "You have 3 leads that haven't been contacted in over 7 days",
-      ui_actions: [createNavigateAction("customer", "/customer", { status: "contacted", overdue: "true" })],
-      tag: "CUSTOMER",
-      dismissible: true,
-    });
-
-    // Example: Hot leads metric
-    insights.push({
-      id: "hot_leads_count",
-      type: "metric",
-      priority: "info",
-      title: "5 hot leads this week",
-      summary: "New prospects with high engagement scores",
-      ui_actions: [createNavigateAction("customer", "/customer", { status: "hot" })],
-      tag: "CUSTOMER",
-      dismissible: true,
-    });
-
-    return insights;
+    return [
+      this.buildSuggestion({
+        intent: "create_lead",
+        title: "Capture a new lead",
+        description: `Prefill Customer 360 with ${leadName}.`,
+        promptText: `Create a new lead for ${leadName} and fill any missing phone or source details you can infer.`,
+        confidence: 0.86,
+      }),
+      this.buildSuggestion({
+        intent: "list_leads",
+        title: `Review ${warmFilter} leads`,
+        description: "Surface the filtered list so I can triage quickly.",
+        promptText: `Show me my ${warmFilter} leads in Customer 360 and highlight ones without recent activity.`,
+        confidence: 0.74,
+      }),
+      this.buildSuggestion({
+        intent: "update_lead_status",
+        title: `Nudge ${overdueStatus} follow-ups`,
+        description: "Open the detail view so I can update statuses.",
+        promptText: `Open the lead detail for my ${overdueStatus} follow-ups and prepare the status dropdown so I can update them.`,
+        confidence: 0.71,
+      }),
+    ];
   }
 }

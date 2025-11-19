@@ -3,7 +3,7 @@ import { intentLabel } from "./intent-label.ts";
 export function needsClarification(confidenceTier?: string): boolean {
   const tier = (confidenceTier ?? "").toLowerCase();
   if (!tier) return true;
-  return tier === "medium" || tier === "low";
+  return tier === "low";
 }
 
 interface ClarificationOptions {

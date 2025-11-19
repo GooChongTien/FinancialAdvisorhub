@@ -8,6 +8,9 @@ import { streamAgentChat, createToolResultMessage } from "@/admin/api/agentClien
 import { enforceGuardrails } from "@/lib/mira/guardrails.js";
 import { trackMiraEvent } from "@/admin/lib/miraTelemetry.js";
 import useUIActionExecutor from "@/lib/mira/useUIActionExecutor.ts";
+import { sanitizeContextPayload } from "@/lib/mira/contextSerialization.ts";
+
+const payloadEncoder = typeof TextEncoder !== "undefined" ? new TextEncoder() : null;
 
 /**
  * @typedef {import("@/lib/mira/types.ts").IntentMetadata} IntentMetadata
@@ -84,6 +87,7 @@ export function useAgentChat(options = {}) {
   const currentMessageRef = useRef(null);
   const processedAutoMessagesRef = useRef(new Set());
   const actionExecutor = useUIActionExecutor();
+  const telemetryRef = useRef({ start: null, metrics: null });
 
   const updateConversationFromMetadata = useCallback((metadata) => {
     if (!metadata || typeof metadata !== "object") return;
@@ -109,6 +113,72 @@ export function useAgentChat(options = {}) {
       };
     },
     [conversationId],
+  );
+
+  const flushTelemetry = useCallback((status, extra = {}) => {
+    const snapshot = telemetryRef.current;
+    if (!snapshot?.start) return;
+    telemetryRef.current = { start: null, metrics: null };
+    const durationMs = Date.now() - snapshot.start;
+    const metrics = snapshot.metrics || {};
+    void trackMiraEvent?.("mira.chat.telemetry", {
+      status,
+      durationMs,
+      payloadBytes: metrics.payloadBytes ?? 0,
+      contextBytes: metrics.contextBytes ?? 0,
+      mode: metrics.mode ?? "stream",
+      trimmedFields: metrics.trimmedFields ?? [],
+      ...extra,
+    });
+  }, []);
+
+  const registerAutoMessage = useCallback((messageId) => {
+    if (!messageId) return false;
+    const store = processedAutoMessagesRef.current;
+    if (store.has(messageId)) return false;
+    store.add(messageId);
+    if (store.size > 40) {
+      const oldest = store.values().next().value;
+      if (oldest) store.delete(oldest);
+    }
+    return true;
+  }, []);
+
+  const queueAutoActions = useCallback(
+    (messageId, actions) => {
+      const validated = validatePlannedActions(actions);
+      if (!validated.length || !registerAutoMessage(messageId)) return;
+      const entryId = `${messageId}-${Date.now()}`;
+      setAutoActionState({
+        id: entryId,
+        actions: validated,
+        status: "running",
+      });
+      Promise.resolve(actionExecutor.executeActions(validated, { correlationId: entryId }))
+        .then(() => {
+          setAutoActionState((prev) =>
+            prev && prev.id === entryId
+              ? {
+                  ...prev,
+                  status: "executed",
+                }
+              : prev,
+          );
+        })
+        .catch((err) => {
+          const message = err instanceof Error ? err.message : String(err);
+          setAutoActionState((prev) =>
+            prev && prev.id === entryId
+              ? {
+                  ...prev,
+                  status: "error",
+                  error: message,
+                }
+              : prev,
+          );
+        });
+    },
+    [actionExecutor, registerAutoMessage],
   );
 
   /**
@@ -173,11 +243,35 @@ export function useAgentChat(options = {}) {
 
     try {
       const contextSnapshot = typeof contextProvider === "function" ? contextProvider() : undefined;
+      const { context: safeContext, metrics: contextMetrics } = sanitizeContextPayload(contextSnapshot);
       const metadataPayload = buildRequestMetadata(requestMetadata);
+      const payloadBytes =
+        payloadEncoder && apiMessages.length > 0
+          ? payloadEncoder.encode(JSON.stringify(apiMessages)).length
+          : 0;
+
+      telemetryRef.current = {
+        start: Date.now(),
+        metrics: {
+          payloadBytes,
+          contextBytes: contextMetrics.sanitizedBytes,
+          trimmedFields: contextMetrics.trimmedFields,
+          mode: "stream",
+        },
+      };
+
+      void trackMiraEvent?.("mira.context.serialized", {
+        module: safeContext?.module ?? null,
+        page: safeContext?.page ?? null,
+        originalBytes: contextMetrics.originalBytes,
+        sanitizedBytes: contextMetrics.sanitizedBytes,
+        trimmedFields: contextMetrics.trimmedFields,
+      });
+
       await streamAgentChat(apiMessages, {
         signal: abortControllerRef.current.signal,
         metadata: metadataPayload,
-        context: contextSnapshot,
+        context: safeContext,
 
         onEvent: (event) => {
           try {
@@ -217,6 +311,11 @@ export function useAgentChat(options = {}) {
               try {
                 queueAutoActions(assistantMessageId, plannedActions);
               } catch (_) {}
+              flushTelemetry("completed", {
+                intent: metadata?.intent,
+                confidence: metadata?.confidence,
+                confidenceTier: metadata?.confidence_tier,
+              });
               break;
             }
 
@@ -234,6 +333,7 @@ export function useAgentChat(options = {}) {
             case "error":
               setError(new Error(event.data.error?.message || "Agent error"));
               setIsStreaming(false);
+              flushTelemetry("error", { reason: event.data?.error?.code || "agent_error" });
 
               // Mark message as error
               setMessages((prev) =>
@@ -247,6 +347,7 @@ export function useAgentChat(options = {}) {
 
             case "done":
               setIsStreaming(false);
+              flushTelemetry("done");
               break;
 
             default:
@@ -258,6 +359,7 @@ export function useAgentChat(options = {}) {
           console.error("[useAgentChat] Stream error:", err);
           setError(err);
           setIsStreaming(false);
+          flushTelemetry("network_error", { reason: err?.message ?? "stream_error" });
 
           // Mark message as error
           setMessages((prev) =>
@@ -274,12 +376,24 @@ export function useAgentChat(options = {}) {
         console.error("[useAgentChat] Send error:", err);
         setError(err);
         setIsStreaming(false);
+        flushTelemetry("exception", { reason: err?.message ?? err });
+      } else {
+        flushTelemetry("aborted");
       }
     } finally {
       abortControllerRef.current = null;
       currentMessageRef.current = null;
     }
-  }, [messages, isStreaming, buildRequestMetadata, contextProvider, onEventExternal, updateConversationFromMetadata]);
+  }, [
+    messages,
+    isStreaming,
+    buildRequestMetadata,
+    contextProvider,
+    onEventExternal,
+    updateConversationFromMetadata,
+    flushTelemetry,
+    queueAutoActions,
+  ]);
 
   /**
    * Send tool result back to Agent
@@ -327,11 +441,35 @@ export function useAgentChat(options = {}) {
 
     try {
       const contextSnapshot = typeof contextProvider === "function" ? contextProvider() : undefined;
+      const { context: safeContext, metrics: contextMetrics } = sanitizeContextPayload(contextSnapshot);
       const metadataPayload = buildRequestMetadata({});
+      const payloadBytes =
+        payloadEncoder && apiMessages.length > 0
+          ? payloadEncoder.encode(JSON.stringify(apiMessages)).length
+          : 0;
+
+      telemetryRef.current = {
+        start: Date.now(),
+        metrics: {
+          payloadBytes,
+          contextBytes: contextMetrics.sanitizedBytes,
+          trimmedFields: contextMetrics.trimmedFields,
+          mode: "stream",
+        },
+      };
+
+      void trackMiraEvent?.("mira.context.serialized", {
+        module: safeContext?.module ?? null,
+        page: safeContext?.page ?? null,
+        originalBytes: contextMetrics.originalBytes,
+        sanitizedBytes: contextMetrics.sanitizedBytes,
+        trimmedFields: contextMetrics.trimmedFields,
+      });
+
       await streamAgentChat(apiMessages, {
         signal: abortControllerRef.current.signal,
         metadata: metadataPayload,
-        context: contextSnapshot,
+        context: safeContext,
 
         onEvent: (event) => {
           try {
@@ -370,16 +508,23 @@ export function useAgentChat(options = {}) {
               try {
                 queueAutoActions(assistantMessageId, plannedActions);
               } catch (_) {}
+              flushTelemetry("completed", {
+                intent: metadata?.intent,
+                confidence: metadata?.confidence,
+                confidenceTier: metadata?.confidence_tier,
+              });
               break;
             }
 
             case "error":
               setError(new Error(event.data.error?.message || "Agent error"));
               setIsStreaming(false);
+              flushTelemetry("error", { reason: event.data?.error?.code || "agent_error" });
               break;
 
             case "done":
               setIsStreaming(false);
+              flushTelemetry("done");
               break;
           }
         },
@@ -387,18 +532,30 @@ export function useAgentChat(options = {}) {
         onError: (err) => {
           setError(err);
           setIsStreaming(false);
+          flushTelemetry("network_error", { reason: err?.message ?? "stream_error" });
         },
       });
     } catch (err) {
       if (err.name !== "AbortError") {
         setError(err);
         setIsStreaming(false);
+        flushTelemetry("exception", { reason: err?.message ?? err });
+      } else {
+        flushTelemetry("aborted");
       }
     } finally {
       abortControllerRef.current = null;
       currentMessageRef.current = null;
     }
-  }, [messages, buildRequestMetadata, contextProvider, onEventExternal, updateConversationFromMetadata]);
+  }, [
+    messages,
+    buildRequestMetadata,
+    contextProvider,
+    onEventExternal,
+    updateConversationFromMetadata,
+    queueAutoActions,
+    flushTelemetry,
+  ]);
 
   /**
    * Abort current streaming request
@@ -407,8 +564,9 @@ export function useAgentChat(options = {}) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       setIsStreaming(false);
+      flushTelemetry("aborted");
     }
-  }, []);
+  }, [flushTelemetry]);
 
   /**
    * Clear all messages
@@ -418,55 +576,6 @@ export function useAgentChat(options = {}) {
     setError(null);
     setIsStreaming(false);
   }, []);
-
-  const registerAutoMessage = useCallback((messageId) => {
-    if (!messageId) return false;
-    const store = processedAutoMessagesRef.current;
-    if (store.has(messageId)) return false;
-    store.add(messageId);
-    if (store.size > 40) {
-      const oldest = store.values().next().value;
-      if (oldest) store.delete(oldest);
-    }
-    return true;
-  }, []);
-
-  const queueAutoActions = useCallback(
-    (messageId, actions) => {
-      const validated = validatePlannedActions(actions);
-      if (!validated.length || !registerAutoMessage(messageId)) return;
-      const entryId = `${messageId}-${Date.now()}`;
-      setAutoActionState({
-        id: entryId,
-        actions: validated,
-        status: "running",
-      });
-      Promise.resolve(actionExecutor.executeActions(validated, { correlationId: entryId }))
-        .then(() => {
-          setAutoActionState((prev) =>
-            prev && prev.id === entryId
-              ? {
-                  ...prev,
-                  status: "executed",
-                }
-              : prev,
-          );
-        })
-        .catch((err) => {
-          const message = err instanceof Error ? err.message : String(err);
-          setAutoActionState((prev) =>
-            prev && prev.id === entryId
-              ? {
-                  ...prev,
-                  status: "error",
-                  error: message,
-                }
-              : prev,
-          );
-        });
-    },
-    [actionExecutor, registerAutoMessage],
-  );
 
   const undoAutoActions = useCallback(() => {
     if (!autoActionState) return;

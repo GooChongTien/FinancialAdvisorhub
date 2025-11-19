@@ -103,6 +103,12 @@ const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
   customer_profile_id: stringField(),
   time_window: stringField(),
   customer_segment: stringField(),
+  initial_stage: stringField(),
+  last_contacted: dateField(),
+  occupation: stringField(),
+  premium_term: numberLikeField(),
+  report_type: stringField(),
+  source: stringField(),
 };
 
 const FALLBACK_SCHEMA = z.unknown();
@@ -219,9 +225,3 @@ export function buildMetadataFromIntent(entry: IntentCatalogEntry): IntentMetada
     agent: "",
   };
 }
-  initial_stage: stringField(),
-  last_contacted: dateField(),
-  occupation: stringField(),
-  premium_term: numberLikeField(),
-  report_type: stringField(),
-  source: stringField(),

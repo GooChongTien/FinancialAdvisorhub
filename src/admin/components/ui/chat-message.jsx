@@ -4,7 +4,7 @@
  */
 
 import { clsx } from "clsx";
-import { Bot, User, Wrench, AlertCircle } from "lucide-react";
+import { Bot, User, Wrench, AlertCircle, Target } from "lucide-react";
 
 const ACTION_LABELS = {
   navigate: "Navigate",
@@ -54,7 +54,7 @@ function describePrefillAction(action) {
   const keys = Object.keys(action.payload);
   if (!keys.length) return "";
   const preview = keys.slice(0, 2).join(", ");
-  return keys.length > 2 ? `${preview}…` : preview;
+  return keys.length > 2 ? `${preview}...` : preview;
 }
 
 function describeExecuteAction(action) {
@@ -97,6 +97,37 @@ function formatTime(timestamp) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function getConfidenceVariant(confidence) {
+  if (typeof confidence !== "number" || Number.isNaN(confidence)) return null;
+  if (confidence >= 0.8) {
+    return {
+      border: "border-emerald-200",
+      bg: "bg-emerald-50",
+      text: "text-emerald-800",
+      label: "High confidence",
+    };
+  }
+  if (confidence >= 0.5) {
+    return {
+      border: "border-amber-200",
+      bg: "bg-amber-50",
+      text: "text-amber-800",
+      label: "Medium confidence",
+    };
+  }
+  return {
+    border: "border-rose-200",
+    bg: "bg-rose-50",
+    text: "text-rose-800",
+    label: "Low confidence",
+  };
+}
+
+function normalizeTopicLabel(topic) {
+  if (!topic) return "";
+  return toTitle(String(topic).replace(/[_-]+/g, " "));
+}
+
 /**
  * Chat message component
  * @param {Object} props
@@ -110,117 +141,191 @@ export function ChatMessage({ message, streaming = false }) {
   const isError = message.error || message.content?.includes("[Error");
   const plannedActions = Array.isArray(message?.plannedActions) ? message.plannedActions : [];
   const showPlanned = isAssistant && plannedActions.length > 0;
-  const showDebugPill = isAssistant && (message?.metadata?.agent || message?.metadata?.intent);
-  const debugAgent = message?.metadata?.agent || "module_agent";
-  const debugIntent = message?.metadata?.intent || message?.metadata?.topic || "intent";
+  const metadataBadge = isAssistant ? <IntentMetadataBadge metadata={message?.metadata} /> : null;
 
-  return (
-    <div
-      className={clsx(
-        "flex gap-3 p-4 rounded-lg transition-colors",
-        isUser && "bg-blue-50 ml-8",
-        isAssistant && "bg-gray-50 mr-8",
-        isTool && "bg-amber-50 mx-8 border border-amber-200"
-      )}
-    >
-      {/* Avatar */}
-      <div
-        className={clsx(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isUser && "bg-blue-500 text-white",
-          isAssistant && "bg-gray-700 text-white",
-          isTool && "bg-amber-500 text-white"
-        )}
-      >
-        {isUser && <User className="w-4 h-4" />}
-        {isAssistant && <Bot className="w-4 h-4" />}
-        {isTool && <Wrench className="w-4 h-4" />}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-gray-900">
-            {isUser && "You"}
-            {isAssistant && "Mira"}
-            {isTool && "Tool Result"}
-          </span>
+  // User messages: right-aligned, compact style
+  if (isUser) {
+    return (
+      <div className="flex justify-end mb-4 px-4 animate-fade-in">
+        <div className="max-w-[85%] md:max-w-[70%]">
+          <div className="flex items-end gap-2 justify-end">
+            <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
+              <div className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                {message.content || <span className="italic opacity-70">No content</span>}
+              </div>
+            </div>
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-md">
+              <User className="w-4 h-4 text-white" />
+            </div>
+          </div>
           {message.timestamp && (
-            <span className="text-xs text-gray-500">
+            <div className="text-[11px] text-neutral-500 mt-1 text-right px-1">
               {formatTime(message.timestamp)}
-            </span>
-          )}
-          {streaming && (
-            <span className="text-xs text-blue-600 flex items-center gap-1">
-              <span className="inline-block w-1 h-1 bg-blue-600 rounded-full animate-pulse" />
-              Typing...
-            </span>
-          )}
-          {showDebugPill && (
-            <span className="text-xs font-medium text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">
-              {debugAgent} <span className="text-slate-400">·</span> {debugIntent}
-            </span>
+            </div>
           )}
         </div>
-
-        {/* Message content */}
-        <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-          {message.content || <span className="text-gray-400 italic">No content</span>}
-          {streaming && (
-            <span className="inline-block w-2 h-4 ml-1 bg-gray-400 animate-pulse" />
-          )}
-        </div>
-
-        {/* Tool call info */}
-        {message.toolCall && (
-          <div className="mt-2 p-2 bg-amber-100 rounded border border-amber-300 text-xs">
-            <div className="font-medium text-amber-900 mb-1 flex items-center gap-1">
-              <Wrench className="w-3 h-3" />
-              Tool Call: {message.toolCall.function?.name || "Unknown"}
-            </div>
-            {message.toolCall.function?.arguments && (
-              <pre className="text-amber-800 whitespace-pre-wrap overflow-x-auto">
-                {message.toolCall.function.arguments}
-              </pre>
-            )}
-          </div>
-        )}
-
-        {showPlanned && (
-          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 text-xs text-slate-700">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Planned actions
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {plannedActions.map((action, index) => {
-                const key = action?.id || `${message.id}-planned-${index}`;
-                const label = formatActionLabel(action);
-                const detail = describeAction(action);
-                return (
-                  <div
-                    key={key}
-                    className="rounded-full border border-slate-300 bg-white px-3 py-1 text-[11px] font-medium text-slate-800 shadow-sm"
-                  >
-                    {label}
-                    {detail && <span className="text-slate-500"> · {detail}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Error indicator */}
-        {isError && (
-          <div className="mt-2 p-2 bg-red-100 rounded border border-red-300 text-xs flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 text-red-600" />
-            <span className="text-red-800">An error occurred</span>
-          </div>
-        )}
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Assistant messages: left-aligned, spacious style like ChatGPT/Claude
+  if (isAssistant) {
+    return (
+      <div className="flex justify-start mb-6 px-4 animate-fade-in">
+        <div className="max-w-[85%] md:max-w-[70%]">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 flex items-center justify-center shadow-md ring-2 ring-neutral-200">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-semibold text-neutral-900">Mira</span>
+                {metadataBadge}
+                {streaming && (
+                  <span className="text-[11px] text-primary-600 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse" />
+                    Typing...
+                  </span>
+                )}
+              </div>
+              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                <div className="text-[15px] leading-relaxed text-neutral-900 whitespace-pre-wrap break-words">
+                  {message.content || <span className="text-neutral-400 italic">No content</span>}
+                  {streaming && (
+                    <span className="inline-block w-0.5 h-5 ml-1 bg-neutral-400 animate-pulse" />
+                  )}
+                </div>
+
+                {/* Tool call info */}
+                {message.toolCall && (
+                  <div className="mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                    <div className="font-semibold text-amber-900 mb-1.5 flex items-center gap-1.5">
+                      <Wrench className="w-3.5 h-3.5" />
+                      Tool Call: {message.toolCall.function?.name || "Unknown"}
+                    </div>
+                    {message.toolCall.function?.arguments && (
+                      <pre className="text-amber-800 text-[11px] whitespace-pre-wrap overflow-x-auto font-mono bg-amber-100/50 p-2 rounded">
+                        {message.toolCall.function.arguments}
+                      </pre>
+                    )}
+                  </div>
+                )}
+
+                {showPlanned && (
+                  <div className="mt-3 rounded-xl border border-neutral-200 bg-white p-3 text-xs text-neutral-700">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-500 mb-2">
+                      Planned actions
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {plannedActions.map((action, index) => {
+                        const key = action?.id || `${message.id}-planned-${index}`;
+                        const label = formatActionLabel(action);
+                        const detail = describeAction(action);
+                        return (
+                          <div
+                            key={key}
+                            className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-[11px] font-medium text-neutral-800 shadow-sm hover:bg-neutral-100 transition-colors"
+                          >
+                            {label}
+                            {detail && <span className="text-neutral-500">{` · ${detail}`}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Error indicator */}
+                {isError && (
+                  <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <span className="text-red-800 font-medium">An error occurred</span>
+                  </div>
+                )}
+              </div>
+              {message.timestamp && (
+                <div className="text-[11px] text-neutral-500 mt-1.5 px-1">
+                  {formatTime(message.timestamp)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tool messages: centered, distinct style
+  if (isTool) {
+    return (
+      <div className="flex justify-center mb-4 px-4 animate-fade-in">
+        <div className="max-w-[90%] md:max-w-[75%]">
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-3 shadow-sm">
+            <div className="flex items-start gap-2">
+              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center shadow-sm">
+                <Wrench className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-semibold text-amber-900 mb-1">Tool Result</div>
+                <div className="text-sm text-amber-800 whitespace-pre-wrap break-words">
+                  {message.content || <span className="text-amber-600 italic">No content</span>}
+                </div>
+                {message.timestamp && (
+                  <div className="text-[11px] text-amber-600 mt-1">
+                    {formatTime(message.timestamp)}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default ChatMessage;
+
+function IntentMetadataBadge({ metadata }) {
+  if (!metadata) return null;
+  const confidence = typeof metadata?.confidence === "number" ? metadata.confidence : null;
+  if (confidence === null) return null;
+
+  const variant = getConfidenceVariant(confidence);
+  if (!variant) return null;
+
+  const agent = metadata?.agent || metadata?.handler || "";
+  const intent = metadata?.intent || "";
+  const topic = normalizeTopicLabel(metadata?.topic || metadata?.module);
+  const percent = Math.round(confidence * 100);
+  const label = topic ? `${topic} · ${percent}% confident` : `${percent}% confident`;
+
+  const tooltipLines = [
+    topic ? `Topic: ${topic}` : null,
+    agent ? `Agent: ${agent}` : null,
+    intent ? `Intent: ${intent}` : null,
+    typeof metadata?.confidenceTier === "string"
+      ? `Confidence tier: ${metadata.confidenceTier}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return (
+    <span
+      className={clsx(
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide",
+        variant.border,
+        variant.bg,
+        variant.text,
+      )}
+      title={tooltipLines || "Intent metadata"}
+      aria-label={tooltipLines || "Intent metadata"}
+    >
+      <Target className="h-3 w-3 opacity-75" />
+      <span>{label}</span>
+    </span>
+  );
+}

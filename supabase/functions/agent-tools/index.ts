@@ -1,8 +1,31 @@
 import { handleCors, jsonResponse, errorResponse } from "../_shared/utils/cors.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://esm.sh/zod@3.25.76";
+import { toolRegistry } from "../_shared/services/tools/registry.ts";
+import type { ToolContext } from "../_shared/services/tools/types.ts";
+import "../_shared/services/tools/customer-tools.ts";
+import "../_shared/services/tools/new-business-tools.ts";
+import "../_shared/services/tools/product-tools.ts";
+import "../_shared/services/tools/analytics-tools.ts";
+import "../_shared/services/tools/todo-tools.ts";
+import "../_shared/services/tools/broadcast-tools.ts";
+import "../_shared/services/tools/visualizer-tools.ts";
 
-// Minimal local knowledge lookup using service key
-async function knowledgeLookup(args: Record<string, unknown>) {
+type KnowledgeLookupArgs = {
+  atom_id?: string;
+  topic?: string;
+  scenario?: string;
+  limit?: number;
+};
+
+const knowledgeLookupSchema = z.object({
+  atom_id: z.string().optional(),
+  topic: z.string().optional(),
+  scenario: z.string().optional(),
+  limit: z.number().int().min(1).max(10).optional(),
+});
+
+async function knowledgeLookup(_ctx: ToolContext, args: KnowledgeLookupArgs) {
   const url = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !serviceKey) throw new Error("Missing Supabase service env");
@@ -10,31 +33,70 @@ async function knowledgeLookup(args: Record<string, unknown>) {
 
   const limit = Math.min(Math.max(Number(args.limit ?? 3), 1), 10);
   if (typeof args.atom_id === "string") {
-    const { data, error } = await supabase.from("knowledge_atoms").select("id,title,content,topic").eq("id", args.atom_id).limit(1).maybeSingle();
+    const { data, error } = await supabase
+      .from("knowledge_atoms")
+      .select("id,title,content,topic")
+      .eq("id", args.atom_id)
+      .limit(1)
+      .maybeSingle();
     if (error) throw error;
-    if (!data) return { items: [] };
-    return { items: [{ atom_id: data.id, title: data.title, topic: data.topic, summary: (data.content ?? "").slice(0, 280) }] };
+    if (!data) return { success: true, data: { items: [] } };
+    return {
+      success: true,
+      data: {
+        items: [
+          {
+            atom_id: data.id,
+            title: data.title,
+            topic: data.topic,
+            summary: (data.content ?? "").slice(0, 280),
+          },
+        ],
+      },
+    };
   }
 
   if (typeof args.topic === "string") {
-    const { data, error } = await supabase.from("knowledge_atoms").select("id,title,content,topic").eq("topic", args.topic).limit(limit);
+    const { data, error } = await supabase
+      .from("knowledge_atoms")
+      .select("id,title,content,topic")
+      .eq("topic", args.topic)
+      .limit(limit);
     if (error) throw error;
-    const items = (data ?? []).map((r: any) => ({ atom_id: r.id, title: r.title, topic: r.topic, summary: (r.content ?? "").slice(0, 280) }));
-    return { items };
+    const items = (data ?? []).map((r: any) => ({
+      atom_id: r.id,
+      title: r.title,
+      topic: r.topic,
+      summary: (r.content ?? "").slice(0, 280),
+    }));
+    return { success: true, data: { items } };
   }
 
   if (typeof args.scenario === "string") {
     const phrase = args.scenario.toLowerCase();
-    const { data: trig, error: tErr } = await supabase.from("scenario_triggers").select("atom_id, trigger_phrase").ilike("trigger_phrase", `%${phrase}%`).limit(10);
+    const { data: trig, error: tErr } = await supabase
+      .from("scenario_triggers")
+      .select("atom_id, trigger_phrase")
+      .ilike("trigger_phrase", `%${phrase}%`)
+      .limit(10);
     if (tErr) throw tErr;
     const atomIds = Array.from(new Set((trig ?? []).map((t: any) => t.atom_id))).slice(0, limit);
-    if (atomIds.length === 0) return { items: [] };
-    const { data: atoms, error: aErr } = await supabase.from("knowledge_atoms").select("id,title,content,topic").in("id", atomIds);
+    if (atomIds.length === 0) return { success: true, data: { items: [] } };
+    const { data: atoms, error: aErr } = await supabase
+      .from("knowledge_atoms")
+      .select("id,title,content,topic")
+      .in("id", atomIds);
     if (aErr) throw aErr;
-    const items = (atoms ?? []).map((r: any) => ({ atom_id: r.id, title: r.title, topic: r.topic, summary: (r.content ?? "").slice(0, 280) }));
-    return { items };
+    const items = (atoms ?? []).map((r: any) => ({
+      atom_id: r.id,
+      title: r.title,
+      topic: r.topic,
+      summary: (r.content ?? "").slice(0, 280),
+    }));
+    return { success: true, data: { items } };
   }
-  return { items: [] };
+
+  return { success: true, data: { items: [] } };
 }
 
 function createUserClientFromRequest(req: Request): SupabaseClient {
@@ -75,7 +137,6 @@ function toDateParts(input?: string | null): { date: string; time?: string } {
 }
 
 async function insertTaskWithCompatibility(supabase: SupabaseClient, payload: Record<string, unknown>) {
-  // First attempt: include advisor_id when available
   try {
     const { data, error } = await supabase.from("tasks").insert([payload]).select().maybeSingle();
     if (error) throw error;
@@ -83,7 +144,6 @@ async function insertTaskWithCompatibility(supabase: SupabaseClient, payload: Re
   } catch (err) {
     const msg = (err as { message?: string })?.message || "";
     if (/(advisor_id)/i.test(msg)) {
-      // Retry without advisor_id if schema doesn't have it
       const clone = { ...payload } as Record<string, unknown>;
       delete clone["advisor_id"];
       const { data, error } = await supabase.from("tasks").insert([clone]).select().maybeSingle();
@@ -94,8 +154,22 @@ async function insertTaskWithCompatibility(supabase: SupabaseClient, payload: Re
   }
 }
 
-async function createTask(req: Request, args: any) {
-  const client = createUserClientFromRequest(req);
+type CreateTaskArgs = {
+  customerId?: string | null;
+  title?: string;
+  due?: string;
+  notes?: string;
+};
+
+const createTaskSchema = z.object({
+  customerId: z.string().nullable().optional(),
+  title: z.string().optional(),
+  due: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+async function createTask(ctx: ToolContext, args: CreateTaskArgs) {
+  const client = createUserClientFromRequest(ctx.req);
   const { data: userData } = await client.auth.getUser();
   const uid = userData.user?.id ?? null;
   const { customerId, title, due, notes } = args ?? {};
@@ -110,11 +184,21 @@ async function createTask(req: Request, args: any) {
   };
   if (uid) row["advisor_id"] = uid;
   const created = await insertTaskWithCompatibility(client, row);
-  return { ok: true, result: { action: "create_task", task: created } };
+  return { success: true, data: { action: "create_task", task: created } };
 }
 
-async function logNote(req: Request, args: any) {
-  const client = createUserClientFromRequest(req);
+type LogNoteArgs = {
+  customerId?: string | null;
+  text?: string;
+};
+
+const logNoteSchema = z.object({
+  customerId: z.string().nullable().optional(),
+  text: z.string().optional(),
+});
+
+async function logNote(ctx: ToolContext, args: LogNoteArgs) {
+  const client = createUserClientFromRequest(ctx.req);
   const { data: userData } = await client.auth.getUser();
   const uid = userData.user?.id ?? null;
   const { customerId, text } = args ?? {};
@@ -125,13 +209,11 @@ async function logNote(req: Request, args: any) {
     new_value: String(text || ""),
     changed_by: uid,
   } as Record<string, unknown>;
-  // Try lead_edit_history; fallback to a task if the table is absent
   try {
     const { data, error } = await client.from("lead_edit_history").insert([payload]).select().maybeSingle();
     if (error) throw error;
-    return { ok: true, result: { action: "log_note", note: data } };
+    return { success: true, data: { action: "log_note", note: data } };
   } catch (_e) {
-    // Fallback: create a Task with notes
     const dt = toDateParts(null);
     const row: Record<string, unknown> = {
       title: "Note",
@@ -142,16 +224,27 @@ async function logNote(req: Request, args: any) {
     };
     if (uid) row["advisor_id"] = uid;
     const created = await insertTaskWithCompatibility(client, row);
-    return { ok: true, result: { action: "log_note", task: created } };
+    return { success: true, data: { action: "log_note", task: created } };
   }
 }
 
-async function updateField(req: Request, args: any) {
-  const client = createUserClientFromRequest(req);
+type UpdateFieldArgs = {
+  customerId?: string | null;
+  path?: string;
+  value?: unknown;
+};
+
+const updateFieldSchema = z.object({
+  customerId: z.string().nullable().optional(),
+  path: z.string().optional(),
+  value: z.unknown().optional(),
+});
+
+async function updateField(ctx: ToolContext, args: UpdateFieldArgs) {
+  const client = createUserClientFromRequest(ctx.req);
   const { data: userData } = await client.auth.getUser();
   const uid = userData.user?.id ?? null;
   const { path, value, customerId } = args ?? {};
-  // Audit trail only for now; business-specific mapping can be added later
   const payload = {
     lead_id: customerId ?? null,
     field: String(path || "unknown"),
@@ -162,14 +255,26 @@ async function updateField(req: Request, args: any) {
   try {
     const { data, error } = await client.from("lead_edit_history").insert([payload]).select().maybeSingle();
     if (error) throw error;
-    return { ok: true, result: { action: "update_field", edit: data } };
+    return { success: true, data: { action: "update_field", edit: data } };
   } catch (_e) {
-    return { ok: true, result: { action: "update_field", acknowledged: true } };
+    return { success: true, data: { action: "update_field", acknowledged: true } };
   }
 }
 
-async function prefillForm(req: Request, args: any) {
-  const client = createUserClientFromRequest(req);
+type PrefillArgs = {
+  customerId?: string | null;
+  form?: string;
+  fields?: Record<string, unknown>;
+};
+
+const prefillSchema = z.object({
+  customerId: z.string().nullable().optional(),
+  form: z.string().optional(),
+  fields: z.record(z.unknown()).optional(),
+});
+
+async function prefillForm(ctx: ToolContext, args: PrefillArgs) {
+  const client = createUserClientFromRequest(ctx.req);
   const { data: userData } = await client.auth.getUser();
   const uid = userData.user?.id ?? null;
   const { form, fields, customerId } = args ?? {};
@@ -183,11 +288,37 @@ async function prefillForm(req: Request, args: any) {
   try {
     const { data, error } = await client.from("lead_edit_history").insert([payload]).select().maybeSingle();
     if (error) throw error;
-    return { ok: true, result: { action: "prefill_form", edit: data } };
+    return { success: true, data: { action: "prefill_form", edit: data } };
   } catch (_e) {
-    return { ok: true, result: { action: "prefill_form", acknowledged: true } };
+    return { success: true, data: { action: "prefill_form", acknowledged: true } };
   }
 }
+
+type NavigateArgs = {
+  route?: string;
+  section?: string;
+  anchor?: string;
+};
+
+const navigateSchema = z.object({
+  route: z.string().optional(),
+  section: z.string().optional(),
+  anchor: z.string().optional(),
+});
+
+async function navigate(_ctx: ToolContext, args: NavigateArgs) {
+  return {
+    success: true,
+    data: { action: "navigate", route: args.route, section: args.section, anchor: args.anchor },
+  };
+}
+
+toolRegistry.registerTool("kb__knowledge_lookup", knowledgeLookup, knowledgeLookupSchema);
+toolRegistry.registerTool("ops__navigate", navigate, navigateSchema);
+toolRegistry.registerTool("ops__create_task", createTask, createTaskSchema);
+toolRegistry.registerTool("ops__log_note", logNote, logNoteSchema);
+toolRegistry.registerTool("fna__update_field", updateField, updateFieldSchema);
+toolRegistry.registerTool("fna__prefill_form", prefillForm, prefillSchema);
 
 Deno.serve(async (req) => {
   const pre = handleCors(req);
@@ -196,31 +327,14 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const tool = String(body?.tool || "");
-    const args = (body?.args && typeof body.args === "object") ? body.args : {};
-    switch (tool) {
-      case "kb__knowledge_lookup": {
-        const result = await knowledgeLookup(args);
-        return jsonResponse({ ok: true, result });
-      }
-      case "ops__navigate": {
-        const { route, section, anchor } = args as any;
-        return jsonResponse({ ok: true, result: { action: "navigate", route, section, anchor } });
-      }
-      case "ops__create_task": {
-        return jsonResponse(await createTask(req, args));
-      }
-      case "ops__log_note": {
-        return jsonResponse(await logNote(req, args));
-      }
-      case "fna__update_field": {
-        return jsonResponse(await updateField(req, args));
-      }
-      case "fna__prefill_form": {
-        return jsonResponse(await prefillForm(req, args));
-      }
-      default:
-        return errorResponse("Unknown tool", 400);
+    const args = body?.args ?? {};
+    const toolResult = await toolRegistry.executeTool(tool, { req, args });
+    if (!toolResult.success) {
+      const code = toolResult.error?.code ?? "tool_error";
+      const status = code === "tool_not_found" ? 404 : code === "validation_error" ? 400 : 500;
+      return errorResponse(toolResult.error?.message ?? "Tool execution failed", status);
     }
+    return jsonResponse({ ok: true, result: toolResult.data });
   } catch (err) {
     return errorResponse(err instanceof Error ? err.message : "Unknown error", 500);
   }

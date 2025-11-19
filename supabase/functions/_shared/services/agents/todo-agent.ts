@@ -38,7 +38,7 @@ export class ToDoAgent extends SkillAgent {
       status: (context.pageData?.status as string) ?? "pending",
       overdue: Boolean(context.pageData?.overdue ?? false),
     };
-    await this.invokeTool("tasks.list", filters, { context });
+    await this.invokeTool("todo__tasks.list", filters, { context });
     const actions = [createNavigateAction(context.module, "/todo", filters)];
     const reply = "Listing your pending items with overdue filter applied so you can triage quickly.";
     return buildAgentResponse(this.id, "list_tasks", context, reply, actions, {
@@ -52,7 +52,7 @@ export class ToDoAgent extends SkillAgent {
       dueDate: (context.pageData?.dueDate as string) ?? new Date().toISOString(),
       customerId: (context.pageData?.customerId as string) ?? undefined,
     };
-    await this.invokeTool("tasks.create", payload, { context });
+    await this.invokeTool("todo__tasks.create", payload, { context });
     const actions = createCRUDFlow("create", context.module, {
       page: "/todo",
       payload,
@@ -66,7 +66,7 @@ export class ToDoAgent extends SkillAgent {
 
   private async handleMarkComplete(context: MiraContext): Promise<MiraResponse> {
     const taskId = (context.pageData?.taskId as string) ?? "T-1";
-    await this.invokeTool("tasks.markComplete", { id: taskId }, { context });
+    await this.invokeTool("todo__tasks.update", { id: taskId, status: "completed" }, { context });
     const actions = createCRUDFlow("update", context.module, {
       page: "/todo",
       payload: { id: taskId, status: "completed" },
@@ -88,5 +88,40 @@ export class ToDoAgent extends SkillAgent {
     return buildAgentResponse(this.id, "view_calendar", context, reply, actions, {
       subtopic: "calendar",
     });
+  }
+
+  async generateSuggestions(context: MiraContext) {
+    const focusCustomer =
+      typeof context.pageData?.customerName === "string" && context.pageData.customerName.trim()
+        ? context.pageData.customerName.trim()
+        : "my top lead";
+    const dueDate =
+      typeof context.pageData?.dueDate === "string" && context.pageData.dueDate.trim()
+        ? context.pageData.dueDate.trim()
+        : "tomorrow";
+
+    return [
+      this.buildSuggestion({
+        intent: "list_tasks",
+        title: "Review overdue tasks",
+        description: "Surface anything waiting on me.",
+        promptText: "Show my overdue tasks and highlight which ones involve client meetings.",
+        confidence: 0.81,
+      }),
+      this.buildSuggestion({
+        intent: "create_task",
+        title: `Log follow-up for ${focusCustomer}`,
+        description: "Prefill the new task modal with context.",
+        promptText: `Create a follow-up task for ${focusCustomer} due ${dueDate}.`,
+        confidence: 0.75,
+      }),
+      this.buildSuggestion({
+        intent: "view_calendar",
+        title: "Open this week's calendar",
+        description: "Check upcoming appointments before I commit.",
+        promptText: "Open my calendar for the next 7 days and list meetings with prospects.",
+        confidence: 0.7,
+      }),
+    ];
   }
 }
