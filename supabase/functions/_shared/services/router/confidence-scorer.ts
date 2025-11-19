@@ -21,24 +21,47 @@ export const CONFIDENCE_THRESHOLDS = {
   // Below 0.30: fallback to module default
 };
 
+/**
+ * Enhanced overlap scoring that rewards partial matches better
+ * Uses bidirectional matching to handle both user message → example and example → user message
+ */
 function overlapScore(message: string, phrase: string): number {
-  const tokens = new Set(
+  const phraseTokens = new Set(
     phrase
       .toLowerCase()
       .split(/[^a-z0-9]+/)
       .filter(Boolean),
   );
-  if (tokens.size === 0) return 0;
-  const words = message
+
+  const messageTokens = message
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
-  if (words.length === 0) return 0;
-  let matches = 0;
-  for (const word of words) {
-    if (tokens.has(word)) matches++;
+
+  if (phraseTokens.size === 0 || messageTokens.length === 0) return 0;
+
+  // Count matches from message tokens
+  let messageMatches = 0;
+  for (const word of messageTokens) {
+    if (phraseTokens.has(word)) messageMatches++;
   }
-  return Math.min(1, matches / tokens.size);
+
+  // Forward score: how much of the example phrase is covered by the message
+  const forwardScore = messageMatches / phraseTokens.size;
+
+  // Backward score: how much of the message is covered by the example
+  const backwardScore = messageMatches / messageTokens.length;
+
+  // Use harmonic mean for balanced scoring (penalizes low scores on either side)
+  const harmonicMean = forwardScore > 0 && backwardScore > 0
+    ? (2 * forwardScore * backwardScore) / (forwardScore + backwardScore)
+    : 0;
+
+  // Boost for exact substring matches (handles cases like "show tasks" matching "show my tasks")
+  const exactBoost = phrase.toLowerCase().includes(message.toLowerCase()) ||
+                    message.toLowerCase().includes(phrase.toLowerCase()) ? 0.15 : 0;
+
+  return Math.min(1, harmonicMean + exactBoost);
 }
 
 export function scoreIntent(
@@ -56,33 +79,68 @@ export function scoreIntent(
   const normalized = message.toLowerCase();
   let score = 0;
 
+  // 1. Direct intent keyword match (0-0.25 points) - reduced weight
   if (intentName && normalized.includes(intentName.replace(/_/g, " "))) {
-    score += 0.3;
+    score += 0.25;
     reasons.push("direct_intent_keyword");
   }
 
+  // 2. Example phrase matching (0-0.50 points) - INCREASED weight with better scoring
   if (options.examplePhrases?.length) {
-    let best = 0;
+    let bestScore = 0;
+    let matchCount = 0;
+
     for (const phrase of options.examplePhrases) {
-      best = Math.max(best, overlapScore(normalized, phrase));
+      const overlap = overlapScore(normalized, phrase);
+      if (overlap > bestScore) {
+        bestScore = overlap;
+      }
+      if (overlap > 0.3) { // Count good matches
+        matchCount++;
+      }
     }
-    if (best > 0) {
-      score += Math.min(0.4, best * 0.4);
-      reasons.push("example_overlap");
+
+    if (bestScore > 0) {
+      // Base score from best match (0-0.50)
+      score += bestScore * 0.50;
+      reasons.push(`example_match:${bestScore.toFixed(2)}`);
+
+      // Bonus for multiple good matches (shows consistent pattern) - up to 0.10
+      if (matchCount > 1) {
+        const bonus = Math.min(0.10, (matchCount - 1) * 0.03);
+        score += bonus;
+        reasons.push(`multi_match_bonus:${matchCount}`);
+      }
     }
   }
 
-  if (options.requiredFields?.some((field) => normalized.includes(field.replace(/_/g, " ")))) {
-    score += 0.1;
-    reasons.push("required_field_match");
+  // 3. Required field presence (0-0.10 points)
+  const matchedFields = options.requiredFields?.filter(
+    (field) => normalized.includes(field.replace(/_/g, " "))
+  ) || [];
+
+  if (matchedFields.length > 0) {
+    const fieldScore = Math.min(0.10, matchedFields.length * 0.05);
+    score += fieldScore;
+    reasons.push(`required_fields:${matchedFields.length}`);
   }
 
+  // 4. Context module match (0-0.20 points) - INCREASED from 0.15
   if (context && context.module === options.topic) {
-    score += 0.15;
+    score += 0.20;
     reasons.push("context_module_match");
   }
 
-  const adjusted = Math.min(1, score);
+  // 5. Message length factor - short messages get small boost (more likely to be direct)
+  const wordCount = normalized.split(/\s+/).length;
+  if (wordCount >= 2 && wordCount <= 5) {
+    score += 0.05;
+    reasons.push("concise_query");
+  }
+
+  // Cap at 1.0
+  const adjusted = Math.min(1.0, score);
+
   return {
     intent: intentName,
     topic: options.topic,
