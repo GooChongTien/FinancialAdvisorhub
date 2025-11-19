@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Domain-specific terminology for Singapore insurance advisors - boosts intent classification confidence",
+
+  "insurance_products": {
+    "protection": [
+      "term life", "term insurance", "whole life", "whole life insurance",
+      "critical illness", "CI", "CI rider", "early CI", "multi-pay CI",
+      "total permanent disability", "TPD", "TPD rider",
+      "disability income", "DII", "income replacement",
+      "accidental death", "AD&D", "personal accident"
+    ],
+    "health": [
+      "shield plan", "integrated shield", "medishield", "medishield life",
+      "hospitalization", "hospital plan", "rider B", "private hospital",
+      "outpatient", "specialist", "panel doctor", "restructured hospital"
+    ],
+    "savings": [
+      "endowment", "endowment plan", "savings plan", "maturity benefit",
+      "annuity", "immediate annuity", "deferred annuity", "retirement income",
+      "cash value", "surrender value", "non-participating", "participating"
+    ],
+    "investment": [
+      "ILP", "investment-linked policy", "investment-linked",
+      "universal life", "UL", "unit trust", "fund value",
+      "sub-fund", "fund switching", "premium allocation", "top-up"
+    ],
+    "riders": [
+      "rider", "supplementary benefit", "waiver of premium", "WOP",
+      "payor benefit", "guaranteed insurability", "accelerated benefit"
+    ]
+  },
+
+  "sales_process": {
+    "stages": [
+      "fact-find", "fact finding", "FNA", "financial needs analysis",
+      "needs analysis", "gap analysis", "coverage gap",
+      "quotation", "quote", "premium calculation", "pricing",
+      "benefit illustration", "BI", "proposal", "product comparison",
+      "application", "submission", "policy delivery", "case closed"
+    ],
+    "activities": [
+      "initial contact", "first call", "cold call", "warm call",
+      "appointment", "meeting", "client meeting", "presentation",
+      "follow-up", "chase", "follow up call", "callback",
+      "objection handling", "closing", "sign up", "commit"
+    ],
+    "outcomes": [
+      "won", "closed", "issued", "accepted", "approved",
+      "lost", "declined", "lapsed", "withdrawn", "cancelled",
+      "pending", "in progress", "under review", "negotiating"
+    ]
+  },
+
+  "underwriting": {
+    "process": [
+      "underwriting", "UW", "medical underwriting", "financial underwriting",
+      "underwriter", "UW team", "submission", "submit for UW",
+      "medical exam", "health declaration", "medical report", "APS",
+      "attending physician statement", "blood test", "urine test",
+      "financial questionnaire", "income proof", "proof of income"
+    ],
+    "decisions": [
+      "approved", "standard", "accepted as applied",
+      "loading", "extra premium", "premium loading", "rated",
+      "exclusion", "exclusion clause", "specific exclusion",
+      "postponed", "deferred", "pending", "counter-offer",
+      "declined", "rejected", "uninsurable"
+    ],
+    "requirements": [
+      "medical requirement", "financial requirement", "additional docs",
+      "NRIC copy", "payslip", "CPF statement", "income tax", "NOA",
+      "bank statement", "proof of address", "employment letter"
+    ]
+  },
+
+  "customer_lifecycle": {
+    "lead_stages": [
+      "cold", "cold lead", "uncontacted",
+      "warm", "warm lead", "contacted", "interested",
+      "hot", "hot lead", "ready to buy", "high intent",
+      "qualified", "qualified lead", "FNA done",
+      "proposal", "BI presented", "quotation stage",
+      "negotiation", "discussing", "objection",
+      "client", "customer", "policyholder", "insured"
+    ],
+    "lead_sources": [
+      "referral", "client referral", "word of mouth",
+      "event", "roadshow", "seminar", "trade show", "networking",
+      "social media", "facebook", "instagram", "linkedin",
+      "cold call", "telemarketing", "outbound",
+      "website", "online", "web inquiry", "landing page",
+      "walk-in", "office visit"
+    ],
+    "relationship": [
+      "prospect", "lead", "potential client",
+      "client", "customer", "policyholder",
+      "VIP", "high net worth", "HNW", "UHNW",
+      "dormant", "inactive", "lapsed client"
+    ]
+  },
+
+  "financial_terms": {
+    "premium": [
+      "premium", "annual premium", "monthly premium", "single premium",
+      "regular premium", "limited pay", "pay to age 65", "whole life pay",
+      "premium term", "payment term", "10-pay", "15-pay", "20-pay"
+    ],
+    "coverage": [
+      "sum assured", "SA", "coverage amount", "death benefit", "benefit amount",
+      "face value", "face amount", "coverage", "protection level",
+      "policy term", "coverage period", "to age 65", "to age 99", "lifetime"
+    ],
+    "benefits": [
+      "guaranteed", "non-guaranteed", "reversionary bonus", "terminal bonus",
+      "maturity benefit", "survival benefit", "living benefit",
+      "death benefit", "claim payout", "policy proceeds",
+      "cash value", "surrender value", "paid-up value"
+    ]
+  },
+
+  "regulatory_singapore": {
+    "entities": [
+      "MAS", "Monetary Authority of Singapore", "LIA", "Life Insurance Association",
+      "GIA", "General Insurance Association", "CMFAS", "FECAA",
+      "ComFEC", "Commercial and Financial Education Council",
+      "FAIR", "Financial Advisers Industry Review"
+    ],
+    "compliance": [
+      "PDPA", "personal data protection", "data privacy",
+      "AML", "anti-money laundering", "KYC", "know your customer",
+      "balanced scorecard", "fair dealing", "representative's reward",
+      "RNF", "Representatives' Notification Framework"
+    ],
+    "documentation": [
+      "NRIC", "national registration identity card",
+      "FIN", "foreign identification number",
+      "CPF", "central provident fund",
+      "Singpass", "Singapore personal access",
+      "Myinfo", "my info", "government data"
+    ]
+  },
+
+  "advisor_terminology": {
+    "metrics": [
+      "conversion rate", "close rate", "hit rate",
+      "persistency", "lapse rate", "retention",
+      "AUM", "assets under management", "MDRT", "COT", "TOT",
+      "FYC", "first year commission", "renewal", "trailer fee",
+      "production", "sales volume", "case count", "new business"
+    ],
+    "activities": [
+      "prospecting", "lead generation", "networking",
+      "cross-sell", "up-sell", "top-up", "increase coverage",
+      "annual review", "policy review", "needs review",
+      "servicing", "claims", "amendments", "endorsement"
+    ],
+    "tools": [
+      "ePOS", "eApp", "electronic application",
+      "quote engine", "quotation system", "illustration system",
+      "CRM", "customer relationship management",
+      "BI system", "benefit illustration system"
+    ]
+  },
+
+  "common_abbreviations": [
+    "FNA", "BI", "CI", "TPD", "DII", "ILP", "UL", "WOP",
+    "SA", "MAS", "LIA", "PDPA", "NRIC", "CPF", "FIN",
+    "UW", "APS", "NOA", "HNW", "UHNW", "MDRT", "COT", "TOT",
+    "FYC", "AUM", "CRM", "ePOS"
+  ],
+
+  "intent_mappings": {
+    "create_lead": [
+      "referral", "event", "networking", "cold call", "walk-in",
+      "prospect", "potential client", "interested party"
+    ],
+    "create_proposal": [
+      "fact-find", "FNA", "needs analysis", "start proposal", "new case",
+      "begin application", "sales process"
+    ],
+    "generate_quote": [
+      "quotation", "quote", "BI", "benefit illustration", "pricing",
+      "premium calculation", "how much", "cost"
+    ],
+    "submit_for_underwriting": [
+      "submit", "UW", "underwriting", "application", "send to insurer",
+      "medical review", "approval"
+    ],
+    "create_task": [
+      "follow-up", "reminder", "chase", "callback", "schedule",
+      "to-do", "task", "appointment"
+    ],
+    "search_products": [
+      "product", "plan", "shield", "term life", "whole life", "ILP",
+      "protection", "savings", "investment", "retirement"
+    ],
+    "view_performance": [
+      "dashboard", "analytics", "metrics", "KPI", "stats", "numbers",
+      "performance", "conversion", "sales", "production"
+    ]
+  }
+}

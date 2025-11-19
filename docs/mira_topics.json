@@ -31,7 +31,17 @@
                 "Create lead for Sarah Lee, phone number 98765432, email sarah@example.com",
                 "I met someone at an event, can you help me add them as a lead?",
                 "Register new prospect Michael Wong from referral",
-                "Add John from the networking event yesterday"
+                "Add John from the networking event yesterday",
+                "met someone at trade show, David Lim 91234567",
+                "got a referral today - Sarah at 98765432, interested in life insurance",
+                "add new prospect from cold call, Mr Tan",
+                "someone wants insurance, name is Michael contact 81234567",
+                "register this lead: Kim Lee email kim@example.com from Facebook",
+                "add prospect I met today, interested in protection",
+                "new lead from event booth, John 92345678",
+                "save this person as lead - referral from existing client",
+                "potential client called, Peter Wong 87654321",
+                "add lead for fact-find tomorrow - Sarah Tan 91112233"
               ]
             },
             {
@@ -49,7 +59,17 @@
                 "Search for leads named David",
                 "Show me all leads from Social Media source",
                 "Find the customer with NRIC S1234567A",
-                "Look up leads I contacted last week"
+                "Look up leads I contacted last week",
+                "find John Tan",
+                "search for that person I met at the event",
+                "where's the lead with contact 98765432",
+                "look up Sarah Lee",
+                "find the customer I called yesterday",
+                "search leads from referrals",
+                "who's that prospect from Facebook",
+                "find my cold call leads",
+                "search by email sarah@example.com",
+                "lookup NRIC T1234567J"
               ]
             },
             {
@@ -84,7 +104,17 @@
                 "Book appointment with John Tan for next Monday",
                 "Set up a call with David at 10am Friday",
                 "Add follow-up appointment with this lead",
-                "Schedule fact-find meeting with client"
+                "Schedule fact-find meeting with client",
+                "book FNA with John tomorrow 3pm",
+                "schedule call with Sarah next week",
+                "set appointment for fact-finding Friday",
+                "book meeting with this prospect Monday 10am",
+                "schedule follow-up call tomorrow afternoon",
+                "set FNA appointment for next Tuesday",
+                "book client meeting for proposal presentation",
+                "schedule policy delivery appointment",
+                "set call back with lead at 2pm tomorrow",
+                "book fact-find session with Michael next Wednesday"
               ]
             },
             {
@@ -195,7 +225,17 @@
                 "Create proposal for lead Sarah Lee",
                 "Begin fact-finding for this customer",
                 "I want to create a new insurance proposal",
-                "Start the sales process for Michael Wong"
+                "Start the sales process for Michael Wong",
+                "new proposal for this lead",
+                "start FNA for John",
+                "create new case for Sarah",
+                "begin proposal for Michael - ready for fact-find",
+                "open new proposal wizard",
+                "start sales for this prospect",
+                "create proposal - customer wants protection",
+                "new case for referral lead",
+                "begin insurance application for David",
+                "start proposal process for the event lead"
               ]
             },
             {
@@ -319,7 +359,17 @@
                 "Create quotation for whole life insurance",
                 "Calculate premium for protection plan",
                 "I need a quote for critical illness coverage",
-                "Show me pricing for endowment plan"
+                "Show me pricing for endowment plan",
+                "quick quote for term life age 35",
+                "generate BI for whole life 500k coverage",
+                "calculate premium for CI rider",
+                "what's the price for ILP",
+                "quote for shield plan age 40",
+                "calculate whole life premium male age 30",
+                "generate quote 300k sum assured term",
+                "pricing for annuity plan",
+                "quick quote protection 200k",
+                "calculate TPD premium for client"
               ]
             },
             {
@@ -363,7 +413,17 @@
                 "Find Savings plans for age 35",
                 "What Investment products do we have?",
                 "Display Health insurance options",
-                "Show Retirement plans"
+                "Show Retirement plans",
+                "show protection products",
+                "find savings plans",
+                "what investment options do we have",
+                "client needs protection - show products",
+                "retirement plans for age 50",
+                "health insurance for young family",
+                "products for income replacement",
+                "what savings products can I recommend",
+                "show me protection plans for breadwinner",
+                "investment-linked products available"
               ]
             },
             {
@@ -474,7 +534,17 @@
                 "How am I doing this month?",
                 "Display my sales metrics",
                 "Show my KPIs for the last 90 days",
-                "What's my performance this year?"
+                "What's my performance this year?",
+                "show my dashboard",
+                "how's my performance",
+                "show stats for this month",
+                "what's my conversion rate",
+                "display my sales numbers",
+                "show my metrics",
+                "how am I performing compared to target",
+                "show year-to-date performance",
+                "what are my KPIs",
+                "display analytics for last quarter"
               ]
             },
             {
@@ -607,7 +677,17 @@
                 "Create reminder to submit documents",
                 "Add to-do: call Sarah next week",
                 "Remind me to review proposal on Friday",
-                "Create task for policy delivery"
+                "Create task for policy delivery",
+                "remind me to call John 2pm tomorrow",
+                "add task: follow up with Sarah",
+                "create to-do for submission deadline",
+                "set reminder for Friday meeting",
+                "add task to chase underwriting",
+                "remind me to deliver policy next Monday",
+                "create follow-up task for this lead",
+                "add to-do: prepare BI for Wednesday",
+                "remind to submit documents by Friday",
+                "task: call back prospect tomorrow morning"
               ]
             },
             {
@@ -622,7 +702,17 @@
                 "What's on my to-do list?",
                 "Display upcoming tasks this week",
                 "Show incomplete tasks",
-                "What do I need to do today?"
+                "What do I need to do today?",
+                "show my tasks",
+                "what's on my agenda today",
+                "list all my to-dos",
+                "show pending tasks",
+                "what do I have tomorrow",
+                "display this week's tasks",
+                "show overdue tasks",
+                "what follow-ups do I have",
+                "list incomplete items",
+                "show my schedule for today"
               ]
             },
             {

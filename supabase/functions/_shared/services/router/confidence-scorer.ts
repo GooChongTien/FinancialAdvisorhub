@@ -15,8 +15,10 @@ export interface RoutingDecision {
 }
 
 export const CONFIDENCE_THRESHOLDS = {
-  high: 0.7,
-  medium: 0.4,
+  high: 0.65,   // Lowered from 0.7 - execute immediately with good semantic match
+  medium: 0.45, // Lowered from 0.4 - soft confirm with reasonable match
+  // Below 0.45: "low" - clarification needed
+  // Below 0.30: fallback to module default
 };
 
 function overlapScore(message: string, phrase: string): number {
