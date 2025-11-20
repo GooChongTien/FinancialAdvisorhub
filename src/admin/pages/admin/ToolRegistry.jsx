@@ -100,6 +100,7 @@ export default function ToolRegistry() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedTool, setSelectedTool] = useState(null);
     const [categoryFilter, setCategoryFilter] = useState("all");
+    const [testFormData, setTestFormData] = useState({});
     const queryClient = useQueryClient();
 
     const { data: tools = [], isLoading, error } = useQuery({
@@ -132,18 +133,145 @@ export default function ToolRegistry() {
         return matchesSearch && matchesCategory;
     });
 
+    // Initialize form data when tool details load
+    const initializeFormData = (details) => {
+        if (!details?.parameters?.properties) return {};
+
+        const initialData = {};
+        Object.entries(details.parameters.properties).forEach(([name, schema]) => {
+            // Set default values based on type
+            if (schema.type === "boolean") {
+                initialData[name] = false;
+            } else if (schema.type === "number" || schema.type === "integer") {
+                initialData[name] = schema.default !== undefined ? schema.default : 0;
+            } else if (schema.type === "array") {
+                initialData[name] = "[]";
+            } else if (schema.type === "object") {
+                initialData[name] = "{}";
+            } else {
+                initialData[name] = schema.default !== undefined ? schema.default : "";
+            }
+        });
+
+        return initialData;
+    };
+
+    // Reset form when tool changes
+    if (toolDetails && Object.keys(testFormData).length === 0) {
+        setTestFormData(initializeFormData(toolDetails));
+    }
+
+    const handleFormChange = (paramName, value) => {
+        setTestFormData((prev) => ({
+            ...prev,
+            [paramName]: value,
+        }));
+    };
+
     const handleTestTool = () => {
         if (!selectedTool || !toolDetails) return;
 
-        // Build simple test args from required params
+        // Parse JSON strings for array/object types
         const args = {};
-        if (toolDetails.parameters?.required) {
-            toolDetails.parameters.required.forEach((param) => {
-                args[param] = "test_value";
-            });
-        }
+        Object.entries(testFormData).forEach(([key, value]) => {
+            const schema = toolDetails.parameters?.properties?.[key];
+            if (!schema) return;
+
+            if (schema.type === "array" || schema.type === "object") {
+                try {
+                    args[key] = JSON.parse(value);
+                } catch (e) {
+                    args[key] = value; // Fallback to raw value
+                }
+            } else if (schema.type === "number" || schema.type === "integer") {
+                args[key] = Number(value);
+            } else if (schema.type === "boolean") {
+                args[key] = Boolean(value);
+            } else {
+                args[key] = value;
+            }
+        });
 
         testMutation.mutate({ toolName: selectedTool, args });
+    };
+
+    const renderInputField = (paramName, schema) => {
+        const value = testFormData[paramName] || "";
+        const isRequired = toolDetails?.parameters?.required?.includes(paramName);
+
+        // Boolean type
+        if (schema.type === "boolean") {
+            return (
+                <div className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        id={paramName}
+                        checked={Boolean(value)}
+                        onChange={(e) => handleFormChange(paramName, e.target.checked)}
+                        className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label htmlFor={paramName} className="text-sm text-neutral-700">
+                        {schema.description || paramName}
+                    </label>
+                </div>
+            );
+        }
+
+        // Number type
+        if (schema.type === "number" || schema.type === "integer") {
+            return (
+                <Input
+                    type="number"
+                    value={value}
+                    onChange={(e) => handleFormChange(paramName, e.target.value)}
+                    placeholder={schema.description || `Enter ${paramName}`}
+                    step={schema.type === "integer" ? "1" : "any"}
+                    className="text-sm font-mono"
+                />
+            );
+        }
+
+        // Array or Object type (JSON input)
+        if (schema.type === "array" || schema.type === "object") {
+            return (
+                <textarea
+                    value={value}
+                    onChange={(e) => handleFormChange(paramName, e.target.value)}
+                    placeholder={schema.type === "array" ? '["value1", "value2"]' : '{"key": "value"}'}
+                    rows={3}
+                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm font-mono focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+            );
+        }
+
+        // Enum type (select)
+        if (schema.enum && Array.isArray(schema.enum)) {
+            return (
+                <select
+                    value={value}
+                    onChange={(e) => handleFormChange(paramName, e.target.value)}
+                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                >
+                    <option value="">Select {paramName}</option>
+                    {schema.enum.map((option) => (
+                        <option key={option} value={option}>
+                            {option}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
+
+        // Default: String type
+        return (
+            <Input
+                type="text"
+                value={value}
+                onChange={(e) => handleFormChange(paramName, e.target.value)}
+                placeholder={schema.description || `Enter ${paramName}`}
+                className="text-sm font-mono"
+            />
+        );
     };
 
     return (
@@ -277,7 +405,15 @@ export default function ToolRegistry() {
             </div>
 
             {/* Tool Details Sheet */}
-            <Sheet open={!!selectedTool} onOpenChange={(open) => !open && setSelectedTool(null)}>
+            <Sheet
+                open={!!selectedTool}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setSelectedTool(null);
+                        setTestFormData({});
+                    }
+                }}
+            >
                 <SheetContent className="w-[600px] overflow-y-auto">
                     <SheetHeader>
                         <SheetTitle className="font-mono">{selectedTool}</SheetTitle>
@@ -298,30 +434,32 @@ export default function ToolRegistry() {
                                 </p>
                             </div>
 
-                            {/* Parameters */}
+                            {/* Test Form */}
                             {toolDetails.parameters?.properties && (
                                 <div>
-                                    <h3 className="text-sm font-semibold text-neutral-900">Parameters</h3>
-                                    <div className="mt-2 space-y-3">
+                                    <h3 className="text-sm font-semibold text-neutral-900 mb-3">Test Parameters</h3>
+                                    <div className="space-y-4">
                                         {Object.entries(toolDetails.parameters.properties).map(([name, schema]) => (
-                                            <div
-                                                key={name}
-                                                className="rounded-md border border-neutral-200 bg-neutral-50 p-3"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <code className="text-sm font-medium text-neutral-900">{name}</code>
+                                            <div key={name}>
+                                                <div className="flex items-center gap-2 mb-1.5">
+                                                    <label className="text-sm font-medium text-neutral-700">
+                                                        <code className="text-sm">{name}</code>
+                                                    </label>
                                                     {toolDetails.parameters?.required?.includes(name) && (
                                                         <Badge variant="destructive" className="text-xs">
                                                             required
                                                         </Badge>
                                                     )}
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {schema.type || "any"}
+                                                    </Badge>
                                                 </div>
-                                                <p className="mt-1 text-xs text-neutral-600">
-                                                    {schema.description || "No description"}
-                                                </p>
-                                                <p className="mt-1 text-xs text-neutral-500">
-                                                    Type: <code>{schema.type || "any"}</code>
-                                                </p>
+                                                {schema.description && (
+                                                    <p className="text-xs text-neutral-500 mb-2">
+                                                        {schema.description}
+                                                    </p>
+                                                )}
+                                                {renderInputField(name, schema)}
                                             </div>
                                         ))}
                                     </div>
