@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { GraphExecutor } from "../_shared/services/engine/graph-executor.ts";
 
 console.log("Hello from admin-workflows!");
 
@@ -178,68 +179,51 @@ serve(async (req) => {
             });
         }
 
-        // POST /admin-workflows/:id/test - Test workflow execution
-        if (req.method === "POST" && id && url.pathname.includes("/test")) {
+        // POST /admin-workflows/:id/execute - Execute workflow
+        // POST /admin-workflows/:id/test - Test workflow execution (same as execute)
+        if (req.method === "POST" && id && (url.pathname.includes("/execute") || url.pathname.includes("/test"))) {
             const body = await req.json();
-            const { input, nodes, edges } = body;
+            const { input } = body;
 
             const startTime = Date.now();
+            const executionId = crypto.randomUUID();
 
             try {
-                // Simulate workflow execution
-                // In a real implementation, this would execute the actual workflow graph
-                const trace = [];
+                // Initialize GraphExecutor
+                const executor = new GraphExecutor(supabaseUrl, supabaseKey);
 
-                // Find start node
-                const startNode = nodes.find((n: any) => n.type === "start");
-                if (!startNode) {
-                    throw new Error("No start node found in workflow");
-                }
-
-                trace.push({
-                    node_id: startNode.id,
-                    node_type: startNode.type,
-                    timestamp: new Date().toISOString(),
-                    status: "executed",
+                // Log execution start
+                await supabase.from("mira_execution_logs").insert({
+                    id: executionId,
+                    workflow_id: id,
+                    status: "running",
+                    input_data: input || {},
+                    started_at: new Date().toISOString(),
                 });
 
-                // Simulate traversing edges
-                let currentNodeId = startNode.id;
-                const visited = new Set([currentNodeId]);
-
-                while (true) {
-                    const nextEdge = edges.find((e: any) => e.source === currentNodeId);
-                    if (!nextEdge) break;
-
-                    const nextNode = nodes.find((n: any) => n.id === nextEdge.target);
-                    if (!nextNode || visited.has(nextNode.id)) break;
-
-                    visited.add(nextNode.id);
-
-                    trace.push({
-                        node_id: nextNode.id,
-                        node_type: nextNode.type,
-                        node_label: nextNode.data?.label,
-                        timestamp: new Date().toISOString(),
-                        status: "executed",
-                        config: nextNode.data,
-                    });
-
-                    if (nextNode.type === "end") break;
-                    currentNodeId = nextNode.id;
-                }
+                // Execute workflow using real GraphExecutor
+                const result = await executor.execute(id, {
+                    messages: input?.message ? [{ role: 'user', content: input.message }] : [],
+                    context: input?.context || {},
+                    ui_actions: [],
+                    metadata: {}
+                });
 
                 const duration = Date.now() - startTime;
 
+                // Log execution completion
+                await supabase.from("mira_execution_logs").update({
+                    status: "completed",
+                    output_data: result,
+                    completed_at: new Date().toISOString(),
+                    execution_time_ms: duration,
+                }).eq("id", executionId);
+
                 return new Response(
                     JSON.stringify({
+                        execution_id: executionId,
                         status: "success",
-                        output: {
-                            message: "Workflow test completed successfully",
-                            input_received: input,
-                            nodes_executed: trace.length,
-                        },
-                        trace,
+                        output: result,
                         duration,
                     }),
                     {
@@ -248,10 +232,125 @@ serve(async (req) => {
                 );
             } catch (testError: any) {
                 const duration = Date.now() - startTime;
+
+                // Log execution failure
+                await supabase.from("mira_execution_logs").update({
+                    status: "failed",
+                    error_message: testError.message,
+                    completed_at: new Date().toISOString(),
+                    execution_time_ms: duration,
+                }).eq("id", executionId);
+
                 return new Response(
                     JSON.stringify({
+                        execution_id: executionId,
                         status: "error",
                         error: testError.message,
+                        duration,
+                    }),
+                    {
+                        status: 500,
+                        headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    }
+                );
+            }
+        }
+
+        // POST /admin-workflows/execute-by-intent - Execute workflow by intent
+        if (req.method === "POST" && url.pathname.includes("/execute-by-intent")) {
+            const body = await req.json();
+            const { intent, input } = body;
+
+            if (!intent) {
+                return new Response(JSON.stringify({ error: "intent is required" }), {
+                    status: 400,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                });
+            }
+
+            const startTime = Date.now();
+            const executionId = crypto.randomUUID();
+
+            try {
+                // Find workflow by trigger_intent
+                const { data: workflow, error: wfError } = await supabase
+                    .from("mira_workflows")
+                    .select("id, name")
+                    .eq("trigger_intent", intent)
+                    .eq("is_active", true)
+                    .single();
+
+                if (wfError || !workflow) {
+                    return new Response(
+                        JSON.stringify({ error: `No active workflow found for intent: ${intent}` }),
+                        {
+                            status: 404,
+                            headers: { ...corsHeaders, "Content-Type": "application/json" },
+                        }
+                    );
+                }
+
+                // Initialize GraphExecutor
+                const executor = new GraphExecutor(supabaseUrl, supabaseKey);
+
+                // Log execution start
+                await supabase.from("mira_execution_logs").insert({
+                    id: executionId,
+                    workflow_id: workflow.id,
+                    status: "running",
+                    input_data: { intent, ...input },
+                    started_at: new Date().toISOString(),
+                });
+
+                // Execute workflow
+                const result = await executor.execute(workflow.id, {
+                    messages: input?.message ? [{ role: 'user', content: input.message }] : [],
+                    context: input?.context || {},
+                    ui_actions: [],
+                    metadata: { intent }
+                });
+
+                const duration = Date.now() - startTime;
+
+                // Log execution completion
+                await supabase.from("mira_execution_logs").update({
+                    status: "completed",
+                    output_data: result,
+                    completed_at: new Date().toISOString(),
+                    execution_time_ms: duration,
+                }).eq("id", executionId);
+
+                return new Response(
+                    JSON.stringify({
+                        execution_id: executionId,
+                        workflow_id: workflow.id,
+                        workflow_name: workflow.name,
+                        status: "success",
+                        output: result,
+                        duration,
+                    }),
+                    {
+                        headers: { ...corsHeaders, "Content-Type": "application/json" },
+                    }
+                );
+            } catch (execError: any) {
+                const duration = Date.now() - startTime;
+
+                // Log execution failure
+                if (executionId) {
+                    await supabase.from("mira_execution_logs").update({
+                        status: "failed",
+                        error_message: execError.message,
+                        completed_at: new Date().toISOString(),
+                        execution_time_ms: duration,
+                    }).eq("id", executionId);
+                }
+
+                return new Response(
+                    JSON.stringify({
+                        execution_id: executionId,
+                        status: "error",
+                        error: execError.message,
                         duration,
                     }),
                     {

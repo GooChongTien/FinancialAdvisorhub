@@ -23,7 +23,7 @@ export interface AgentState {
 
 interface WorkflowNode {
     id: string;
-    type: 'llm' | 'tool' | 'router' | 'start' | 'end';
+    type: 'agent' | 'tool' | 'decision' | 'userApproval' | 'transform' | 'classify' | 'while' | 'state' | 'start' | 'end';
     name: string;
     config: any;
 }
@@ -79,8 +79,8 @@ export class GraphExecutor {
             graph.addNode(node.id, async (state: AgentState) => {
                 console.log(`Executing Node: ${node.name} (${node.type})`);
 
-                // --- LLM Node ---
-                if (node.type === 'llm') {
+                // --- Agent/LLM Node ---
+                if (node.type === 'agent' || node.type === 'llm') {
                     const prompt = node.config.prompt_template || "You are a helpful assistant.";
                     const systemPrompt = node.config.system_prompt || "You are Mira, an intelligent insurance advisor assistant.";
 
@@ -171,6 +171,180 @@ export class GraphExecutor {
                     }
                 }
 
+                // --- Decision Node ---
+                if (node.type === 'decision') {
+                    const condition = node.config.condition || '';
+
+                    try {
+                        // Evaluate condition expression against state
+                        // For prototype, simple string check. Real impl would use safe eval or expression parser.
+                        let result = false;
+
+                        // Simple condition evaluation (can be enhanced with proper expression parser)
+                        if (condition.includes('metadata.confidence')) {
+                            const confidence = state.metadata?.confidence || 0;
+                            if (condition.includes('>')) {
+                                const threshold = parseFloat(condition.split('>')[1].trim());
+                                result = confidence > threshold;
+                            } else if (condition.includes('<')) {
+                                const threshold = parseFloat(condition.split('<')[1].trim());
+                                result = confidence < threshold;
+                            }
+                        }
+
+                        return {
+                            next_node: result ? node.config.true_branch : node.config.false_branch,
+                            metadata: { ...state.metadata, last_decision: result }
+                        };
+                    } catch (e) {
+                        return { messages: [{ role: 'system', content: `Decision evaluation failed: ${e}` }] };
+                    }
+                }
+
+                // --- Transform Node ---
+                if (node.type === 'transform') {
+                    const field = node.config.field || '';
+                    const expression = node.config.expression || '';
+                    const outputField = node.config.outputField || field;
+
+                    try {
+                        // Simple transformation: get value from state and apply expression
+                        const value = state[field] || state.context?.[field];
+
+                        // For prototype, support simple transformations
+                        let transformed = value;
+                        if (expression.toLowerCase().includes('uppercase')) {
+                            transformed = String(value || '').toUpperCase();
+                        } else if (expression.toLowerCase().includes('lowercase')) {
+                            transformed = String(value || '').toLowerCase();
+                        } else if (expression.toLowerCase().includes('trim')) {
+                            transformed = String(value || '').trim();
+                        }
+
+                        return {
+                            [outputField]: transformed,
+                            messages: [{ role: 'system', content: `Transformed ${field} -> ${outputField}` }]
+                        };
+                    } catch (e) {
+                        return { messages: [{ role: 'system', content: `Transform failed: ${e}` }] };
+                    }
+                }
+
+                // --- Classify Node ---
+                if (node.type === 'classify') {
+                    const field = node.config.field || '';
+                    const categories = node.config.categories || [];
+
+                    try {
+                        const value = String(state[field] || state.context?.[field] || '').toLowerCase();
+
+                        // Simple classification based on keyword matching
+                        let selectedCategory = categories[0] || 'unknown';
+                        for (const category of categories) {
+                            if (value.includes(category.toLowerCase())) {
+                                selectedCategory = category;
+                                break;
+                            }
+                        }
+
+                        return {
+                            classification: selectedCategory,
+                            messages: [{ role: 'system', content: `Classified as: ${selectedCategory}` }]
+                        };
+                    } catch (e) {
+                        return { messages: [{ role: 'system', content: `Classification failed: ${e}` }] };
+                    }
+                }
+
+                // --- While Node ---
+                if (node.type === 'while') {
+                    const condition = node.config.condition || '';
+                    const maxIterations = node.config.maxIterations || 10;
+
+                    try {
+                        // Initialize iteration counter if not present
+                        const iterations = state.while_iterations || 0;
+
+                        // Simple condition check (enhance with proper expression parser)
+                        let continueLoop = iterations < maxIterations;
+
+                        if (condition) {
+                            // Basic evaluation - can be enhanced
+                            if (condition.includes('count <')) {
+                                const threshold = parseInt(condition.split('<')[1].trim());
+                                continueLoop = continueLoop && (state.count || 0) < threshold;
+                            }
+                        }
+
+                        return {
+                            while_iterations: iterations + 1,
+                            continue_loop: continueLoop,
+                            messages: [{ role: 'system', content: `Loop iteration ${iterations + 1}` }]
+                        };
+                    } catch (e) {
+                        return { messages: [{ role: 'system', content: `While loop failed: ${e}` }] };
+                    }
+                }
+
+                // --- State Node ---
+                if (node.type === 'state') {
+                    const stateKey = node.config.stateKey || '';
+                    const operation = node.config.operation || 'set';
+                    const valueExpression = node.config.valueExpression || '';
+
+                    try {
+                        let newValue: any;
+
+                        // Parse value expression (simple literal or state reference)
+                        if (valueExpression.startsWith('state.')) {
+                            const path = valueExpression.substring(6);
+                            newValue = state[path] || state.context?.[path];
+                        } else {
+                            // Try to parse as JSON, fallback to string
+                            try {
+                                newValue = JSON.parse(valueExpression);
+                            } catch {
+                                newValue = valueExpression;
+                            }
+                        }
+
+                        let result: any = {};
+                        const currentValue = state[stateKey];
+
+                        switch (operation) {
+                            case 'set':
+                                result[stateKey] = newValue;
+                                break;
+                            case 'merge':
+                                result[stateKey] = { ...(currentValue || {}), ...(newValue || {}) };
+                                break;
+                            case 'append':
+                                result[stateKey] = [...(Array.isArray(currentValue) ? currentValue : []), newValue];
+                                break;
+                            case 'get':
+                                result.retrieved_value = currentValue;
+                                break;
+                        }
+
+                        return {
+                            ...result,
+                            messages: [{ role: 'system', content: `State ${operation}: ${stateKey}` }]
+                        };
+                    } catch (e) {
+                        return { messages: [{ role: 'system', content: `State operation failed: ${e}` }] };
+                    }
+                }
+
+                // --- User Approval Node ---
+                if (node.type === 'userApproval') {
+                    // For automated execution, we'll auto-approve
+                    // In a real implementation, this would pause and wait for user input
+                    return {
+                        approval_status: 'auto_approved',
+                        messages: [{ role: 'system', content: `User approval requested: ${node.config.message || 'Approve to continue'}` }]
+                    };
+                }
+
                 return {};
             });
         });
@@ -185,9 +359,13 @@ export class GraphExecutor {
             if (sourceNode.type === 'start') {
                 graph.setEntryPoint(targetNode.id);
             } else {
-                // Handle conditional edges (Router)
-                if (sourceNode.type === 'router') {
-                    // For prototype, direct edge. Real impl needs conditional logic.
+                // Handle conditional edges (Decision nodes)
+                if (sourceNode.type === 'decision') {
+                    // For decision nodes, edges are conditional
+                    // The decision node itself sets next_node in state
+                    graph.addEdge(sourceNode.id, targetNode.id);
+                } else if (sourceNode.type === 'while') {
+                    // While nodes may loop back or continue forward
                     graph.addEdge(sourceNode.id, targetNode.id);
                 } else {
                     graph.addEdge(sourceNode.id, targetNode.id);
