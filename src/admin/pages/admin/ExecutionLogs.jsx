@@ -18,46 +18,84 @@ import {
     TableRow,
 } from "@/admin/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, AlertCircle, CheckCircle, ChevronRight, Clock, Search, XCircle } from "lucide-react";
+import { Activity, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, Clock, Search, XCircle } from "lucide-react";
 import { useState } from "react";
 
-async function fetchExecutionLogs(limit = 100) {
-    // Query mira_workflow_executions table
-    const { data, error } = await supabase
+async function fetchExecutionLogs({ page = 0, pageSize = 25, status = "all" }) {
+    // Calculate range for pagination
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
+    // Build query
+    let query = supabase
         .from("mira_workflow_executions")
-        .select("*")
-        .order("started_at", { ascending: false })
-        .limit(limit);
+        .select("*", { count: "exact" })
+        .order("started_at", { ascending: false });
+
+    // Apply status filter
+    if (status !== "all") {
+        query = query.eq("status", status);
+    }
+
+    // Apply pagination
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) {
         console.warn("Error fetching execution logs:", error);
-        return [];
+        return { executions: [], totalCount: 0 };
     }
 
-    return data || [];
+    return { executions: data || [], totalCount: count || 0 };
 }
 
 export default function ExecutionLogs() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedExecution, setSelectedExecution] = useState(null);
     const [statusFilter, setStatusFilter] = useState("all");
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize] = useState(25);
 
-    const { data: executions = [], isLoading, error } = useQuery({
-        queryKey: ["execution-logs", statusFilter],
-        queryFn: () => fetchExecutionLogs(100),
+    const { data, isLoading, error } = useQuery({
+        queryKey: ["execution-logs", statusFilter, currentPage, pageSize],
+        queryFn: () => fetchExecutionLogs({ page: currentPage, pageSize, status: statusFilter }),
         staleTime: 10_000,
         refetchInterval: 30_000, // Auto-refresh every 30s
     });
 
+    const executions = data?.executions || [];
+    const totalCount = data?.totalCount || 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
     const statuses = ["all", "completed", "failed", "running"];
 
+    // Client-side search filter (applied after server-side status filter and pagination)
     const filteredExecutions = executions.filter((exec) => {
-        const matchesSearch =
+        if (!searchQuery) return true;
+        return (
             exec.workflow_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            exec.execution_id?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === "all" || exec.status === statusFilter;
-        return matchesSearch && matchesStatus;
+            exec.execution_id?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
     });
+
+    // Reset to first page when status filter changes
+    const handleStatusFilterChange = (newStatus) => {
+        setStatusFilter(newStatus);
+        setCurrentPage(0);
+    };
+
+    const handlePreviousPage = () => {
+        setCurrentPage((prev) => Math.max(0, prev - 1));
+    };
+
+    const handleNextPage = () => {
+        setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+    };
+
+    const handlePageClick = (pageNum) => {
+        setCurrentPage(pageNum);
+    };
 
     const formatDuration = (startedAt, completedAt) => {
         if (!startedAt) return "—";
@@ -139,7 +177,7 @@ export default function ExecutionLogs() {
                         <Activity className="h-4 w-4 text-neutral-500" />
                         <select
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => handleStatusFilterChange(e.target.value)}
                             className="rounded-md border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                         >
                             {statuses.map((status) => (
@@ -170,64 +208,123 @@ export default function ExecutionLogs() {
                         </div>
                     </div>
                 ) : (
-                    <div className="rounded-lg border border-neutral-200 bg-white shadow-sm">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Workflow</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Started</TableHead>
-                                    <TableHead>Duration</TableHead>
-                                    <TableHead>Execution ID</TableHead>
-                                    <TableHead className="w-[100px]">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredExecutions.map((execution) => (
-                                    <TableRow
-                                        key={execution.execution_id}
-                                        className="cursor-pointer hover:bg-neutral-50"
-                                        onClick={() => setSelectedExecution(execution)}
-                                    >
-                                        <TableCell className="font-medium">
-                                            {execution.workflow_name || execution.workflow_id}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                {getStatusIcon(execution.status)}
-                                                <Badge variant={getStatusVariant(execution.status)} className="text-xs">
-                                                    {execution.status || "unknown"}
-                                                </Badge>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-neutral-600">
-                                            <div className="flex items-center gap-2">
-                                                <Clock className="h-3 w-3 text-neutral-400" />
-                                                {formatTime(execution.started_at)}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-neutral-600">
-                                            {formatDuration(execution.started_at, execution.completed_at)}
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs text-neutral-500">
-                                            {execution.execution_id?.slice(0, 8)}...
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedExecution(execution);
-                                                }}
-                                            >
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
+                    <div className="space-y-4">
+                        <div className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Workflow</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Started</TableHead>
+                                        <TableHead>Duration</TableHead>
+                                        <TableHead>Execution ID</TableHead>
+                                        <TableHead className="w-[100px]">Actions</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredExecutions.map((execution) => (
+                                        <TableRow
+                                            key={execution.execution_id}
+                                            className="cursor-pointer hover:bg-neutral-50"
+                                            onClick={() => setSelectedExecution(execution)}
+                                        >
+                                            <TableCell className="font-medium">
+                                                {execution.workflow_name || execution.workflow_id}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    {getStatusIcon(execution.status)}
+                                                    <Badge variant={getStatusVariant(execution.status)} className="text-xs">
+                                                        {execution.status || "unknown"}
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-neutral-600">
+                                                <div className="flex items-center gap-2">
+                                                    <Clock className="h-3 w-3 text-neutral-400" />
+                                                    {formatTime(execution.started_at)}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-neutral-600">
+                                                {formatDuration(execution.started_at, execution.completed_at)}
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs text-neutral-500">
+                                                {execution.execution_id?.slice(0, 8)}...
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedExecution(execution);
+                                                    }}
+                                                >
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white px-4 py-3">
+                                <div className="text-sm text-neutral-600">
+                                    Showing {currentPage * pageSize + 1} to {Math.min((currentPage + 1) * pageSize, totalCount)} of {totalCount} executions
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={handlePreviousPage}
+                                        disabled={currentPage === 0}
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Previous
+                                    </Button>
+
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            let pageNum;
+                                            if (totalPages <= 5) {
+                                                pageNum = i;
+                                            } else if (currentPage < 3) {
+                                                pageNum = i;
+                                            } else if (currentPage > totalPages - 4) {
+                                                pageNum = totalPages - 5 + i;
+                                            } else {
+                                                pageNum = currentPage - 2 + i;
+                                            }
+
+                                            return (
+                                                <Button
+                                                    key={pageNum}
+                                                    size="sm"
+                                                    variant={currentPage === pageNum ? "default" : "ghost"}
+                                                    onClick={() => handlePageClick(pageNum)}
+                                                    className="min-w-[36px]"
+                                                >
+                                                    {pageNum + 1}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={handleNextPage}
+                                        disabled={currentPage >= totalPages - 1}
+                                    >
+                                        Next
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
