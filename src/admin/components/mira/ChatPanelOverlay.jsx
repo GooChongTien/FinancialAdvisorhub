@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
-import { X, GripVertical, Maximize2, Minimize2 } from "lucide-react";
-import { Button } from "@/admin/components/ui/button";
 import InlineChatPanel from "@/admin/components/mira/InlineChatPanel.jsx";
+import { Button } from "@/admin/components/ui/button";
 import { useChatPanelMode } from "@/admin/state/useChatPanelMode.ts";
+import { ChevronDown, GripVertical, Maximize2, Minimize2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const MIN_CHAT_WIDTH = 300;
 const MAX_CHAT_WIDTH = 800;
@@ -159,7 +159,7 @@ export default function ChatPanelOverlay() {
           minWidth: `${MIN_CHAT_WIDTH}px`
         }}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-gradient-to-r from-white to-neutral-50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-white/80 backdrop-blur-md rounded-t-lg shadow-md">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 flex items-center justify-center shadow-md">
               <span className="text-white text-xs font-bold">M</span>
@@ -179,6 +179,24 @@ export default function ChatPanelOverlay() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => { close(); }}
+              className="h-8 w-8 hover:bg-neutral-100 rounded-lg transition-colors"
+              title="Collapse chat"
+            >
+              <ChevronDown className="h-4 w-4 text-neutral-600" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openSplit}
+              className="h-8 w-8 hover:bg-neutral-100 rounded-lg transition-colors"
+              title="Split view"
+            >
+              <Split className="h-4 w-4 text-neutral-600" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={close}
               className="h-8 w-8 hover:bg-neutral-100 rounded-lg transition-colors"
               title="Close chat"
@@ -188,7 +206,7 @@ export default function ChatPanelOverlay() {
           </div>
         </div>
         <div className="flex-1 overflow-hidden">
-          <InlineChatPanel />
+          <InlineChatPanel showHeader={false} />
         </div>
       </div>
 

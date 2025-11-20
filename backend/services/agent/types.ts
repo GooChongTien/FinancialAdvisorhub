@@ -35,6 +35,44 @@ export interface ToolResult {
 
 export type AgentRequestMode = "stream" | "batch" | "suggest" | "insights";
 
+// Behavioral context types
+export interface BehavioralContext {
+  currentPage?: string;
+  currentModule?: string;
+  pageData?: Record<string, unknown>;
+  navigationHistory?: Array<{
+    timestamp: string;
+    fromPage: string;
+    toPage: string;
+    module: string;
+    trigger: string;
+    timeSpent: number;
+  }>;
+  recentActions?: Array<{
+    timestamp: string;
+    actionType: string;
+    elementId?: string;
+    elementType?: string;
+    elementLabel?: string;
+    value?: unknown;
+    context?: Record<string, unknown>;
+  }>;
+  sessionId?: string;
+  sessionStartTime?: string;
+  currentPageStartTime?: string;
+  userIntent?: string;
+  detectedPatterns?: string[];
+  confidenceLevel?: number;
+}
+
+export interface BehavioralMetadata {
+  originalActionsCount?: number;
+  sentActionsCount?: number;
+  originalNavigationCount?: number;
+  sentNavigationCount?: number;
+  estimatedBytes?: number;
+}
+
 // Chat request from frontend
 export interface AgentChatRequest {
   messages: ChatMessage[];
@@ -42,6 +80,8 @@ export interface AgentChatRequest {
   metadata?: Record<string, unknown>;
   temperature?: number;
   max_tokens?: number;
+  behavioral_context?: BehavioralContext;
+  behavioral_metadata?: BehavioralMetadata;
 }
 
 export interface AgentChatResult {

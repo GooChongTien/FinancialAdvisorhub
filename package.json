@@ -32,6 +32,8 @@
         "@supabase/supabase-js": "^2.45.0",
         "@tanstack/react-query": "^5.36.0",
         "@xstate/react": "^6.0.0",
+        "@xyflow/react": "^12.9.3",
+        "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "date-fns": "^3.6.0",
         "lucide-react": "^0.452.0",
@@ -41,6 +43,7 @@
         "react-dom": "^18.3.1",
         "react-router-dom": "^6.26.1",
         "recharts": "^2.12.7",
+        "tailwind-merge": "^3.4.0",
         "xlsx": "^0.18.5",
         "xstate": "^5.24.0",
         "zod": "^3.25.76",
@@ -53,8 +56,8 @@
         "@testing-library/user-event": "^14.6.1",
         "@types/node": "^24.10.0",
         "@vitejs/plugin-react": "^4.3.1",
-        "@vitest/coverage-v8": "^4.0.8",
-        "@vitest/ui": "^4.0.8",
+        "@vitest/coverage-v8": "^2.1.5",
+        "@vitest/ui": "^2.1.5",
         "autoprefixer": "^10.4.17",
         "dotenv": "^17.2.3",
         "jsdom": "^24.1.3",
@@ -64,6 +67,6 @@
         "tailwindcss": "^3.4.13",
         "ts-node": "^10.9.2",
         "vite": "^5.4.10",
-        "vitest": "^4.0.8"
+        "vitest": "^2.1.5"
     }
 }

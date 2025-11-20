@@ -1,6 +1,6 @@
-import type { UserAction, NavigationEvent, BehavioralPattern } from "./types";
-import { sanitizeUserAction, sanitizeNavigationEvent } from "./behavioral-sanitization";
 import supabase from "@/admin/api/supabaseClient.js";
+import { sanitizeNavigationEvent, sanitizeUserAction } from "./behavioral-sanitization";
+import type { BehavioralPattern, NavigationEvent, UserAction } from "./types";
 
 const UPLOAD_BATCH_SIZE = 50;
 const UPLOAD_INTERVAL_MS = 30000; // 30 seconds
@@ -236,7 +236,14 @@ export class BehavioralAnalyticsUploader {
     try {
       const { data, error } = await supabase
         .from("mira_behavioral_events")
-        .insert(batch.map((item) => item.event));
+        .insert(batch.map((item) => ({
+          user_id: item.event.advisor_id,
+          session_id: item.event.session_id,
+          event_type: item.event.event_type,
+          module: item.event.page_context?.module || 'unknown',
+          page: item.event.page_context?.page || 'unknown',
+          payload: item.event.event_data
+        })));
 
       if (error) {
         console.error("[BehavioralAnalyticsUploader] Upload failed:", error);

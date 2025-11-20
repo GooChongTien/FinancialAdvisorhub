@@ -9,6 +9,7 @@ import { scoreIntent, applyThresholds, type IntentScore } from "./confidence-sco
 import { detectTopicSwitch } from "./topic-tracker.ts";
 import { buildSystemPrompt, buildClassificationPrompt } from "./prompts.ts";
 import { IntentCache, getIntentCache } from "./intent-cache.ts";
+import { calculateBehavioralBoost, getBehavioralInsights } from "./behavioral-scorer.ts";
 
 type Taxonomy = {
   topics: Array<{
@@ -67,6 +68,10 @@ const MODULE_AGENT_MAP: Record<string, string> = {
   todo: "ToDoAgent",
   broadcast: "BroadcastAgent",
   visualizer: "VisualizerAgent",
+  fna: "mira_fna_advisor_agent",
+  knowledge: "mira_knowledge_brain_agent",
+  operations: "mira_ops_task_agent",
+  compliance: "mira_ops_task_agent",
 };
 
 const DEFAULT_AGENT = "CustomerAgent";
@@ -153,6 +158,8 @@ export class IntentRouterService implements IntentRouter {
 
   private scoreAllIntents(message: string, context: MiraContext): IntentScore[] {
     const results: IntentScore[] = [];
+    const behavioralContext = context.behavioral_context;
+
     for (const entry of INTENT_ENTRIES) {
       const score = scoreIntent(entry.intent, message, context, {
         topic: entry.topic,
@@ -160,6 +167,21 @@ export class IntentRouterService implements IntentRouter {
         examplePhrases: entry.examples,
         requiredFields: entry.requiredFields,
       });
+
+      // Apply behavioral boost if context is available
+      if (behavioralContext) {
+        const behavioralBoost = calculateBehavioralBoost(
+          entry.intent,
+          entry.topic,
+          behavioralContext
+        );
+
+        if (behavioralBoost > 0) {
+          score.adjustedScore = Math.min(score.adjustedScore + behavioralBoost, 1.0);
+          score.reasons.push(`behavioral_boost:${behavioralBoost.toFixed(2)}`);
+        }
+      }
+
       results.push(score);
     }
     return results.sort((a, b) => b.adjustedScore - a.adjustedScore);

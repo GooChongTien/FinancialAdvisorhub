@@ -1,7 +1,8 @@
 import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 export function formatCurrency(amount, { currency = "SGD", language = "en-SG" } = {}) {
@@ -10,8 +11,8 @@ export function formatCurrency(amount, { currency = "SGD", language = "en-SG" } 
     // Map simple language label to locale if needed
     const locale = language?.toLowerCase().startsWith("en") ? "en-SG"
       : language?.toLowerCase().startsWith("ch") ? "zh-SG"
-      : language?.toLowerCase().startsWith("ms") ? "ms-SG"
-      : "en-SG";
+        : language?.toLowerCase().startsWith("ms") ? "ms-SG"
+          : "en-SG";
     return new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
   } catch {
     return `${currency} ${value.toFixed(2)}`;

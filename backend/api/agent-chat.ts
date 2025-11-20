@@ -80,13 +80,24 @@ export function sanitizeRequest(body: any, tenantId?: string): AgentChatRequest 
     metadata.tenantId = tenantId;
   }
 
-  return {
+  const request: AgentChatRequest = {
     messages,
     mode: body.mode === "batch" ? "batch" : "stream",
     metadata,
     temperature: typeof body.temperature === "number" ? body.temperature : undefined,
     max_tokens: typeof body.max_tokens === "number" ? body.max_tokens : undefined,
   };
+
+  // Include behavioral context if provided
+  if (body.behavioral_context && typeof body.behavioral_context === "object") {
+    request.behavioral_context = body.behavioral_context;
+  }
+
+  if (body.behavioral_metadata && typeof body.behavioral_metadata === "object") {
+    request.behavioral_metadata = body.behavioral_metadata;
+  }
+
+  return request;
 }
 
 function resolveTenantId(body: any): string | null {

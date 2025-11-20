@@ -1,8 +1,8 @@
 import { z } from "https://esm.sh/zod@3.25.76";
-import { toolRegistry } from "./registry.ts";
-import type { ToolContext } from "./types.ts";
-import { createServiceClient } from "./service-client.ts";
 import { executeSafely } from "./error-handling.ts";
+import { toolRegistry } from "./registry.ts";
+import { createServiceClient } from "./service-client.ts";
+import type { ToolContext } from "./types.ts";
 
 type LeadFilters = {
   status?: string;
@@ -68,7 +68,23 @@ async function leadsCreate(ctx: ToolContext, args: z.infer<typeof leadCreateSche
       const client = createServiceClient();
       const { data, error } = await client.from("leads").insert([payload]).select().maybeSingle();
       if (error) throw error;
-      return data;
+
+      return {
+        data,
+        ui_actions: [
+          {
+            action: "navigate",
+            params: { page: "/customer" }
+          },
+          {
+            action: "prefill",
+            params: {
+              form: "lead_create",
+              data: payload
+            }
+          }
+        ]
+      };
     },
     args
   );

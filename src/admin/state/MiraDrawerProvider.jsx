@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const MiraDrawerContext = createContext(null);
 const STORAGE_KEY = "advisorhub:mira-drawer";
@@ -22,7 +22,7 @@ function saveState(state) {
   try {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {}
+  } catch { }
 }
 
 export function MiraDrawerProvider({ children }) {
@@ -31,6 +31,18 @@ export function MiraDrawerProvider({ children }) {
   useEffect(() => {
     saveState({ open, width });
   }, [open, width]);
+
+  useEffect(() => {
+    const handleOpenSplitView = () => setState((s) => ({ ...s, open: true }));
+    if (typeof window !== "undefined") {
+      window.addEventListener("mira:open-split-view", handleOpenSplitView);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("mira:open-split-view", handleOpenSplitView);
+      }
+    };
+  }, []);
 
   const openFull = useCallback(() => setState((s) => ({ ...s, open: false })), []);
   const openDrawer = useCallback(() => setState((s) => ({ ...s, open: true })), []);

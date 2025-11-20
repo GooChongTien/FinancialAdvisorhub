@@ -1,4 +1,6 @@
 import { z } from "https://esm.sh/zod@3.25.76";
+import { fnaTools } from "./fna-tools.ts";
+import { todoTools } from "./todo-tools.ts";
 import type { RegisteredTool, ToolContext, ToolResult } from "./types.ts";
 
 export class ToolRegistry {
@@ -62,3 +64,13 @@ export class ToolRegistry {
 }
 
 export const toolRegistry = new ToolRegistry();
+
+// Register FNA tools
+Object.entries(fnaTools).forEach(([name, { handler, schema }]) => {
+  toolRegistry.registerTool(name, handler, schema);
+});
+
+// Register TODO tools
+Object.entries(todoTools).forEach(([name, { handler, schema }]) => {
+  toolRegistry.registerTool(name, handler, schema);
+});

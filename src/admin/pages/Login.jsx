@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useToast } from "@/admin/components/ui/toast";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
 import { supabase } from "@/admin/api/supabaseClient";
+import { useToast } from "@/admin/components/ui/toast";
+import { createPageUrl } from "@/admin/utils";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const { showToast } = useToast();
@@ -19,7 +19,7 @@ export default function Login() {
       const search = typeof window !== 'undefined' ? window.location.search : '';
       const hasRecovery = (hash && hash.includes('type=recovery')) || (search && search.includes('type=recovery'));
       if (hasRecovery) setRecoveryMode(true);
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   const handleLogin = async () => {
@@ -29,10 +29,31 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
       if (error) throw error;
-      showToast({ type: "success", title: "Welcome back" });
-      navigate(createPageUrl("Home"), { replace: true });
+
+      // Fetch user role
+      const { data: advisorData, error: roleError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
+        // Fallback to advisor if role fetch fails (safe default)
+        navigate("/advisor/home", { replace: true });
+      } else {
+        const role = advisorData?.role || 'advisor';
+        showToast({ type: "success", title: `Welcome back (${role})` });
+
+        if (role === 'admin') {
+          navigate("/admin/workflows", { replace: true });
+        } else {
+          navigate("/advisor/home", { replace: true });
+        }
+      }
+
       // Hard refresh to reload any user-dependent state
       setTimeout(() => { if (typeof window !== 'undefined') window.location.reload(); }, 50);
     } catch (e) {

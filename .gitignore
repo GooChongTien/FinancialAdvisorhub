@@ -69,9 +69,11 @@ temp_*.txt
 # Supabase
 .supabase/
 
-# Scripts
-*.bat
-*.ps1
+# Scripts (only ignore root-level setup scripts, but track scripts/ folder)
+/*.bat
+/*.ps1
+npm
+fix-cursor-codex.ps1
 
 # Other
 snapshot_tables.json

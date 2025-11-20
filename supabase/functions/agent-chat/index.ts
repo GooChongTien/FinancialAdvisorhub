@@ -7,42 +7,43 @@
  * - mode: "batch"  → JSON { message }
  */
 
-import { createCorsHeaders } from "../_shared/utils/cors.ts";
-import { logAgentEvent, logAgentError } from "../_shared/services/agent/logger.ts";
-import type { AgentChatRequest, AgentEvent } from "../_shared/services/agent/types.ts";
+import { logAgentError, logAgentEvent } from "../_shared/services/agent/logger.ts";
 import { createErrorSSE, createSSEHeaders } from "../_shared/services/agent/stream-adapter.ts";
-import { intentRouter, buildRouterPrompts } from "../_shared/services/router/intent-router.ts";
-import { decideSkillFromClassification } from "../_shared/services/router/skill-decider.ts";
+import type { AgentChatRequest } from "../_shared/services/agent/types.ts";
+import { getAgentRegistry } from "../_shared/services/agents/registry.ts";
+import { ensureConversationRecord } from "../_shared/services/conversations.ts";
+import { GraphExecutor } from "../_shared/services/engine/graph-executor.ts";
+import {
+  isAgentEnabled,
+  isMiraEnabled,
+  isModeEnabled,
+} from "../_shared/services/feature-flags.ts";
+import { generateProactiveInsights } from "../_shared/services/insights.ts";
+import { buildClarificationMessage, needsClarification } from "../_shared/services/router/clarification.ts";
 import { logIntentClassification } from "../_shared/services/router/intent-logger.ts";
+import { buildRouterPrompts, intentRouter } from "../_shared/services/router/intent-router.ts";
+import { decideSkillFromClassification } from "../_shared/services/router/skill-decider.ts";
 import {
   detectTopicSwitch,
-  updateTopicHistory,
-  shouldPromptForSwitch,
   generateTransitionMessage,
+  shouldPromptForSwitch,
+  updateTopicHistory,
 } from "../_shared/services/router/topic-tracker.ts";
-import { buildClarificationMessage, needsClarification } from "../_shared/services/router/clarification.ts";
-import type { MiraContext, MiraResponse, MiraModule } from "../_shared/services/types.ts";
-import { logSkillExecution } from "../_shared/services/telemetry.ts";
-import * as skills from "../_shared/services/skills/index.ts";
-import { ensureConversationRecord } from "../_shared/services/conversations.ts";
-import { getAgentRegistry } from "../_shared/services/agents/registry.ts";
-import { generateProactiveInsights } from "../_shared/services/insights.ts";
-import {
-  validateUserMessage,
-  validateContext,
-  validateMetadata,
-  checkRateLimit,
-} from "../_shared/services/security/input-validation.ts";
 import {
   formatAgentChatIssues,
   parseAgentChatBody,
   type AgentChatBody,
 } from "../_shared/services/security/agent-request-schema.ts";
 import {
-  isMiraEnabled,
-  isModeEnabled,
-  isAgentEnabled,
-} from "../_shared/services/feature-flags.ts";
+  checkRateLimit,
+  validateContext,
+  validateMetadata,
+  validateUserMessage,
+} from "../_shared/services/security/input-validation.ts";
+import * as skills from "../_shared/services/skills/index.ts";
+import { logSkillExecution } from "../_shared/services/telemetry.ts";
+import type { MiraContext, MiraModule, MiraResponse } from "../_shared/services/types.ts";
+import { createCorsHeaders } from "../_shared/utils/cors.ts";
 
 interface AialMetadata {
   requestId: string;
@@ -187,7 +188,7 @@ async function openAiChat(messages: Array<{ role: string; content: string }>) {
     try {
       const payload = await response.json();
       detail = payload?.error?.message ? `: ${payload.error.message}` : "";
-    } catch {}
+    } catch { }
     throw new Error(`OpenAI request failed (${response.status} ${response.statusText})${detail}`);
   }
   const data = await response.json();
@@ -265,6 +266,10 @@ const VALID_MODULES = new Set([
   "todo",
   "broadcast",
   "visualizer",
+  "fna",
+  "knowledge",
+  "operations",
+  "compliance",
 ]);
 
 function sanitizeContext(raw: any): MiraContext | undefined {
@@ -1029,6 +1034,102 @@ async function handleRequest(req: Request): Promise<Response> {
         classificationMetadata,
         origin,
       );
+    }
+
+    // [NEW] Graph Engine Integration (Strangler Fig Pattern)
+    // Check if we should route to the new Graph Engine for this agent/intent
+    // For Phase 3 verification, we specifically target the 'customer' module and 'create_lead' intent (or all customer intents for now to test)
+    if (miraContext.module === 'customer' && classification.intent === 'create_lead') {
+      try {
+        console.log("[GraphExecutor] Intercepting Customer Agent request...");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+        if (supabaseUrl && supabaseKey) {
+          const executor = new GraphExecutor(supabaseUrl, supabaseKey);
+          // We assume the workflow ID is 'customer_agent_v1' as seeded
+          // In production, we'd look this up dynamically based on agentId/version
+          const workflowId = 'customer_agent_v1';
+
+          // Map AgentChatRequest to AgentState
+          const initialState = {
+            messages: chatRequest.messages,
+            context: miraContext,
+            ui_actions: [],
+            behavioral_context: chatRequest.metadata?.behavioral_context
+          };
+
+          const result = await executor.execute(workflowId, initialState);
+
+          // Transform result back to MiraResponse format
+          const lastMessage = result.messages[result.messages.length - 1];
+          const assistantContent = lastMessage?.content ?? "I processed your request.";
+
+          const agentResponse: MiraResponse = {
+            assistant_reply: assistantContent,
+            ui_actions: result.ui_actions || [],
+            metadata: {
+              agent: 'customer_agent_v1',
+              processing_time: 0, // TODO: Measure
+              model: 'graph-engine'
+            }
+          };
+
+          return respondWithAgentResult(chatRequest.mode ?? "stream", agentResponse, classificationMetadata, origin);
+        }
+      } catch (e) {
+        console.error("[GraphExecutor] Failed to execute graph, falling back to legacy:", e);
+        // Fallthrough to legacy logic
+      }
+    }
+
+    // Check for Expert Brain workflows
+    const expertBrainModules = new Set(['fna', 'knowledge', 'operations', 'compliance']);
+    if (expertBrainModules.has(miraContext.module)) {
+      try {
+        console.log("[GraphExecutor] Checking for Expert Brain workflow...");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+        if (supabaseUrl && supabaseKey) {
+          const executor = new GraphExecutor(supabaseUrl, supabaseKey);
+
+          // Look up workflow by trigger_intent from the classification
+          const triggerIntent = classification.intent;
+          console.log(`[GraphExecutor] Looking for workflow with trigger_intent: ${triggerIntent}`);
+
+          const initialState = {
+            messages: chatRequest.messages,
+            context: miraContext,
+            ui_actions: [],
+            behavioral_context: chatRequest.metadata?.behavioral_context,
+            user_message: userMessage
+          };
+
+          const result = await executor.executeByIntent(triggerIntent, initialState);
+
+          if (result) {
+            // Transform result back to MiraResponse format
+            const lastMessage = result.messages[result.messages.length - 1];
+            const assistantContent = lastMessage?.content ?? "I processed your request.";
+
+            const agentResponse: MiraResponse = {
+              assistant_reply: assistantContent,
+              ui_actions: result.ui_actions || [],
+              metadata: {
+                agent: `expert_brain_${miraContext.module}`,
+                processing_time: 0,
+                model: 'graph-engine'
+              }
+            };
+
+            return respondWithAgentResult(chatRequest.mode ?? "stream", agentResponse, classificationMetadata, origin);
+          }
+        }
+      } catch (e) {
+        console.error("[GraphExecutor] Failed to execute Expert Brain workflow, falling back to legacy:", e);
+        // Fallthrough to legacy logic
+      }
     }
 
     if (skills.hasModuleAgent(agentSelection.agentId, moduleForAgent)) {

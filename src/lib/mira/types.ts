@@ -182,3 +182,84 @@ export interface SkillAgentConfig {
   parameters?: Record<string, unknown>;
   active?: boolean;
 }
+
+// ===== Behavioral Tracking Types =====
+
+export type UserActionType =
+  | "click"
+  | "form_input"
+  | "scroll"
+  | "hover"
+  | "search"
+  | "navigation"
+  | "mira_interaction"
+  | "form_submit"
+  | "page_load";
+
+export interface UserAction {
+  timestamp: Date;
+  actionType: UserActionType;
+  elementId?: string;
+  elementType?: string;
+  elementLabel?: string;
+  value?: unknown;
+  context: Record<string, unknown>;
+}
+
+export interface NavigationEvent {
+  timestamp: Date;
+  fromPage: string;
+  toPage: string;
+  module: string;
+  trigger: "click" | "mira" | "direct" | "back" | "forward";
+  timeSpent: number;
+}
+
+export interface BehavioralContext {
+  // Current state
+  currentPage: string;
+  currentModule: string;
+  pageData: Record<string, unknown>;
+
+  // Navigation history
+  navigationHistory: NavigationEvent[];
+
+  // User actions
+  recentActions: UserAction[];
+
+  // Session data
+  sessionId: string;
+  sessionStartTime: Date;
+  currentPageStartTime: Date;
+
+  // Derived insights
+  userIntent?: string;
+  suggestedActions?: SuggestedIntent[];
+  confidenceLevel?: number;
+  detectedPatterns?: string[];
+}
+
+export interface PrivacySettings {
+  trackingEnabled: boolean;
+  trackClickEvents: boolean;
+  trackFormInputs: boolean;
+  trackNavigationTime: boolean;
+  shareWithMira: boolean;
+  dataRetentionDays: number;
+}
+
+export interface BehavioralPattern {
+  patternType: string;
+  confidence: number;
+  indicators: string[];
+  suggestedAction?: string;
+}
+
+export interface ProactiveSuggestion {
+  id: string;
+  trigger: "immediate" | "after_delay" | "on_idle";
+  message: string;
+  actions: UIAction[];
+  relevanceScore: number;
+  expiresAt?: Date;
+}

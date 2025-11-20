@@ -5,12 +5,56 @@ export type MiraModule =
   | "analytics"
   | "todo"
   | "broadcast"
-  | "visualizer";
+  | "visualizer"
+  | "fna"
+  | "knowledge"
+  | "operations"
+  | "compliance";
 
 export interface MiraContext {
   module: MiraModule;
   page: string;
   pageData?: Record<string, unknown>;
+  behavioral_context?: BehavioralContext;
+  behavioral_metadata?: BehavioralMetadata;
+}
+
+// Behavioral context from frontend tracking
+export interface BehavioralContext {
+  currentPage?: string;
+  currentModule?: string;
+  pageData?: Record<string, unknown>;
+  navigationHistory?: Array<{
+    timestamp: string | Date;
+    fromPage: string;
+    toPage: string;
+    module: string;
+    trigger: string;
+    timeSpent: number;
+  }>;
+  recentActions?: Array<{
+    timestamp: string | Date;
+    actionType: string;
+    elementId?: string;
+    elementType?: string;
+    elementLabel?: string;
+    value?: unknown;
+    context?: Record<string, unknown>;
+  }>;
+  sessionId?: string;
+  sessionStartTime?: string | Date;
+  currentPageStartTime?: string | Date;
+  userIntent?: string;
+  detectedPatterns?: string[];
+  confidenceLevel?: number;
+}
+
+export interface BehavioralMetadata {
+  originalActionsCount?: number;
+  sentActionsCount?: number;
+  originalNavigationCount?: number;
+  sentNavigationCount?: number;
+  estimatedBytes?: number;
 }
 
 export interface CandidateAgentScore {

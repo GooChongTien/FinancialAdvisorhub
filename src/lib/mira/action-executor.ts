@@ -1,14 +1,14 @@
-import type { NavigateOptions } from "react-router-dom";
 import { createPageUrl } from "@/admin/utils";
+import type { NavigateOptions } from "react-router-dom";
+import { logMiraActionEvent } from "./action-logger";
 import type {
-  UIAction,
+  ExecuteAction,
+  MiraContext,
   NavigateAction,
   PrefillAction,
-  ExecuteAction,
+  UIAction,
   UIActionResult,
-  MiraContext,
 } from "./types.ts";
-import { logMiraActionEvent } from "./action-logger";
 
 type ToastPayload = {
   type?: "default" | "success" | "error" | "warning";
@@ -210,17 +210,21 @@ export class UIActionExecutor {
         ? `${window.location.pathname}${window.location.search}${window.location.hash}`
         : null;
 
-    // Check if we're in a chat context - if so, activate split view
-    const inChatContext = typeof window !== "undefined" &&
-      (window.location.pathname.includes("/chat") ||
-       window.location.search.includes("from="));
+    // Check if the target is the chat page itself
+    const isChatTarget = url.includes("/chat") || url.includes("Chat");
 
     // Navigate to the target URL
     this.navigate(url);
 
-    // If in chat context, trigger split view mode via custom event
-    if (inChatContext && typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("mira:open-split-view"));
+    // Smart View Switching:
+    // If navigating to a business page (not chat), open the split view (drawer).
+    // This supports the "Expert Brain" flow where Mira guides the user to a screen.
+    if (!isChatTarget && typeof window !== "undefined") {
+      // Small delay to ensure navigation has started/completed
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("mira:open-split-view"));
+      }, 50);
+
       this.notify?.({
         type: "success",
         title: "Opened in split view",

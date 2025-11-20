@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "metadata": {
     "created_at": "2025-11-11",
-    "last_updated": "2025-11-11",
-    "description": "Mira Co-Pilot Topic Taxonomy for AdvisorHub ePOS - Complete taxonomy for all 7 modules",
-    "modules": 7,
-    "total_intents": 38
+    "last_updated": "2025-11-20",
+    "description": "Mira Co-Pilot Topic Taxonomy for AdvisorHub ePOS - Complete taxonomy with Expert Brain workflows",
+    "modules": 11,
+    "total_intents": 42
   },
   "topics": [
     {
@@ -972,6 +972,122 @@
                 "Which scenario is better?",
                 "Compare investment options",
                 "Display scenario comparison"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "fna",
+      "display_name": "Financial Needs Analysis",
+      "description": "Managing client FNA data capture and updates",
+      "subtopics": [
+        {
+          "subtopic": "data_management",
+          "display_name": "FNA Data Management",
+          "description": "Capturing and updating client financial data for FNA",
+          "intents": [
+            {
+              "intent_name": "fna__capture_update_data",
+              "display_name": "Update FNA Data",
+              "description": "Captures client data updates and applies them to the Financial Needs Analysis",
+              "required_fields": [],
+              "optional_fields": ["field_path", "field_value"],
+              "ui_actions": [],
+              "example_phrases": [
+                "Update FNA field income to 120000",
+                "Change client's monthly income to $8000",
+                "Set FNA dependents to 3",
+                "Update the client's age to 45",
+                "Change occupation to Engineer",
+                "Update FNA marital status to married"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "knowledge",
+      "display_name": "Knowledge Base",
+      "description": "Accessing regulatory and compliance knowledge",
+      "subtopics": [
+        {
+          "subtopic": "regulatory",
+          "display_name": "Regulatory Knowledge",
+          "description": "Singapore insurance regulations and compliance information",
+          "intents": [
+            {
+              "intent_name": "kb__regulatory_qa",
+              "display_name": "Regulatory Q&A",
+              "description": "Answers questions about Singapore insurance regulations (MAS, LIA, PDPA)",
+              "required_fields": [],
+              "optional_fields": ["question"],
+              "ui_actions": [],
+              "example_phrases": [
+                "What are the latest regulations for Singapore wealth management?",
+                "Tell me about MAS guidelines for insurance advisors",
+                "What are PDPA requirements for client data?",
+                "What are the LIA ethical standards?",
+                "Explain the balanced scorecard requirements",
+                "What are the disclosure requirements for insurance products?"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "operations",
+      "display_name": "Operations",
+      "description": "Operational workflows and meeting preparation",
+      "subtopics": [
+        {
+          "subtopic": "meeting_prep",
+          "display_name": "Meeting Preparation",
+          "description": "Preparing agendas and tasks for client meetings",
+          "intents": [
+            {
+              "intent_name": "ops__prepare_meeting",
+              "display_name": "Prepare Meeting",
+              "description": "Prepares a meeting agenda and tasks for client reviews",
+              "required_fields": [],
+              "optional_fields": ["client_id", "meeting_date"],
+              "ui_actions": [{"action": "navigate", "target": "/fna"}],
+              "example_phrases": [
+                "Prepare for client meeting tomorrow",
+                "Create agenda for John Tan review",
+                "Schedule client review next week",
+                "Set up meeting prep for quarterly review"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "compliance",
+      "display_name": "Compliance",
+      "description": "Compliance checks and vulnerable client safeguards",
+      "subtopics": [
+        {
+          "subtopic": "vulnerability",
+          "display_name": "Vulnerability Assessment",
+          "description": "Detecting and safeguarding vulnerable clients per MAS guidelines",
+          "intents": [
+            {
+              "intent_name": "compliance__check_vulnerability",
+              "display_name": "Check Client Vulnerability",
+              "description": "Detects vulnerable clients and enforces compliance checks per MAS guidelines",
+              "required_fields": [],
+              "optional_fields": ["client_age", "education_level", "language_proficiency"],
+              "ui_actions": [],
+              "example_phrases": [
+                "Is this client considered vulnerable?",
+                "Check if Mrs Lee needs special protection",
+                "Verify vulnerable client checklist for elderly client",
+                "Client is 65 years old, check compliance requirements"
               ]
             }
           ]

@@ -3,21 +3,20 @@
  * Uses our own /agent-chat endpoint via useAgentChat.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { PageHeader } from "@/admin/components/ui/page-header.jsx";
+import { IntentDebugPanel } from "@/admin/components/mira/IntentDebugPanel.jsx";
+import { MiraInteractionModes } from "@/admin/components/mira/MiraInteractionModes.jsx";
 import { ChatInput } from "@/admin/components/ui/chat-input.jsx";
 import { ChatMessage as ChatBubble } from "@/admin/components/ui/chat-message.jsx";
-import { createPageUrl } from "@/admin/utils";
-import { useAgentChatStore } from "@/admin/state/providers/AgentChatProvider.jsx";
-import InlineConfirmationCard from "@/admin/components/ui/inline-confirmation-card.jsx";
 import { ClarificationPrompt } from "@/admin/components/ui/clarification-prompt.jsx";
-import { MiraInteractionModes } from "@/admin/components/mira/MiraInteractionModes.jsx";
-import { IntentDebugPanel } from "@/admin/components/mira/IntentDebugPanel.jsx";
-import { useMiraMode } from "@/admin/state/useMiraMode";
+import InlineConfirmationCard from "@/admin/components/ui/inline-confirmation-card.jsx";
 import { Skeleton } from "@/admin/components/ui/skeleton.jsx";
-import { Sparkles, TrendingUp, Users, FileText } from "lucide-react";
+import { useAgentChatStore } from "@/admin/state/providers/AgentChatProvider.jsx";
+import { useMiraMode } from "@/admin/state/useMiraMode";
+import { createPageUrl } from "@/admin/utils";
 import clsx from "clsx";
+import { FileText, Sparkles, TrendingUp, Users } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // Lazy load Copilot and Insight components for better initial load performance
 const InlineSuggestionPanel = lazy(() =>
@@ -165,9 +164,10 @@ export default function ChatMira() {
     const prompt = robustDecode(raw || "");
     if (prompt && prompt.trim()) {
       autoSentRef.current = true;
+      openCommand(conversationId);
       void sendMessage(prompt);
     }
-  }, [location.search, sendMessage]);
+  }, [location.search, sendMessage, openCommand, conversationId]);
 
   const goBack = useCallback(() => {
     const params = new URLSearchParams(location.search);
@@ -197,31 +197,46 @@ export default function ChatMira() {
   const showTabletCopilotPanel = viewportCategory === "tablet" && viewMode === "copilot";
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-neutral-50 to-white">
-      <PageHeader title="Mira Chat" description="Chat with your AI insurance assistant" />
-      <div className={clsx("flex-1 m-4 grid grid-cols-1 gap-4", isDesktop && "xl:grid-cols-3")}>
+    <div className="flex flex-col h-full bg-white">
+      {/* Minimal Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+        <h1 className="text-xl font-semibold text-neutral-900 tracking-tight">Mira Chat</h1>
+        <button
+          type="button"
+          className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
+          onClick={goBack}
+        >
+          Back to Dashboard
+        </button>
+      </div>
+
+      <div className={clsx("flex-1 p-6 grid grid-cols-1 gap-6 max-w-7xl mx-auto w-full", isDesktop && "xl:grid-cols-3")}>
         {/* Main chat column */}
         <div className={mainColumnClass}>
-          <div className="flex h-full flex-col bg-white rounded-2xl shadow-md border border-neutral-200 overflow-hidden">
-            <div className="border-b border-neutral-200 p-4 bg-gradient-to-r from-white to-neutral-50">
+          <div className="flex h-full flex-col bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+            <div className="border-b border-neutral-100 p-3 bg-white">
               <MiraInteractionModes
                 mode={viewMode}
                 onModeChange={handleModeChange}
                 availableModes={availableModes}
               />
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto bg-white">
               {messages.length === 0 && !isStreaming && (
                 <ChatEmptyState onPromptSelect={(prompt) => sendMessage(prompt)} />
               )}
-              {messages.map((m) => (
-                <ChatBubble key={m.id} message={m} streaming={Boolean(m.streaming)} />
-              ))}
+              <div className="max-w-3xl mx-auto w-full">
+                {messages.map((m) => (
+                  <ChatBubble key={m.id} message={m} streaming={Boolean(m.streaming)} />
+                ))}
+              </div>
               {autoActionState && (
-                <PlannedActionsBanner state={autoActionState} onUndo={undoAutoActions} />
+                <div className="px-4 py-2 max-w-3xl mx-auto w-full">
+                  <PlannedActionsBanner state={autoActionState} onUndo={undoAutoActions} />
+                </div>
               )}
               {pendingAction && (
-                <div className="px-4 mb-4">
+                <div className="px-4 mb-4 max-w-3xl mx-auto w-full">
                   <InlineConfirmationCard
                     title={pendingAction.message || "Allow Mira to perform this action?"}
                     description={pendingAction.tool ? `Requested: ${pendingAction.tool}` : undefined}
@@ -232,7 +247,7 @@ export default function ChatMira() {
                 </div>
               )}
               {clarificationPrompt && (
-                <div className="px-4 mb-4">
+                <div className="px-4 mb-4 max-w-3xl mx-auto w-full">
                   <ClarificationPrompt
                     prompt={clarificationPrompt}
                     onConfirm={confirmClarification}
@@ -241,25 +256,16 @@ export default function ChatMira() {
                 </div>
               )}
               {error && (
-                <div className="mx-4 mb-4 p-4 bg-red-50 rounded-xl border border-red-200 shadow-sm">
+                <div className="mx-4 mb-4 p-4 bg-red-50 rounded-xl border border-red-200 shadow-sm max-w-3xl mx-auto w-full">
                   <div className="text-sm text-red-800 font-medium">
                     {String(error.message || error)}
                   </div>
                 </div>
               )}
             </div>
-            <div className="border-t border-neutral-200 p-4 bg-white">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all"
-                  onClick={goBack}
-                >
-                  Back
-                </button>
-                <div className="flex-1">
-                  <ChatInput onSend={({ message }) => sendMessage(message)} disabled={isStreaming} />
-                </div>
+            <div className="p-4 bg-white border-t border-neutral-100">
+              <div className="max-w-3xl mx-auto w-full">
+                <ChatInput onSend={({ message }) => sendMessage(message)} disabled={isStreaming} />
               </div>
             </div>
           </div>

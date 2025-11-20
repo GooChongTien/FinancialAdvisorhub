@@ -1,15 +1,14 @@
-import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import { useAgentChatStore } from "@/admin/state/providers/AgentChatProvider.jsx";
-import InlineConfirmationCard from "@/admin/components/ui/inline-confirmation-card.jsx";
-import { ChatMessage as ChatBubble } from "@/admin/components/ui/chat-message.jsx";
-import { ChatInput } from "@/admin/components/ui/chat-input.jsx";
-import { Skeleton } from "@/admin/components/ui/skeleton.jsx";
 import { Button } from "@/admin/components/ui/button.jsx";
-import { AlertCircle, RefreshCw, Maximize2 } from "lucide-react";
+import { ChatInput } from "@/admin/components/ui/chat-input.jsx";
+import { ChatMessage as ChatBubble } from "@/admin/components/ui/chat-message.jsx";
+import InlineConfirmationCard from "@/admin/components/ui/inline-confirmation-card.jsx";
+import { Skeleton } from "@/admin/components/ui/skeleton.jsx";
+import { useAgentChatStore } from "@/admin/state/providers/AgentChatProvider.jsx";
+import { createPageUrl } from "@/admin/utils";
+import { AlertCircle, Maximize2, RefreshCw } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-export default function InlineChatPanel() {
+export default function InlineChatPanel({ showHeader = true }) {
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -33,28 +32,30 @@ export default function InlineChatPanel() {
       aria-label="Mira Chat Assistant"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-gradient-to-r from-white to-neutral-50">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 flex items-center justify-center shadow-md">
-            <span className="text-white text-xs font-bold">M</span>
+      {showHeader && (
+        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-gradient-to-r from-white to-neutral-50">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 flex items-center justify-center shadow-md">
+              <span className="text-white text-xs font-bold">M</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-neutral-900" id="mira-chat-title">
+                Mira
+              </p>
+              <p className="text-[10px] text-neutral-500">AI Assistant</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-neutral-900" id="mira-chat-title">
-              Mira
-            </p>
-            <p className="text-[10px] text-neutral-500">AI Assistant</p>
-          </div>
+          <button
+            type="button"
+            className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50 hover:border-neutral-400 transition-all flex items-center gap-1.5"
+            onClick={handleOpen}
+            aria-label="Open full chat interface"
+          >
+            <Maximize2 className="w-3 h-3" />
+            Expand
+          </button>
         </div>
-        <button
-          type="button"
-          className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50 hover:border-neutral-400 transition-all flex items-center gap-1.5"
-          onClick={handleOpen}
-          aria-label="Open full chat interface"
-        >
-          <Maximize2 className="w-3 h-3" />
-          Expand
-        </button>
-      </div>
+      )}
 
       {/* Messages Area */}
       <div

@@ -1,5 +1,4 @@
 import { z } from "https://esm.sh/zod@3.25.76";
-import { toolRegistry } from "./registry.ts";
 import type { ToolContext } from "./types.ts";
 import { createServiceClient } from "./service-client.ts";
 import { executeSafely } from "./error-handling.ts";
@@ -53,9 +52,6 @@ async function tasksCreate(ctx: ToolContext, args: z.infer<typeof taskCreateSche
   );
 }
 
-toolRegistry.registerTool("todo__tasks.list", tasksList, tasksListSchema);
-toolRegistry.registerTool("todo__tasks.create", tasksCreate, taskCreateSchema);
-
 const taskUpdateSchema = z.object({
   id: z.string().min(1),
   status: z.string().min(1),
@@ -76,4 +72,9 @@ async function tasksUpdate(ctx: ToolContext, args: z.infer<typeof taskUpdateSche
   );
 }
 
-toolRegistry.registerTool("todo__tasks.update", tasksUpdate, taskUpdateSchema);
+// Export tools for registration in registry.ts
+export const todoTools = {
+  "todo__tasks.list": { handler: tasksList, schema: tasksListSchema },
+  "todo__tasks.create": { handler: tasksCreate, schema: taskCreateSchema },
+  "todo__tasks.update": { handler: tasksUpdate, schema: taskUpdateSchema }
+};
