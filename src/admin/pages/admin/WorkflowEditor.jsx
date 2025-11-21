@@ -14,7 +14,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Play, Plus, Save } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ReactFlow, {
+import {
+    ReactFlow,
     Background,
     Controls,
     MiniMap,
