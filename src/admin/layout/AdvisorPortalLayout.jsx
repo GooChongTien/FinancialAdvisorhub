@@ -37,7 +37,7 @@ import {
   Users
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const navigationItems = [
   { title: "Home", url: "/advisor/home", icon: Home },
@@ -53,17 +53,17 @@ const navigationItems = [
   // { title: "Mira Ops", url: "/advisor/ops", icon: Activity },
 ];
 
-export default function Layout({ children }) {
+export default function AdvisorPortalLayout() {
   return (
     <MiraChatProvider>
       <MiraDrawerProvider>
-        <LayoutWithChatProvider>{children}</LayoutWithChatProvider>
+        <LayoutWithChatProvider />
       </MiraDrawerProvider>
     </MiraChatProvider>
   );
 }
 
-function LayoutWithChatProvider({ children }) {
+function LayoutWithChatProvider() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -490,7 +490,7 @@ function LayoutWithChatProvider({ children }) {
           className={`transition-all duration-300 ${sidebarCollapsed ? "ml-[74px]" : "ml-64"}`}
           style={open ? { marginLeft: `calc(${sidebarCollapsed ? "74px" : "256px"} + ${width}px)` } : undefined}
         >
-          {children}
+          <Outlet />
         </main>
 
         {/* Left Drawer (placeholder content for now; chat stream wiring next) */}
