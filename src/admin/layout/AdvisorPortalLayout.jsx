@@ -216,44 +216,56 @@ function LayoutWithChatProvider() {
     navigate(`/advisor/chat?from=${from}`);
   }, [location.pathname, location.search, navigate, setActiveThread]);
 
-  // Auth gate: redirect unauthenticated users to Login; if authenticated and on Login/Register, go Home
+  // Auth gate: redirect unauthenticated users to Login
   useEffect(() => {
     let mounted = true;
     async function checkAuth() {
       try {
-        const { data } = await supabase.auth.getUser();
-        const authed = !!data?.user?.id;
-        const path = location.pathname;
-        const loginPath = "/login";
-        const registerPath = "/register";
-        const onAuthPage = path === loginPath || path === registerPath;
+        // Use getSession instead of getUser - it's faster and checks localStorage
+        const { data: { session } } = await supabase.auth.getSession();
+        const authed = !!session?.user?.id;
 
         if (mounted) {
           setAuthLoading(false);
         }
 
-        if (!authed && !onAuthPage) {
-          navigate(loginPath, { replace: true });
+        // Only redirect if not authenticated
+        // Don't check for login/register pages since they don't use this layout
+        if (!authed) {
+          console.warn('[AdvisorPortalLayout] No session found, redirecting to login');
+          navigate("/login", { replace: true });
         }
-        if (authed && onAuthPage) {
-          navigate("/advisor/home", { replace: true });
-        }
-      } catch (_) {
+      } catch (error) {
+        console.error('[AdvisorPortalLayout] Auth check error:', error);
         if (mounted) {
           setAuthLoading(false);
         }
       }
     }
-    checkAuth();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      if (!mounted) return;
+
+    // Only check auth on initial mount, not on every route change
+    if (authLoading) {
       checkAuth();
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      // If user logs out, redirect to login
+      if (event === 'SIGNED_OUT') {
+        navigate("/login", { replace: true });
+      }
+      // If user signs in while on this layout, we're good
+      if (event === 'SIGNED_IN' && session) {
+        setAuthLoading(false);
+      }
     });
+
     return () => {
       mounted = false;
       sub?.subscription?.unsubscribe?.();
     };
-  }, [location.pathname, navigate]);
+  }, [navigate, authLoading]); // Only depend on navigate and authLoading, not location.pathname
 
   const handleLogout = async () => {
     try {
