@@ -41,16 +41,16 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 const navigationItems = [
   { title: "Home", url: "/advisor/home", icon: Home },
-  { title: "Customer", url: "/advisor/customer", icon: Users },
+  { title: "Customer", url: "/advisor/customers", icon: Users },
   { title: "New Business", url: "/advisor/new-business", icon: Briefcase },
   { title: "Visualizer", url: "/advisor/visualizer", icon: LineChart },
   { title: "Products", url: "/advisor/product", icon: Calculator },
   { title: "Analytics", url: "/advisor/analytics", icon: BarChart3 },
   { title: "To Do", url: "/advisor/todo", icon: CheckSquare, showOverdue: true },
   { title: "Broadcast", url: "/advisor/broadcast", icon: Radio, showUnread: true },
-  // NOTE: Mira Ops page is accessible via direct URL (/advisor/ops) but hidden from sidebar
+  // NOTE: Mira Ops page is accessible via direct URL (/advisor/mira/ops) but hidden from sidebar
   // See MIRA_CONSOLIDATED_IMPLEMENTATION_PLAN.md - Future Sprint: Move to Admin Portal
-  // { title: "Mira Ops", url: "/advisor/ops", icon: Activity },
+  // { title: "Mira Ops", url: "/advisor/mira/ops", icon: Activity },
 ];
 
 export default function AdvisorPortalLayout() {
@@ -505,7 +505,7 @@ function LayoutWithChatProvider() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => navigate("/advisor/profile")}
+                  onClick={() => navigate("/advisor/profile-settings")}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Profile Settings

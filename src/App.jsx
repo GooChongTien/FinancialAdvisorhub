@@ -63,21 +63,21 @@ export default function App() {
             <Route path="/advisor" element={<AdvisorPortalLayout />}>
               <Route index element={<Navigate to="/advisor/home" replace />} />
               <Route path="home" element={<Home />} />
-              <Route path="customer" element={<Customer />} />
-              <Route path="customer/:id" element={<CustomerDetail />} />
+              <Route path="customers" element={<Customer />} />
+              <Route path="customers/detail" element={<CustomerDetail />} />
               <Route path="new-business" element={<NewBusiness />} />
               <Route path="product" element={<Product />} />
               <Route path="quote-summary" element={<QuoteSummary />} />
-              <Route path="proposal/:id" element={<ProposalDetail />} />
-              <Route path="policy/:id" element={<PolicyDetail />} />
-              <Route path="profile" element={<ProfileSettings />} />
+              <Route path="proposals/detail" element={<ProposalDetail />} />
+              <Route path="policies/detail" element={<PolicyDetail />} />
+              <Route path="profile-settings" element={<ProfileSettings />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="broadcast" element={<Broadcast />} />
-              <Route path="broadcast/:id" element={<BroadcastDetail />} />
+              <Route path="broadcast/detail" element={<BroadcastDetail />} />
               <Route path="todo" element={<ToDo />} />
               <Route path="chat" element={<ChatMira />} />
-              <Route path="chat-history" element={<AllChats />} />
-              <Route path="ops" element={<MiraOps />} />
+              <Route path="chats" element={<AllChats />} />
+              <Route path="mira/ops" element={<MiraOps />} />
             </Route>
 
             {/* Legacy Redirects (handle old /admin/* routes) */}
