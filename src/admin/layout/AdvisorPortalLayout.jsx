@@ -67,6 +67,7 @@ function LayoutWithChatProvider() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [authLoading, setAuthLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -226,13 +227,22 @@ function LayoutWithChatProvider() {
         const loginPath = "/login";
         const registerPath = "/register";
         const onAuthPage = path === loginPath || path === registerPath;
+
+        if (mounted) {
+          setAuthLoading(false);
+        }
+
         if (!authed && !onAuthPage) {
           navigate(loginPath, { replace: true });
         }
         if (authed && onAuthPage) {
           navigate("/advisor/home", { replace: true });
         }
-      } catch (_) { }
+      } catch (_) {
+        if (mounted) {
+          setAuthLoading(false);
+        }
+      }
     }
     checkAuth();
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
@@ -273,6 +283,18 @@ function LayoutWithChatProvider() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Show loading screen while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background-tertiary flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-500" />
+          <p className="mt-4 text-sm text-neutral-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
