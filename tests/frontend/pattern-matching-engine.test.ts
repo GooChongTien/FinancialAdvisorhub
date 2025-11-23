@@ -115,6 +115,10 @@ describe("Pattern Matching Engine", () => {
     });
 
     it("should allow custom configuration", () => {
+      // Reset singleton to allow custom config
+      engine.destroy();
+      PatternMatchingEngine["instance"] = null as any;
+
       const customEngine = PatternMatchingEngine.getInstance({
         minConfidence: 0.8,
         maxPatterns: 3,

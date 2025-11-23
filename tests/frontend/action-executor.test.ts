@@ -53,7 +53,7 @@ describe("UIActionExecutor", () => {
     ]);
 
     expect(navigateMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledWith("/customers/detail?id=abc&filter=hot");
+    expect(navigateMock).toHaveBeenCalledWith("/advisor/customers/detail?id=abc&filter=hot");
   });
 
   it("emits prefill events through the provided handler", async () => {
@@ -221,7 +221,7 @@ describe("UIActionExecutor", () => {
       { correlationId: "auto-undo-1" },
     );
 
-    expect(navigateMock).toHaveBeenCalledWith("/customers/detail?id=auto-lead");
+    expect(navigateMock).toHaveBeenCalledWith("/advisor/customers/detail?id=auto-lead");
 
     window.dispatchEvent(
       new CustomEvent("mira:auto-actions:undo", {

@@ -89,48 +89,48 @@ describe("MiraContextProvider", () => {
   it("updates module and page when navigation changes location", async () => {
     let snapshot: any;
     cleanup = mountProvider({
-      initialEntries: ["/customers"],
+      initialEntries: ["/advisor/customers"],
       onPrimary: (payload) => {
         snapshot = payload;
       },
     });
 
-    await waitFor(() => snapshot && snapshot.context.page === "/customers");
+    await waitFor(() => snapshot && snapshot.context.page === "/advisor/customers");
     expect(snapshot.context.module).toBe("customer");
 
     const navigate = snapshot.navigate;
     await act(async () => {
-      navigate("/analytics/performance");
+      navigate("/advisor/analytics/performance");
     });
 
-    await waitFor(() => snapshot && snapshot.context.page === "/analytics/performance");
+    await waitFor(() => snapshot && snapshot.context.page === "/advisor/analytics/performance");
     expect(snapshot.context.module).toBe("analytics");
   });
 
   it("resets pageData on route change and getContext mirrors state", async () => {
     let snapshot: any;
     cleanup = mountProvider({
-      initialEntries: ["/customers?tab=list"],
+      initialEntries: ["/advisor/customers?tab=list"],
       onPrimary: (payload) => {
         snapshot = payload;
       },
     });
 
-    await waitFor(() => snapshot && snapshot.context.page === "/customers");
+    await waitFor(() => snapshot && snapshot.context.page === "/advisor/customers");
 
     await act(async () => {
       snapshot.context.setPageData({ draft: "yes" });
     });
     await waitFor(() => snapshot.context.pageData.draft === "yes");
     const firstContext = snapshot.context.getContext();
-    expect(firstContext.page).toBe("/customers");
+    expect(firstContext.page).toBe("/advisor/customers");
     expect(firstContext.pageData.draft).toBe("yes");
 
     const navigate = snapshot.navigate;
     await act(async () => {
-      navigate("/todo");
+      navigate("/advisor/todo");
     });
-    await waitFor(() => snapshot && snapshot.context.page === "/todo");
+    await waitFor(() => snapshot && snapshot.context.page === "/advisor/todo");
     expect(snapshot.context.pageData).toEqual({});
     const secondContext = snapshot.context.getContext();
     expect(secondContext.module).toBe("todo");
@@ -140,7 +140,7 @@ describe("MiraContextProvider", () => {
     let primary: any;
     let secondary: any;
     cleanup = mountProvider({
-      initialEntries: ["/customers"],
+      initialEntries: ["/advisor/customers"],
       onPrimary: (payload) => {
         primary = payload;
       },
@@ -155,7 +155,7 @@ describe("MiraContextProvider", () => {
 
     const navigate = primary.navigate;
     await act(async () => {
-      navigate("/broadcast/detail");
+      navigate("/advisor/broadcast/detail");
     });
 
     await waitFor(() => secondary && secondary.module === "broadcast");
