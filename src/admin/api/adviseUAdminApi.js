@@ -689,6 +689,14 @@ const ServiceRequestEntity = {
     const { data, error } = await query;
     return readData({ data, error }, "load service requests");
   },
+  async getById(id) {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return readSingle({ data, error }, "get service request");
+  },
   async create(payload) {
     const { data, error } = await supabase
       .from("service_requests")
@@ -705,6 +713,103 @@ const ServiceRequestEntity = {
       .select()
       .single();
     return readSingle({ data, error }, "update service request");
+  },
+  async delete(id) {
+    const { data, error } = await supabase
+      .from("service_requests")
+      .delete()
+      .eq("id", id)
+      .select()
+      .single();
+    return readSingle({ data, error }, "delete service request");
+  },
+};
+
+const EntityCustomerEntity = {
+  async list(criteria) {
+    let query = supabase.from("entity_customers").select("*");
+    query = applyFilters(query, criteria);
+    query = query.order("created_at", { ascending: false });
+    const { data, error } = await query;
+    return readData({ data, error }, "load entity customers");
+  },
+  async getById(id) {
+    const { data, error} = await supabase
+      .from("entity_customers")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return readSingle({ data, error }, "get entity customer");
+  },
+  async create(payload) {
+    const { data, error } = await supabase
+      .from("entity_customers")
+      .insert([{ ...payload, advisor_id: await currentUserId() }])
+      .select()
+      .single();
+    return readSingle({ data, error }, "create entity customer");
+  },
+  async update(id, updates) {
+    const { data, error } = await supabase
+      .from("entity_customers")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+    return readSingle({ data, error }, "update entity customer");
+  },
+  async delete(id) {
+    const { data, error } = await supabase
+      .from("entity_customers")
+      .delete()
+      .eq("id", id)
+      .select()
+      .single();
+    return readSingle({ data, error }, "delete entity customer");
+  },
+};
+
+const MilestoneEntity = {
+  async list(criteria) {
+    let query = supabase.from("customer_milestones").select("*");
+    query = applyFilters(query, criteria);
+    query = query.order("milestone_date", { ascending: false });
+    const { data, error } = await query;
+    return readData({ data, error }, "load milestones");
+  },
+  async getById(id) {
+    const { data, error } = await supabase
+      .from("customer_milestones")
+      .select("*")
+      .eq("id", id)
+      .single();
+    return readSingle({ data, error }, "get milestone");
+  },
+  async create(payload) {
+    const { data, error } = await supabase
+      .from("customer_milestones")
+      .insert([payload])
+      .select()
+      .single();
+    return readSingle({ data, error }, "create milestone");
+  },
+  async update(id, updates) {
+    const { data, error } = await supabase
+      .from("customer_milestones")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+    return readSingle({ data, error }, "update milestone");
+  },
+  async delete(id) {
+    const { data, error } = await supabase
+      .from("customer_milestones")
+      .delete()
+      .eq("id", id)
+      .select()
+      .single();
+    return readSingle({ data, error }, "delete milestone");
   },
 };
 
@@ -741,6 +846,8 @@ export const adviseUAdminApi = {
     LeadStatusHistory: LeadStatusHistoryEntity,
     LeadEditHistory: LeadEditHistoryEntity,
     MiraChat: MiraChatEntity,
+    EntityCustomer: EntityCustomerEntity,
+    Milestone: MilestoneEntity,
   },
 };
 
