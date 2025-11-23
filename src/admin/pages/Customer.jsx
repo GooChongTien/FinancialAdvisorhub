@@ -73,6 +73,7 @@ export default function Customer() {
     createdEnd: "advisorhub:customers-created-end",
     lastContacted: "advisorhub:customers-last-contacted",
     relationship: "advisorhub:customers-relationship",
+    temperature: "advisorhub:customers-temperature",
     sort: "advisorhub:customers-sort",
     filtersCollapsed: "advisorhub:customers-filters-collapsed",
   };
@@ -105,6 +106,10 @@ export default function Customer() {
   const [relationshipFilter, setRelationshipFilter] = useState(() => {
     if (typeof window === "undefined") return "all";
     return window.sessionStorage.getItem(storageKeys.relationship) ?? "all";
+  });
+  const [temperatureFilter, setTemperatureFilter] = useState(() => {
+    if (typeof window === "undefined") return "all";
+    return window.sessionStorage.getItem(storageKeys.temperature) ?? "all";
   });
   const [sortOrder, setSortOrder] = useState(() => {
     if (typeof window === "undefined") return "lastContacted";
@@ -188,6 +193,14 @@ export default function Customer() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(
+      storageKeys.temperature,
+      temperatureFilter,
+    );
+  }, [temperatureFilter]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     window.sessionStorage.setItem(storageKeys.sort, sortOrder);
   }, [sortOrder]);
 
@@ -260,6 +273,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       sourceFilter,
       lastContactedFilter,
       relationshipFilter,
+      temperatureFilter,
       sortOrder,
       filtersCollapsed,
       visibleCount,
@@ -271,6 +285,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       sourceFilter,
       lastContactedFilter,
       relationshipFilter,
+      temperatureFilter,
       sortOrder,
       filtersCollapsed,
       visibleCount,
@@ -518,6 +533,13 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
         return false;
       }
 
+      if (temperatureFilter !== "all") {
+        const temperature = calculateCustomerTemperature(lead);
+        if (temperatureFilter !== temperature) {
+          return false;
+        }
+      }
+
       // Created date filters removed per QA request
 
       if (lastContactedFilter !== "any") {
@@ -608,6 +630,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     statusFilter,
     sourceFilter,
     relationshipFilter,
+    temperatureFilter,
     lastContactedFilter,
     sortOrder,
     upcomingAppointments,
@@ -621,6 +644,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     statusFilter,
     sourceFilter,
     relationshipFilter,
+    temperatureFilter,
     lastContactedFilter,
     sortOrder,
   ]);
@@ -677,6 +701,13 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
         onRemove: () => setRelationshipFilter("all"),
       });
     }
+    if (temperatureFilter !== "all") {
+      chips.push({
+        key: "temperature",
+        label: `Temperature: ${temperatureFilter.charAt(0).toUpperCase() + temperatureFilter.slice(1)}`,
+        onRemove: () => setTemperatureFilter("all"),
+      });
+    }
     if (sourceFilter !== "all") {
       chips.push({
         key: "source",
@@ -711,13 +742,14 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       });
     }
     return chips;
-  }, [lastContactedFilter, relationshipFilter, sourceFilter, statusFilter]);
+  }, [lastContactedFilter, relationshipFilter, temperatureFilter, sourceFilter, statusFilter]);
 
   const clearAllFilters = useCallback(() => {
     setStatusFilter("all");
     setSourceFilter("all");
     setLastContactedFilter("any");
     setRelationshipFilter("all");
+    setTemperatureFilter("all");
   }, []);
 
   const renderFilterBadges = useCallback(
@@ -856,6 +888,22 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
                         <SelectItem value="all">All relationships</SelectItem>
                         <SelectItem value="leads">Leads only</SelectItem>
                         <SelectItem value="clients">Customers only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Temperature */}
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700 mb-2">Temperature</Label>
+                    <Select value={temperatureFilter} onValueChange={setTemperatureFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All temperatures" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All temperatures</SelectItem>
+                        <SelectItem value="hot">Hot (&le;7 days)</SelectItem>
+                        <SelectItem value="warm">Warm (&le;30 days)</SelectItem>
+                        <SelectItem value="cool">Cool (&gt;30 days)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
