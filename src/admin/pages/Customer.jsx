@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/admin/utils";
 import { differenceInCalendarDays, format, endOfDay, startOfDay } from "date-fns";
+import TemperatureBadge from "@/admin/components/ui/TemperatureBadge.jsx";
+import { calculateCustomerTemperature } from "@/lib/customer-temperature";
 import {
   Search,
   Plus,
@@ -246,7 +248,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
 
   const totalLeads = leads?.length ?? 0;
 
-  // Simple client-side pagination for large lists
+  // Simple in-memory pagination for large lists
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -637,16 +639,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     return colors[status] || "bg-slate-100 text-slate-700";
   };
 
-  const getTemperature = (lead) => {
-    const lc = lead?.last_contacted ? new Date(lead.last_contacted) : null;
-    if (!lc || Number.isNaN(lc.getTime())) {
-      return { label: "Cool", cls: "bg-slate-100 text-slate-700" };
-    }
-    const days = differenceInCalendarDays(new Date(), lc);
-    if (days <= 7) return { label: "Hot", cls: "bg-red-100 text-red-700" };
-    if (days <= 30) return { label: "Warm", cls: "bg-orange-100 text-orange-700" };
-    return { label: "Cool", cls: "bg-slate-100 text-slate-700" };
-  };
+  // Temperature calculation now uses calculateCustomerTemperature utility
 
   const lastContactedLabels = {
     "7": "Last 7 days",
@@ -679,7 +672,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
         key: "relationship",
         label:
           relationshipFilter === "clients"
-            ? "Relationship: Clients"
+            ? "Relationship: Customers"
             : "Relationship: Leads",
         onRemove: () => setRelationshipFilter("all"),
       });
@@ -784,7 +777,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       <div className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="Customer Management"
-          subtitle="Manage your leads and clients"
+              subtitle="Manage your leads and customers"
           icon={Users}
           actions={(
             <Button onClick={() => setShowNewLeadDialog(true)} className="bg-primary-600 shadow-lg hover:bg-primary-700">
@@ -862,7 +855,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
                       <SelectContent>
                         <SelectItem value="all">All relationships</SelectItem>
                         <SelectItem value="leads">Leads only</SelectItem>
-                        <SelectItem value="clients">Clients only</SelectItem>
+                        <SelectItem value="clients">Customers only</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1019,7 +1012,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
                       <SelectContent>
                         <SelectItem value="all">All relationships</SelectItem>
                         <SelectItem value="leads">Leads only</SelectItem>
-                        <SelectItem value="clients">Clients only</SelectItem>
+                        <SelectItem value="clients">Customers only</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1048,8 +1041,8 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
 
                 {renderFilterBadges()}
                 <div className="text-xs text-slate-500">
-                  <span className="font-semibold text-primary-600">Client</span>{" "}
-                  badge highlights converted clients; status badge reflects the current
+                  <span className="font-semibold text-primary-600">Customer</span>{" "}
+                  badge highlights converted customers; status badge reflects the current
                   proposal stage.
                 </div>
               </>
@@ -1120,17 +1113,14 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
                             <Badge className={getStatusColor(lead.status)}>
                               {lead.status}
                             </Badge>
-                            {!lead.is_client && (() => {
-                              const t = getTemperature(lead);
-                              return (
-                                <Badge className={t.cls}>
-                                  {t.label}
-                                </Badge>
-                              );
-                            })()}
+                            {!lead.is_client && (
+                              <TemperatureBadge
+                                temperature={calculateCustomerTemperature(lead)}
+                              />
+                            )}
                             {lead.is_client && (
                               <Badge className="bg-green-100 text-green-700">
-                                Client
+                                Customer
                               </Badge>
                             )}
                           </div>
