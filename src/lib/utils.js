@@ -7,15 +7,18 @@ export function cn(...inputs) {
 
 export function formatCurrency(amount, { currency = "SGD", language = "en-SG" } = {}) {
   const value = Number(amount ?? 0);
+  const code = typeof currency === "string" ? currency.toUpperCase() : "SGD";
   try {
-    // Map simple language label to locale if needed
-    const locale = language?.toLowerCase().startsWith("en") ? "en-SG"
-      : language?.toLowerCase().startsWith("ch") ? "zh-SG"
-        : language?.toLowerCase().startsWith("ms") ? "ms-SG"
-          : "en-SG";
-    return new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
+    const lang = (language || "").toLowerCase();
+    const locale = lang.startsWith("zh") ? "zh-SG"
+      : lang.startsWith("ms") ? "ms-SG"
+        : lang.startsWith("ta") ? "ta-IN"
+          : lang.startsWith("hi") ? "hi-IN"
+            : lang.startsWith("es") ? "es-ES"
+              : "en-SG";
+    return new Intl.NumberFormat(locale, { style: "currency", currency: code }).format(value);
   } catch {
-    return `${currency} ${value.toFixed(2)}`;
+    return `${code} ${value.toFixed(2)}`;
   }
 }
 

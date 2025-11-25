@@ -6,6 +6,7 @@ import { Button } from "@/admin/components/ui/button";
 import { Textarea } from "@/admin/components/ui/textarea";
 import { Save, DollarSign, TrendingUp, Plus, Trash2, Printer } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/admin/components/ui/select";
+import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
 export default function FNASection({ proposal, onSave, isSaving }) {
   const [formData, setFormData] = useState({
     incomes: [], // {source, amount, frequency}
@@ -28,9 +29,11 @@ export default function FNASection({ proposal, onSave, isSaving }) {
     onSave(formData);
   };
 
+  const { prefs } = usePreferences?.() ?? { prefs: { currency: "SGD" } };
+  const currencyCode = prefs?.currency || "SGD";
   const currency = useMemo(
-    () => new Intl.NumberFormat(undefined, { style: "currency", currency: "SGD" }),
-    [],
+    () => new Intl.NumberFormat(undefined, { style: "currency", currency: currencyCode }),
+    [currencyCode],
   );
 
   const parse = (v) => {

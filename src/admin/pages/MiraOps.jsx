@@ -41,8 +41,8 @@ const MODULE_OPTIONS = [
   { label: "New Business", value: "new_business" },
   { label: "Product", value: "product" },
   { label: "Analytics", value: "analytics" },
-  { label: "To Do", value: "todo" },
-  { label: "Broadcast", value: "broadcast" },
+  { label: "Smart Plan", value: "todo" },
+  { label: "News", value: "news" },
   { label: "Visualizer", value: "visualizer" },
 ];
 
@@ -64,7 +64,7 @@ const ENTITY_ROUTE_BUILDERS = {
   customer: (id) => createPageUrl(`CustomerDetail?id=${id}`),
   lead: (id) => createPageUrl(`CustomerDetail?id=${id}`),
   policy: (id) => createPageUrl(`PolicyDetail?id=${id}`),
-  task: (id) => `${createPageUrl("ToDo")}?taskId=${id}`,
+  task: (id) => `${createPageUrl("SmartPlan")}?taskId=${id}`,
 };
 
 const PAGE_SIZE = 25;

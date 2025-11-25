@@ -18,11 +18,14 @@ import ProfileSettings from "@/admin/pages/ProfileSettings.jsx";
 import ProposalDetail from "@/admin/pages/ProposalDetail.jsx";
 import QuoteSummary from "@/admin/pages/QuoteSummary.jsx";
 import Register from "@/admin/pages/Register.jsx";
-import ToDo from "@/admin/pages/ToDo.jsx";
+import ScenarioVisualizer from "@/admin/pages/ScenarioVisualizer.jsx";
+import ServiceRequestDetail from "@/admin/pages/ServiceRequestDetail.jsx";
+import ServiceRequests from "@/admin/pages/ServiceRequests.jsx";
+import SmartPlan from "@/admin/pages/SmartPlan.jsx";
+import SmartPlanDetail from "@/admin/pages/SmartPlanDetail.jsx";
 import { AgentChatProvider } from "@/admin/state/providers/AgentChatProvider.jsx";
 import { MiraContextProvider } from "@/admin/state/providers/MiraContextProvider.jsx";
 import { MiraConfirmProvider } from "@/lib/mira/useMiraConfirm";
-import { useGlobalKeyboardShortcuts } from "@/admin/hooks/useGlobalKeyboardShortcuts";
 import MiraQuickstart from "@/pages/MiraQuickstart.jsx";
 import { Navigate, Route, Routes } from "react-router-dom";
 
@@ -67,14 +70,22 @@ export default function App() {
               <Route path="customers/detail" element={<CustomerDetail />} />
               <Route path="new-business" element={<NewBusiness />} />
               <Route path="product" element={<Product />} />
+              <Route path="service-requests" element={<ServiceRequests />} />
+              <Route path="service-requests/detail" element={<ServiceRequestDetail />} />
               <Route path="quote-summary" element={<QuoteSummary />} />
               <Route path="proposals/detail" element={<ProposalDetail />} />
               <Route path="policies/detail" element={<PolicyDetail />} />
               <Route path="profile-settings" element={<ProfileSettings />} />
               <Route path="analytics" element={<Analytics />} />
-              <Route path="broadcast" element={<Broadcast />} />
-              <Route path="broadcast/detail" element={<BroadcastDetail />} />
-              <Route path="todo" element={<ToDo />} />
+              <Route path="news" element={<Broadcast />} />
+              <Route path="news/detail" element={<BroadcastDetail />} />
+              {/* Legacy aliases */}
+              <Route path="broadcast" element={<Navigate to="/advisor/news" replace />} />
+              <Route path="broadcast/detail" element={<Navigate to="/advisor/news/detail" replace />} />
+              <Route path="smart-plan" element={<SmartPlan />} />
+              <Route path="smart-plan/detail" element={<SmartPlanDetail />} />
+              <Route path="visualizers" element={<ScenarioVisualizer />} />
+              <Route path="todo" element={<Navigate to="/advisor/smart-plan" replace />} />
               <Route path="chat" element={<ChatMira />} />
               <Route path="chats" element={<AllChats />} />
               <Route path="mira/ops" element={<MiraOps />} />

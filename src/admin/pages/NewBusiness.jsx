@@ -1,27 +1,14 @@
-import React, { useState, useEffect } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import { format } from "date-fns";
-import {
-  Search,
-  Plus,
-  Clock,
-  FileText,
-  TrendingUp,
-  Target,
-  Calculator,
-  Send,
-  Filter,
-  ArrowUpDown,
-} from "lucide-react";
-import PageHeader from "@/admin/components/ui/page-header.jsx";
-import { Card, CardContent } from "@/admin/components/ui/card";
-import { Input } from "@/admin/components/ui/input";
-import { Button } from "@/admin/components/ui/button";
 import { Badge } from "@/admin/components/ui/badge";
-import { Skeleton } from "@/admin/components/ui/skeleton";
+import { Button } from "@/admin/components/ui/button";
+import { Card, CardContent } from "@/admin/components/ui/card";
+import PageHeader from "@/admin/components/ui/page-header.jsx";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/admin/components/ui/popover";
+import SearchFilterBar from "@/admin/components/ui/search-filter-bar.jsx";
 import {
   Select,
   SelectContent,
@@ -29,13 +16,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/admin/components/ui/select";
-import SearchFilterBar from "@/admin/components/ui/search-filter-bar.jsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/admin/components/ui/popover";
+import { Skeleton } from "@/admin/components/ui/skeleton";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
+import { createPageUrl } from "@/admin/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import {
+  ArrowUpDown,
+  Calculator,
+  FileText,
+  Filter,
+  Send,
+  Target,
+  TrendingUp
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const stageIcons = {
   "Fact Finding": FileText,
@@ -346,115 +342,119 @@ export default function NewBusiness() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <PageHeader
-          title="New Business"
-          subtitle="Track and manage your proposal pipeline"
-          icon={FileText}
-        />
+        {/* Sticky Header Section */}
+        <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200 space-y-6">
+          <PageHeader
+            title="New Business"
+            subtitle="Track and manage your proposal pipeline"
+            icon={FileText}
+            className="mb-0"
+          />
 
-        {/* Unified Search/Filter/Sort Bar */}
-        <SearchFilterBar
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          placeholder="Search by proposal number or client name..."
-          filterButton={
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={filterStage !== "all" || filterStatus !== "all" ? "default" : "outline"}
-                  size="icon"
-                  className={filterStage !== "all" || filterStatus !== "all" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                  title="Filter"
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Stage</h4>
-                    <Select value={filterStage} onValueChange={setFilterStage}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Stage" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Stages</SelectItem>
-                        <SelectItem value="Fact Finding">Fact Finding</SelectItem>
-                        <SelectItem value="Financial Planning">Financial Planning</SelectItem>
-                        <SelectItem value="Recommendation">Recommendation</SelectItem>
-                        <SelectItem value="Quotation">Quotation</SelectItem>
-                        <SelectItem value="Application">Application</SelectItem>
-                      </SelectContent>
-                    </Select>
+          {/* Unified Search/Filter/Sort Bar */}
+          <SearchFilterBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            placeholder="Search by proposal number or client name..."
+            filterButton={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={filterStage !== "all" || filterStatus !== "all" ? "default" : "outline"}
+                    size="icon"
+                    className={filterStage !== "all" || filterStatus !== "all" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
+                    title="Filter"
+                  >
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Stage</h4>
+                      <Select value={filterStage} onValueChange={setFilterStage}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Stage" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Stages</SelectItem>
+                          <SelectItem value="Fact Finding">Fact Finding</SelectItem>
+                          <SelectItem value="Financial Planning">Financial Planning</SelectItem>
+                          <SelectItem value="Recommendation">Recommendation</SelectItem>
+                          <SelectItem value="Quotation">Quotation</SelectItem>
+                          <SelectItem value="Application">Application</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Status</h4>
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="In Progress">In Progress</SelectItem>
+                          <SelectItem value="Pending for UW">Pending UW</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Status</h4>
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="In Progress">In Progress</SelectItem>
-                        <SelectItem value="Pending for UW">Pending UW</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                </PopoverContent>
+              </Popover>
+            }
+            sortButton={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={sortBy !== "date-desc" ? "default" : "outline"}
+                    size="icon"
+                    className={sortBy !== "date-desc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
+                    title="Sort"
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
+                    <div className="space-y-2">
+                      <Button
+                        variant={sortBy === "date-desc" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("date-desc")}
+                      >
+                        Latest Update
+                      </Button>
+                      <Button
+                        variant={sortBy === "date-asc" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("date-asc")}
+                      >
+                        Oldest Update
+                      </Button>
+                      <Button
+                        variant={sortBy === "name-asc" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("name-asc")}
+                      >
+                        Name (A-Z)
+                      </Button>
+                      <Button
+                        variant={sortBy === "stage" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("stage")}
+                      >
+                        By Stage
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          }
-          sortButton={
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={sortBy !== "date-desc" ? "default" : "outline"}
-                  size="icon"
-                  className={sortBy !== "date-desc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                  title="Sort"
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
-                  <div className="space-y-2">
-                    <Button
-                      variant={sortBy === "date-desc" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("date-desc")}
-                    >
-                      Latest Update
-                    </Button>
-                    <Button
-                      variant={sortBy === "date-asc" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("date-asc")}
-                    >
-                      Oldest Update
-                    </Button>
-                    <Button
-                      variant={sortBy === "name-asc" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("name-asc")}
-                    >
-                      Name (A-Z)
-                    </Button>
-                    <Button
-                      variant={sortBy === "stage" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("stage")}
-                    >
-                      By Stage
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          }
-        />
+                </PopoverContent>
+              </Popover>
+            }
+          />
+        </div>
 
         {/* Proposals List */}
         <div className="space-y-4">
@@ -521,24 +521,22 @@ export default function NewBusiness() {
                                   style={showPie ? { backgroundImage: `conic-gradient(currentColor ${deg}deg, #E2E8F0 0)` } : undefined}
                                 >
                                   <div
-                                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                                      showPie
-                                        ? (isCurrent ? "bg-blue-500 text-white ring-4 ring-primary-100" : "bg-blue-500 text-white")
-                                        : item.status === "completed"
-                                          ? "bg-green-500 text-white"
-                                          : isCurrent
-                                            ? "bg-primary-500 text-white ring-4 ring-primary-100"
-                                            : "bg-slate-200 text-slate-400"
-                                    }`}
+                                    className={`w-12 h-12 rounded-full flex items-center justify-center ${showPie
+                                      ? (isCurrent ? "bg-blue-500 text-white ring-4 ring-primary-100" : "bg-blue-500 text-white")
+                                      : item.status === "completed"
+                                        ? "bg-green-500 text-white"
+                                        : isCurrent
+                                          ? "bg-primary-500 text-white ring-4 ring-primary-100"
+                                          : "bg-slate-200 text-slate-400"
+                                      }`}
                                   >
                                     <Icon className="w-6 h-6" />
                                   </div>
                                 </div>
                                 {index < stageProgress.length - 1 && (
                                   <div
-                                    className={`w-10 h-1 mx-2 rounded transition-all ${
-                                      item.status === "completed" ? "bg-green-500" : "bg-slate-200"
-                                    }`}
+                                    className={`w-10 h-1 mx-2 rounded transition-all ${item.status === "completed" ? "bg-green-500" : "bg-slate-200"
+                                      }`}
                                   />
                                 )}
                               </React.Fragment>

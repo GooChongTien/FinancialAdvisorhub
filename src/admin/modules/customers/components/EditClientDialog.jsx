@@ -57,7 +57,7 @@ export default function EditClientDialog({ open, onClose, onSubmit, lead, isSavi
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit Client Information</DialogTitle>
+          <DialogTitle>Edit Customer Information</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">

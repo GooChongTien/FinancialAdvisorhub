@@ -112,8 +112,8 @@ export class ToDoAgent extends SkillAgent {
           this.id,
           intent,
           context,
-          "Opening To-Do workspace.",
-          [createNavigateAction(context.module, "/todo")],
+          "Opening Smart Plan workspace.",
+          [createNavigateAction(context.module, "/smart-plan")],
         );
     }
   }
@@ -124,8 +124,8 @@ export class ToDoAgent extends SkillAgent {
       overdue: Boolean(context.pageData?.overdue ?? false),
     };
     await this.invokeTool("todo__tasks.list", filters, { context });
-    const actions = [createNavigateAction(context.module, "/todo", filters)];
-    const reply = "Listing your pending items with overdue filter applied so you can triage quickly.";
+    const actions = [createNavigateAction(context.module, "/smart-plan", filters)];
+    const reply = "Listing your Smart Plan tasks with overdue filter applied so you can triage quickly.";
     return buildAgentResponse(this.id, "list_tasks", context, reply, actions, {
       subtopic: "tasks",
     });
@@ -139,11 +139,11 @@ export class ToDoAgent extends SkillAgent {
     };
     await this.invokeTool("todo__tasks.create", payload, { context });
     const actions = createCRUDFlow("create", context.module, {
-      page: "/todo",
+      page: "/smart-plan",
       payload,
       description: "Prefill the new task modal",
     });
-    const reply = "I'll open the To-Do modal with your task details prefilled for quick confirmation.";
+    const reply = "I'll open the Smart Plan modal with your task details prefilled for quick confirmation.";
     return buildAgentResponse(this.id, "create_task", context, reply, actions, {
       subtopic: "tasks",
     });
@@ -153,7 +153,7 @@ export class ToDoAgent extends SkillAgent {
     const taskId = (context.pageData?.taskId as string) ?? "T-1";
     await this.invokeTool("todo__tasks.update", { id: taskId, status: "completed" }, { context });
     const actions = createCRUDFlow("update", context.module, {
-      page: "/todo",
+      page: "/smart-plan",
       payload: { id: taskId, status: "completed" },
       endpoint: `/api/todo/tasks/${taskId}`,
       description: "Confirm completion",
@@ -168,7 +168,7 @@ export class ToDoAgent extends SkillAgent {
     const startDate = (context.pageData?.startDate as string) ?? new Date().toISOString();
     const endDate = (context.pageData?.endDate as string) ?? new Date(Date.now() + 7 * 86400000).toISOString();
     await this.invokeTool("calendar.getEvents", { startDate, endDate }, { context });
-    const actions = [createNavigateAction(context.module, "/todo/calendar", { startDate, endDate })];
+    const actions = [createNavigateAction(context.module, "/smart-plan/calendar", { startDate, endDate })];
     const reply = "Switching to calendar view and highlighting events for the selected range.";
     return buildAgentResponse(this.id, "view_calendar", context, reply, actions, {
       subtopic: "calendar",

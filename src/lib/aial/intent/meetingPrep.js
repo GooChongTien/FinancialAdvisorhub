@@ -55,7 +55,7 @@ function makeExecutor({ fetchTasks, createDestination }) {
 
     const nextMeeting = meetings[0];
     const destination =
-      environment.createPageUrl?.("ToDo") ?? createDestination("ToDo");
+      environment.createPageUrl?.("SmartPlan") ?? createDestination("SmartPlan");
 
     if (environment.navigate) {
       environment.navigate(destination);

@@ -535,6 +535,8 @@ export class PatternMatchingEngine {
       this.processingTimer = null;
     }
 
+    // Flush pending data before destroying
+    this.learningService.flush();
     this.learningService.destroy();
     this.streamBuffer = [];
     this.lastContext = null;

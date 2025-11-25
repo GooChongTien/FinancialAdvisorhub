@@ -10,7 +10,7 @@ const contexts = {
   new_business: { module: "new_business", page: "/new-business", pageData: {} },
   product: { module: "product", page: "/product", pageData: {} },
   analytics: { module: "analytics", page: "/analytics", pageData: {} },
-  todo: { module: "todo", page: "/todo", pageData: {} },
+  todo: { module: "todo", page: "/smart-plan", pageData: {} },
 };
 
 describe("Skill agents emit templated ui_actions", () => {

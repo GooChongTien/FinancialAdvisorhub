@@ -9,7 +9,7 @@ import { ensureAdvisorUser, loadEnv } from '../utils/e2eHelpers';
  * 1. Intent router classifies → ToDoAgent selected
  * 2. Agent parses "tomorrow" as due_date
  * 3. Agent returns navigate + prefill + execute actions
- * 4. Frontend navigates to /todo
+ * 4. Frontend navigates to /smart-plan
  * 5. Opens new task modal
  * 6. Prefills title="Follow up with Kim", due_date=tomorrow
  * 7. Shows confirmation dialog
@@ -18,14 +18,14 @@ import { ensureAdvisorUser, loadEnv } from '../utils/e2eHelpers';
  *
  * Test scenario 2: User asks "What are my tasks for today?"
  * Expected flow:
- * 1. ToDoAgent returns navigate action to /todo with today filter
+ * 1. ToDoAgent returns navigate action to /smart-plan with today filter
  * 2. Frontend navigates and displays filtered tasks
  *
  * Test scenario 3: Copilot suggests "Complete overdue tasks"
  * Expected flow:
  * 1. Copilot mode shows suggestion with overdue task count
  * 2. User clicks suggestion
- * 3. Navigates to /todo?filter=overdue
+ * 3. Navigates to /smart-plan?filter=overdue
  */
 
 const TEST_FLAG_KEY = 'mira:test:create-task';
@@ -109,7 +109,7 @@ test.describe('Flow 3: Create Task', () => {
           ui_actions: [
             {
               action: 'navigate',
-              page: '/todo',
+              page: '/smart-plan',
               popup: 'new-task-dialog',
               description: 'Opening task management page',
             },
@@ -157,8 +157,8 @@ test.describe('Flow 3: Create Task', () => {
     // Step 4: Verify agent response appears
     await expect(page.getByText(/I'll create a reminder/i)).toBeVisible({ timeout: 10000 });
 
-    // Step 5: Verify navigation to /todo
-    await page.waitForURL('**/todo**', { timeout: 10000 });
+    // Step 5: Verify navigation to /smart-plan
+    await page.waitForURL('**/smart-plan**', { timeout: 10000 });
 
     // Step 6: Verify new task dialog opens
     const dialog = page.getByRole('dialog', { name: /new task|add task|create task/i });
@@ -214,7 +214,7 @@ test.describe('Flow 3: Create Task', () => {
           ui_actions: [
             {
               action: 'navigate',
-              page: '/todo',
+              page: '/smart-plan',
               params: {
                 filter: 'today',
               },
@@ -245,10 +245,10 @@ test.describe('Flow 3: Create Task', () => {
 
     await expect(page.getByText(/Here are your tasks for today/i)).toBeVisible({ timeout: 10000 });
 
-    // Verify navigation to /todo with today filter
-    await page.waitForURL('**/todo**', { timeout: 10000 });
+    // Verify navigation to /smart-plan with today filter
+    await page.waitForURL('**/smart-plan**', { timeout: 10000 });
     const url = page.url();
-    expect(url).toContain('/todo');
+    expect(url).toContain('/smart-plan');
     expect(url).toContain('filter=today');
   });
 
@@ -294,7 +294,7 @@ test.describe('Flow 3: Create Task', () => {
           ui_actions: [
             {
               action: 'navigate',
-              page: '/todo',
+              page: '/smart-plan',
               params: {
                 filter: 'overdue',
               },
@@ -334,9 +334,9 @@ test.describe('Flow 3: Create Task', () => {
     await overdueSuggestion.click();
 
     // Verify navigation
-    await page.waitForURL('**/todo**', { timeout: 10000 });
+    await page.waitForURL('**/smart-plan**', { timeout: 10000 });
     const url = page.url();
-    expect(url).toContain('/todo');
+    expect(url).toContain('/smart-plan');
     expect(url).toContain('filter=overdue');
   });
 

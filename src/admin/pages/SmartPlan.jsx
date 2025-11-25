@@ -1,42 +1,55 @@
-import React, { useState } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO, isToday, isTomorrow, isPast, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, startOfDay } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
-import { Button } from "@/admin/components/ui/button";
-import { Badge } from "@/admin/components/ui/badge";
-import { Checkbox } from "@/admin/components/ui/checkbox";
-import { Calendar, Clock, User, Plus, CheckCircle2, AlertCircle, ChevronRight, List, ChevronLeft, CalendarIcon, Download, Undo2, Filter, X, MapPin, FileText, Search, Cake, ArrowUpDown } from "lucide-react";
-import PageHeader from "@/admin/components/ui/page-header.jsx";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/admin/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/admin/components/ui/dialog";
 import { Alert, AlertDescription } from "@/admin/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/admin/components/ui/select";
-import { useToast } from "@/admin/components/ui/toast";
-import AddEventDialog from "@/admin/modules/customers/components/AddEventDialog";
-import { Separator } from "@/admin/components/ui/separator";
-import { Label } from "@/admin/components/ui/label";
+import { Badge } from "@/admin/components/ui/badge";
+import { Button } from "@/admin/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
+import { Checkbox } from "@/admin/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/admin/components/ui/dialog";
 import { Input } from "@/admin/components/ui/input";
-import { Switch } from "@/admin/components/ui/switch";
-import SearchFilterBar from "@/admin/components/ui/search-filter-bar.jsx";
+import { Label } from "@/admin/components/ui/label";
+import PageHeader from "@/admin/components/ui/page-header.jsx";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/admin/components/ui/popover";
+import SearchFilterBar from "@/admin/components/ui/search-filter-bar.jsx";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/admin/components/ui/select";
+import { Switch } from "@/admin/components/ui/switch";
+import { useToast } from "@/admin/components/ui/toast";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
 import useMiraPopupListener from "@/admin/hooks/useMiraPopupListener.js";
+import AddEventDialog from "@/admin/modules/customers/components/AddEventDialog";
+import { createPageUrl } from "@/admin/utils";
 import { MIRA_POPUP_TARGETS } from "@/lib/mira/popupTargets.ts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, parseISO, startOfDay, startOfMonth, startOfWeek, subMonths } from "date-fns";
+import { ArrowUpDown, Cake, Calendar, CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Clock, Download, Filter, List, Plus, Undo2, User } from "lucide-react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function ToDo() {
+const VIEW_MODE_STORAGE_KEY = "advisorhub:smart-plan-view-mode";
+const LEGACY_VIEW_MODE_STORAGE_KEY = "advisorhub:todo-view-mode";
+const FILTER_STORAGE_KEY = "advisorhub:smart-plan-filters";
+const LEGACY_FILTER_STORAGE_KEY = "advisorhub:todo-filters";
+const COMPLETED_STORAGE_KEY = "advisorhub:smart-plan-completed-map";
+const LEGACY_COMPLETED_STORAGE_KEY = "advisorhub:task-completed-map";
+const BIRTHDAY_TOGGLE_KEY = "advisorhub:smart-plan-show-birthdays";
+const LEGACY_BIRTHDAY_TOGGLE_KEY = "advisorhub:todo-show-birthdays";
+const COMPLETED_TOGGLE_KEY = "advisorhub:smart-plan-show-completed";
+const LEGACY_COMPLETED_TOGGLE_KEY = "advisorhub:todo-show-completed";
+
+export default function SmartPlan() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const viewModeStorageKey = "advisorhub:todo-view-mode";
-
   // Main view mode: "list" or "calendar"
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window === "undefined") return "list";
-    return window.localStorage.getItem(viewModeStorageKey) ?? "list";
+    const stored =
+      window.localStorage.getItem(VIEW_MODE_STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_VIEW_MODE_STORAGE_KEY);
+    return stored ?? "list";
   });
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -45,11 +58,12 @@ export default function ToDo() {
   const [sortBy, setSortBy] = useState("date-asc");
 
   // Local completion state (fallback if schema has no 'completed' column)
-  const completedStorageKey = "advisorhub:task-completed-map";
   const [completedMap, setCompletedMap] = useState(() => {
     try {
       if (typeof window === "undefined") return {};
-      const raw = window.localStorage.getItem(completedStorageKey);
+      const raw =
+        window.localStorage.getItem(COMPLETED_STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_COMPLETED_STORAGE_KEY);
       return raw ? JSON.parse(raw) : {};
     } catch {
       return {};
@@ -59,9 +73,10 @@ export default function ToDo() {
   React.useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(completedStorageKey, JSON.stringify(completedMap));
+        window.localStorage.setItem(COMPLETED_STORAGE_KEY, JSON.stringify(completedMap));
+        window.localStorage.removeItem(LEGACY_COMPLETED_STORAGE_KEY);
       }
-    } catch {}
+    } catch { }
   }, [completedMap]);
 
   // Detect if backend provides a 'completed' column (defined after tasks query)
@@ -81,11 +96,12 @@ export default function ToDo() {
   const [eventToDelete, setEventToDelete] = useState(null);
 
   // Simple filter state (advanced panel removed)
-  const filterStorageKey = "advisorhub:todo-filters";
   const [filters, setFilters] = useState(() => {
     try {
       if (typeof window === 'undefined') return { timeRange: 'all', eventType: 'all', linkedClient: '' };
-      const raw = window.localStorage.getItem(filterStorageKey);
+      const raw =
+        window.localStorage.getItem(FILTER_STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_FILTER_STORAGE_KEY);
       const parsed = raw ? JSON.parse(raw) : null;
       const initial = parsed || { timeRange: 'all', eventType: 'all', linkedClient: 'all' };
       // Coerce legacy empty string to 'all'
@@ -96,14 +112,19 @@ export default function ToDo() {
     }
   });
   React.useEffect(() => {
-    try { if (typeof window !== 'undefined') window.localStorage.setItem(filterStorageKey, JSON.stringify(filters)); } catch {}
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
+        window.localStorage.removeItem(LEGACY_FILTER_STORAGE_KEY);
+      }
+    } catch { }
   }, [filters]);
 
   // Drag and drop state
   const [draggedTask, setDraggedTask] = useState(null);
   const [dragOverDate, setDragOverDate] = useState(null);
 
-  useMiraPopupListener(MIRA_POPUP_TARGETS.TODO_NEW_TASK, () => {
+  useMiraPopupListener(MIRA_POPUP_TARGETS.SMART_PLAN_NEW_TASK, () => {
     const autoOpened = !addEventDialogOpenRef.current;
     if (!addEventDialogOpenRef.current) {
       setShowAddEventDialog(true);
@@ -118,15 +139,42 @@ export default function ToDo() {
   const [showUndoToast, setShowUndoToast] = useState(false);
 
   // Export dialog state
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [connectForm, setConnectForm] = useState({
+    provider: "google",
+    email: "",
+    syncMode: "two-way",
+    includePast: "30",
+  });
+  // Legacy export calendar state retained for future use (hidden in UI for now)
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportDateRange, setExportDateRange] = useState("all");
   const [exportStartDate, setExportStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [exportEndDate, setExportEndDate] = useState(format(addDays(new Date(), 30), 'yyyy-MM-dd'));
 
+  const [calendarConnections, setCalendarConnections] = useState(() => {
+    try {
+      if (typeof window === "undefined") return { google: false, outlook: false, apple: false };
+      const raw = window.localStorage.getItem("advisorhub:smart-plan-calendar-connections");
+      return raw ? JSON.parse(raw) : { google: false, outlook: false, apple: false };
+    } catch {
+      return { google: false, outlook: false, apple: false };
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("advisorhub:smart-plan-calendar-connections", JSON.stringify(calendarConnections));
+      }
+    } catch { }
+  }, [calendarConnections]);
+
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(viewModeStorageKey, viewMode);
-  }, [viewMode, viewModeStorageKey]);
+    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
+    window.localStorage.removeItem(LEGACY_VIEW_MODE_STORAGE_KEY);
+  }, [viewMode]);
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
@@ -138,35 +186,52 @@ export default function ToDo() {
     queryFn: () => adviseUAdminApi.entities.Lead.list(),
   });
 
+  const { data: proposals = [] } = useQuery({
+    queryKey: ["proposals"],
+    queryFn: () => adviseUAdminApi.entities.Proposal.list("-updated_date"),
+  });
+
   const hasCompletedField = React.useMemo(
     () => Array.isArray(tasks) && tasks.some((t) => Object.prototype.hasOwnProperty.call(t || {}, 'completed')),
     [tasks],
   );
 
   // Birthday reminders toggle
-  const birthdayToggleKey = "advisorhub:todo-show-birthdays";
   const [showBirthdays, setShowBirthdays] = useState(() => {
     try {
       if (typeof window === "undefined") return false;
-      const raw = window.localStorage.getItem(birthdayToggleKey);
+      const raw =
+        window.localStorage.getItem(BIRTHDAY_TOGGLE_KEY) ??
+        window.localStorage.getItem(LEGACY_BIRTHDAY_TOGGLE_KEY);
       return raw ? raw === '1' : false;
     } catch { return false; }
   });
   React.useEffect(() => {
-    try { if (typeof window !== 'undefined') window.localStorage.setItem(birthdayToggleKey, showBirthdays ? '1' : '0'); } catch {}
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(BIRTHDAY_TOGGLE_KEY, showBirthdays ? '1' : '0');
+        window.localStorage.removeItem(LEGACY_BIRTHDAY_TOGGLE_KEY);
+      }
+    } catch { }
   }, [showBirthdays]);
 
   // Show completed toggle (persisted)
-  const completedToggleKey = "advisorhub:todo-show-completed";
   const [showCompleted, setShowCompleted] = useState(() => {
     try {
       if (typeof window === 'undefined') return true;
-      const raw = window.localStorage.getItem(completedToggleKey);
+      const raw =
+        window.localStorage.getItem(COMPLETED_TOGGLE_KEY) ??
+        window.localStorage.getItem(LEGACY_COMPLETED_TOGGLE_KEY);
       return raw ? raw === '1' : true;
     } catch { return true; }
   });
   React.useEffect(() => {
-    try { if (typeof window !== 'undefined') window.localStorage.setItem(completedToggleKey, showCompleted ? '1' : '0'); } catch {}
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(COMPLETED_TOGGLE_KEY, showCompleted ? '1' : '0');
+        window.localStorage.removeItem(LEGACY_COMPLETED_TOGGLE_KEY);
+      }
+    } catch { }
   }, [showCompleted]);
 
   // Compute birthday tasks within active time range
@@ -203,7 +268,7 @@ export default function ToDo() {
             date: dateStr,
             linked_lead_id: lead.id,
             linked_lead_name: lead.name,
-            notes: 'Wish client happy birthday',
+            notes: 'Wish customer happy birthday',
             synthetic: 'birthday',
           });
         }
@@ -221,7 +286,7 @@ export default function ToDo() {
 
   useMiraPageData(
     () => ({
-      view: "todo_manager",
+      view: "smart_plan_manager",
       mode: viewMode,
       activeFilter,
       searchQuery,
@@ -266,6 +331,8 @@ export default function ToDo() {
       queryClient.invalidateQueries(['tasks']);
       setShowDeleteConfirm(false);
       setEventToDelete(null);
+      setShowDetailDrawer(false);
+      setDetailTask(null);
       showToast({ type: 'success', title: 'Event Deleted', description: 'The event has been removed.' });
     },
     onError: (error) => {
@@ -399,6 +466,22 @@ export default function ToDo() {
     createTaskMutation.mutate(payload);
   };
 
+  const openTaskDetail = (task) => {
+    if (!task?.id) return;
+    navigate(createPageUrl(`SmartPlanDetail?id=${task.id}`));
+  };
+
+  const handleConnectCalendar = () => {
+    const provider = connectForm.provider;
+    setCalendarConnections((prev) => ({ ...prev, [provider]: true }));
+    showToast({
+      type: 'success',
+      title: `${provider === 'google' ? 'Google' : provider === 'outlook' ? 'Outlook' : 'Apple'} connected`,
+      description: `Sync mode: ${connectForm.syncMode === "two-way" ? "Two-way" : "One-way (pull)"}. (Simulated)`,
+    });
+    setShowConnectDialog(false);
+  };
+
   const handleEditEvent = (task) => {
     setSelectedEvent(task);
     setShowEditDialog(true);
@@ -480,6 +563,71 @@ export default function ToDo() {
     setDragOverDate(null);
   };
 
+  const detectProposalIntent = (text) => {
+    if (!text) return false;
+    const normalized = text.toLowerCase();
+    return /proposal|quote|apply|application|upgrade|policy|plan/i.test(normalized);
+  };
+
+  const createProposalIntentMutation = useMutation({
+    mutationFn: async (leadId) => {
+      const lead = leads.find((l) => l.id === leadId);
+      const proposalNumber = `PRO-${Date.now()}`;
+      return adviseUAdminApi.entities.Proposal.create({
+        proposal_number: proposalNumber,
+        lead_id: leadId,
+        proposer_name: lead?.name || "Unknown",
+        stage: "Fact Finding",
+        status: "In Progress",
+        completion_percentage: 0,
+        last_updated: new Date().toISOString(),
+      });
+    },
+    onSuccess: (proposal) => {
+      queryClient.invalidateQueries(["proposals"]);
+      showToast({
+        type: "success",
+        title: "Draft proposal created",
+        description: "We detected intent and started a proposal draft.",
+      });
+      navigate(createPageUrl(`ProposalDetail?id=${proposal.id}`));
+    },
+    onError: (error) => {
+      showToast({
+        type: "error",
+        title: "Proposal creation failed",
+        description: error?.message || "Unable to create proposal from task intent.",
+      });
+    },
+  });
+
+  const maybeCreateProposalFromIntent = (task, updates) => {
+    if (!task?.linked_lead_id) return;
+    const notesText = updates?.notes ?? task?.notes ?? "";
+    const transcriptText =
+      (updates?.transcript && updates.transcript.text) ||
+      updates?.transcript_text ||
+      (task?.transcript && task.transcript.text) ||
+      task?.transcript_text ||
+      "";
+    const combined = `${notesText} ${transcriptText}`;
+    if (!detectProposalIntent(combined)) return;
+
+    const existing = proposals.find(
+      (p) => p.lead_id === task.linked_lead_id && p.status === "In Progress",
+    );
+    if (existing) {
+      showToast({
+        type: "info",
+        title: "Existing draft found",
+        description: "Opening the current in-progress proposal.",
+      });
+      navigate(createPageUrl(`ProposalDetail?id=${existing.id}`));
+      return;
+    }
+    createProposalIntentMutation.mutate(task.linked_lead_id);
+  };
+
   const handleUndo = () => {
     if (!lastMove) return;
 
@@ -559,7 +707,7 @@ export default function ToDo() {
       );
 
       if (task.linked_lead_name) {
-        icsLines.push(`ATTENDEE;CN=${escapeICS(task.linked_lead_name)}:MAILTO:client@example.com`);
+        icsLines.push(`ATTENDEE;CN=${escapeICS(task.linked_lead_name)}:MAILTO:customer@example.com`);
       }
 
       icsLines.push('END:VEVENT');
@@ -599,10 +747,9 @@ export default function ToDo() {
 
     return (
       <Card
-        className={`border-slate-200 shadow-lg transition-colors cursor-pointer hover:bg-slate-50 ${
-          isOverdue ? 'border-l-4 border-l-red-500' : ''
-        } ${isCompleted ? 'opacity-60' : ''}`}
-        onClick={() => handleEditEvent(task)}
+        className={`border-slate-200 shadow-lg transition-colors cursor-pointer hover:bg-slate-50 ${isOverdue ? 'border-l-4 border-l-red-500' : ''
+          } ${isCompleted ? 'opacity-60' : ''}`}
+        onClick={() => openTaskDetail(task)}
       >
         <CardContent className="p-4">
           <div className="flex items-start gap-4">
@@ -622,9 +769,8 @@ export default function ToDo() {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className={`text-sm font-semibold text-slate-900 ${
-                  isCompleted ? 'line-through text-slate-500' : ''
-                }`}>
+                <h3 className={`text-sm font-semibold text-slate-900 ${isCompleted ? 'line-through text-slate-500' : ''
+                  }`}>
                   <span className="inline-flex items-center gap-1">
                     {task.synthetic === 'birthday' && (
                       <Cake className="w-3 h-3 text-pink-600" />
@@ -752,7 +898,7 @@ export default function ToDo() {
   const renderTodayView = () => {
     const todayDate = new Date();
     const todayItems = getTasksForDate(todayDate);
-              const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8 AM to 8 PM
+    const hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8 AM to 8 PM
 
     const getEventsForHour = (hour) => {
       return todayItems.filter(task => {
@@ -786,9 +932,8 @@ export default function ToDo() {
                   <div
                     key={task.id}
                     onClick={() => handleEditEvent(task)}
-                    className={`text-xs px-2 py-1 rounded cursor-pointer ${
-                      task.type === 'Appointment' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                    }`}
+                    className={`text-xs px-2 py-1 rounded cursor-pointer ${task.type === 'Appointment' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                      }`}
                   >
                     {task.title}
                   </div>
@@ -815,13 +960,12 @@ export default function ToDo() {
                           <div
                             key={task.id}
                             onClick={() => handleEditEvent(task)}
-                          className={`text-xs px-2 py-1.5 rounded cursor-pointer border-l-2 ${
-                                    task.type === 'Appointment'
-                                      ? 'bg-blue-50 border-blue-500 text-blue-900'
-                                      : (hasCompletedField ? Boolean(task.completed) : Boolean(completedMap?.[task.id]))
-                                      ? 'bg-green-50 border-green-500 text-green-900 opacity-60'
-                                      : 'bg-green-50 border-green-500 text-green-900'
-                                  }`}
+                            className={`text-xs px-2 py-1.5 rounded cursor-pointer border-l-2 ${task.type === 'Appointment'
+                              ? 'bg-blue-50 border-blue-500 text-blue-900'
+                              : (hasCompletedField ? Boolean(task.completed) : Boolean(completedMap?.[task.id]))
+                                ? 'bg-green-50 border-green-500 text-green-900 opacity-60'
+                                : 'bg-green-50 border-green-500 text-green-900'
+                              }`}
                           >
                             <p className="font-semibold">{task.title}</p>
                             {task.linked_lead_name && (
@@ -880,26 +1024,24 @@ export default function ToDo() {
               return (
                 <div
                   key={index}
-                  className={`min-h-[120px] p-3 rounded-lg border-2 transition-all ${
-                    isCurrentDay
-                      ? 'bg-primary-50 border-primary-500 shadow-lg'
-                      : isCurrentMonth
+                  className={`min-h-[120px] p-3 rounded-lg border-2 transition-all ${isCurrentDay
+                    ? 'bg-primary-50 border-primary-500 shadow-lg'
+                    : isCurrentMonth
                       ? 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
                       : 'bg-slate-50 border-slate-100 opacity-50'
-                  } ${isDragOver ? 'border-primary-400 bg-primary-100 shadow-lg' : ''}`}
+                    } ${isDragOver ? 'border-primary-400 bg-primary-100 shadow-lg' : ''}`}
                   onDragOver={(e) => handleDragOver(e, day)}
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, day)}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span
-                      className={`text-sm font-semibold ${
-                        isCurrentDay
-                          ? 'text-primary-700'
-                          : isCurrentMonth
+                      className={`text-sm font-semibold ${isCurrentDay
+                        ? 'text-primary-700'
+                        : isCurrentMonth
                           ? 'text-slate-900'
                           : 'text-slate-400'
-                      }`}
+                        }`}
                     >
                       {format(day, 'd')}
                     </span>
@@ -917,13 +1059,12 @@ export default function ToDo() {
                       return (
                         <div
                           key={task.id}
-                          className={`text-xs px-2 py-1 rounded border-l-2 cursor-move hover:shadow-sm transition-all duration-150 ${
-                            (hasCompletedField ? Boolean(task.completed) : Boolean(completedMap?.[task.id]))
-                              ? 'bg-green-50 border-green-500 text-green-800 line-through opacity-60'
-                              : task.type === 'Appointment'
+                          className={`text-xs px-2 py-1 rounded border-l-2 cursor-move hover:shadow-sm transition-all duration-150 ${(hasCompletedField ? Boolean(task.completed) : Boolean(completedMap?.[task.id]))
+                            ? 'bg-green-50 border-green-500 text-green-800 line-through opacity-60'
+                            : task.type === 'Appointment'
                               ? 'bg-blue-50 border-blue-500 text-blue-900'
                               : 'bg-green-50 border-green-500 text-green-900'
-                          } truncate`}
+                            } truncate`}
                           title={`${task.time ? task.time + ' - ' : ''}${task.title}`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, task)}
@@ -1007,9 +1148,8 @@ export default function ToDo() {
                           <div
                             key={task.id}
                             onClick={() => handleEditEvent(task)}
-                            className={`text-xs px-2 py-1 rounded cursor-pointer truncate ${
-                              task.type === 'Appointment' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                            }`}
+                            className={`text-xs px-2 py-1 rounded cursor-pointer truncate ${task.type === 'Appointment' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                              }`}
                             title={task.title}
                           >
                             {task.title}
@@ -1032,9 +1172,8 @@ export default function ToDo() {
                 return (
                   <div
                     key={index}
-                    className={`border-r border-slate-100 last:border-r-0 p-3 text-center ${
-                      isCurrentDay ? 'bg-primary-50' : ''
-                    }`}
+                    className={`border-r border-slate-100 last:border-r-0 p-3 text-center ${isCurrentDay ? 'bg-primary-50' : ''
+                      }`}
                   >
                     <div className={`text-xs font-semibold ${isCurrentDay ? 'text-primary-700' : 'text-slate-600'}`}>
                       {format(day, 'EEE')}
@@ -1060,7 +1199,7 @@ export default function ToDo() {
                   </div>
                   <div className="flex-1 grid grid-cols-7">
                     {days.map((day, dayIndex) => {
-              const events = getEventsForDayAndHour(day, hour);
+                      const events = getEventsForDayAndHour(day, hour);
                       return (
                         <div key={dayIndex} className="border-r border-slate-100 last:border-r-0 p-2">
                           {events.length > 0 && (
@@ -1069,13 +1208,12 @@ export default function ToDo() {
                                 <div
                                   key={task.id}
                                   onClick={() => handleEditEvent(task)}
-                                  className={`text-xs px-2 py-1.5 rounded cursor-pointer border-l-2 ${
-                                    task.type === 'Appointment'
-                                      ? 'bg-blue-50 border-blue-500 text-blue-900'
-                                      : Boolean(completedMap?.[task.id])
+                                  className={`text-xs px-2 py-1.5 rounded cursor-pointer border-l-2 ${task.type === 'Appointment'
+                                    ? 'bg-blue-50 border-blue-500 text-blue-900'
+                                    : Boolean(completedMap?.[task.id])
                                       ? 'bg-green-50 border-green-500 text-green-900 opacity-60'
                                       : 'bg-green-50 border-green-500 text-green-900'
-                                  }`}
+                                    }`}
                                 >
                                   <p className="font-semibold truncate" title={task.title}>{task.title}</p>
                                   {task.linked_lead_name && (
@@ -1101,206 +1239,207 @@ export default function ToDo() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <PageHeader
-          title="Tasks & Appointments"
-          subtitle="Stay organized and never miss a follow-up"
-          icon={Calendar}
-          actions={(
-            <Button onClick={() => setShowAddEventDialog(true)} className="!bg-primary-600 !text-white hover:!bg-primary-700">
-              <Plus className="w-4 h-4 mr-2" />
-              New Event
-            </Button>
-          )}
-        />
-
-        {/* Unified Search/Filter/Sort Bar */}
-        <SearchFilterBar
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
-          placeholder="Search tasks..."
-          filterButton={
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={filters.eventType !== "all" || filters.linkedClient !== "all" || activeFilter !== "all" || showBirthdays || !showCompleted ? "default" : "outline"}
-                  size="icon"
-                  className={filters.eventType !== "all" || filters.linkedClient !== "all" || activeFilter !== "all" || showBirthdays || !showCompleted ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                  title="Filter"
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm text-slate-900">Filters</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setFilters({ timeRange: 'all', eventType: 'all', linkedClient: 'all' });
-                        setActiveFilter('all');
-                        setShowBirthdays(false);
-                        setShowCompleted(true);
-                      }}
-                    >
-                      Clear All
-                    </Button>
-                  </div>
-
-                  {/* Time Range */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Time Range</Label>
-                    <Select value={activeFilter} onValueChange={setActiveFilter}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="today">Today</SelectItem>
-                        <SelectItem value="week">This Week</SelectItem>
-                        <SelectItem value="month">This Month</SelectItem>
-                        <SelectItem value="all">All</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Event Type */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Event Type</Label>
-                    <Select value={filters.eventType} onValueChange={(val) => setFilters({ ...filters, eventType: val })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="Appointment">Appointment</SelectItem>
-                        <SelectItem value="Task">Task</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Linked Client */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Client</Label>
-                    <Select value={filters.linkedClient} onValueChange={(val) => setFilters({ ...filters, linkedClient: val })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Clients</SelectItem>
-                        {Array.from(new Set((leads || []).map((l) => l.name).filter(Boolean)))
-                          .sort((a, b) => a.localeCompare(b))
-                          .map((name) => (
-                            <SelectItem key={name} value={name}>{name}</SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Toggles */}
-                  <div className="space-y-3 pt-2 border-t">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Cake className="w-4 h-4 text-pink-600" />
-                        <Label className="text-sm text-slate-700">Show Birthdays</Label>
-                      </div>
-                      <Switch checked={showBirthdays} onCheckedChange={setShowBirthdays} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <Label className="text-sm text-slate-700">Show Completed</Label>
-                      </div>
-                      <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          }
-          sortButton={
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={sortBy !== "date-asc" ? "default" : "outline"}
-                  size="icon"
-                  className={sortBy !== "date-asc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                  title="Sort"
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
-                  <div className="space-y-2">
-                    <Button
-                      variant={sortBy === "date-asc" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("date-asc")}
-                    >
-                      Date (Earliest First)
-                    </Button>
-                    <Button
-                      variant={sortBy === "date-desc" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("date-desc")}
-                    >
-                      Date (Latest First)
-                    </Button>
-                    <Button
-                      variant={sortBy === "title-asc" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("title-asc")}
-                    >
-                      Title (A-Z)
-                    </Button>
-                    <Button
-                      variant={sortBy === "type" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortBy("type")}
-                    >
-                      By Type
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          }
-          rightActions={
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-                <button
-                  type="button"
-                  aria-pressed={viewMode === 'list'}
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
-                >
-                  <List className="w-4 h-4" /> List
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={viewMode === 'calendar'}
-                  onClick={() => setViewMode('calendar')}
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-primary-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
-                >
-                  <CalendarIcon className="w-4 h-4" /> Calendar
-                </button>
-              </div>
-
-              {/* Export Button */}
-              <Button
-                variant="outline"
-                onClick={() => setShowExportDialog(true)}
-                size="icon"
-              >
-                <Download className="w-4 h-4" />
+        {/* Sticky Header Section */}
+        <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200 space-y-6">
+          <PageHeader
+            title="Smart Plan"
+            subtitle="Plan every follow-up with AI-powered tasks & appointments"
+            icon={Calendar}
+            className="mb-0"
+            actions={(
+              <Button onClick={() => setShowAddEventDialog(true)} className="!bg-primary-600 !text-white hover:!bg-primary-700">
+                <Plus className="w-4 h-4 mr-2" />
+                New Event
               </Button>
-            </div>
-          }
-        />
+            )}
+          />
 
+          {/* Unified Search/Filter/Sort Bar */}
+          <SearchFilterBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            filterButton={(
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={filters.eventType !== "all" || filters.linkedClient !== "all" || activeFilter !== "all" || showBirthdays || !showCompleted ? "default" : "outline"}
+                    size="icon"
+                    className={filters.eventType !== "all" || filters.linkedClient !== "all" || activeFilter !== "all" || showBirthdays || !showCompleted ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
+                    title="Filter"
+                  >
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-sm text-slate-900">Filters</h4>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFilters({ timeRange: 'all', eventType: 'all', linkedClient: 'all' });
+                          setActiveFilter('all');
+                          setShowBirthdays(false);
+                          setShowCompleted(true);
+                        }}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+
+                    {/* Time Range */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">Time Range</Label>
+                      <Select value={activeFilter} onValueChange={setActiveFilter}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="week">This Week</SelectItem>
+                          <SelectItem value="month">This Month</SelectItem>
+                          <SelectItem value="all">All</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Event Type */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">Event Type</Label>
+                      <Select value={filters.eventType} onValueChange={(val) => setFilters({ ...filters, eventType: val })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="Appointment">Appointment</SelectItem>
+                          <SelectItem value="Task">Task</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Linked Customer */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">Customer</Label>
+                      <Select value={filters.linkedClient} onValueChange={(val) => setFilters({ ...filters, linkedClient: val })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Customers</SelectItem>
+                          {Array.from(new Set((leads || []).map((l) => l.name).filter(Boolean)))
+                            .sort((a, b) => a.localeCompare(b))
+                            .map((name) => (
+                              <SelectItem key={name} value={name}>{name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Toggles */}
+                    <div className="space-y-3 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Cake className="w-4 h-4 text-pink-600" />
+                          <Label className="text-sm text-slate-700">Show Birthdays</Label>
+                        </div>
+                        <Switch checked={showBirthdays} onCheckedChange={setShowBirthdays} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          <Label className="text-sm text-slate-700">Show Completed</Label>
+                        </div>
+                        <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            sortButton={(
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={sortBy !== "date-asc" ? "default" : "outline"}
+                    size="icon"
+                    className={sortBy !== "date-asc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
+                    title="Sort"
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
+                    <div className="space-y-2">
+                      <Button
+                        variant={sortBy === "date-asc" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("date-asc")}
+                      >
+                        Date (Earliest First)
+                      </Button>
+                      <Button
+                        variant={sortBy === "date-desc" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("date-desc")}
+                      >
+                        Date (Latest First)
+                      </Button>
+                      <Button
+                        variant={sortBy === "title-asc" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("title-asc")}
+                      >
+                        Title (A-Z)
+                      </Button>
+                      <Button
+                        variant={sortBy === "type" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortBy("type")}
+                      >
+                        By Type
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            rightActions={(
+              <div className="flex items-center gap-2">
+                {/* View Mode Toggle */}
+                <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                  <button
+                    type="button"
+                    aria-pressed={viewMode === 'list'}
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    <List className="w-4 h-4" /> List
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={viewMode === 'calendar'}
+                    onClick={() => setViewMode('calendar')}
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-primary-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    <CalendarIcon className="w-4 h-4" /> Calendar
+                  </button>
+                </div>
+
+                {/* Connect Calendar button (replaces export; export dialog hidden for now) */}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConnectDialog(true)}
+                >
+                  Connect Your Calendar
+                </Button>
+              </div>
+            )}
+          />
+        </div>
 
         {/* Enhanced Filter Panel removed for simplicity */}
 
@@ -1391,7 +1530,85 @@ export default function ToDo() {
         )}
       </div>
 
-      {/* Dialogs remain the same */}
+      {/* Connect Calendar dialog */}
+      <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Connect Your Calendar</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm">Provider</Label>
+                <Select
+                  value={connectForm.provider}
+                  onValueChange={(provider) => setConnectForm((prev) => ({ ...prev, provider }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="google">Google Calendar</SelectItem>
+                    <SelectItem value="outlook">Outlook</SelectItem>
+                    <SelectItem value="apple">Apple Calendar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm">Sync mode</Label>
+                <Select
+                  value={connectForm.syncMode}
+                  onValueChange={(syncMode) => setConnectForm((prev) => ({ ...prev, syncMode }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="two-way">Two-way sync</SelectItem>
+                    <SelectItem value="pull">One-way (pull events)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm">Account email</Label>
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={connectForm.email}
+                onChange={(e) => setConnectForm((prev) => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Sync past events</Label>
+              <Select
+                value={connectForm.includePast}
+                onValueChange={(includePast) => setConnectForm((prev) => ({ ...prev, includePast }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Alert className="bg-slate-50 border-slate-200 text-slate-700">
+              <AlertDescription>
+                This is a simulated connection. OAuth and real sync will be added later.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConnectDialog(false)}>Cancel</Button>
+            <Button onClick={handleConnectCalendar}>Save connection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export calendar dialog (hidden/not used) */}
       <AddEventDialog
         open={showAddEventDialog}
         onClose={() => setShowAddEventDialog(false)}

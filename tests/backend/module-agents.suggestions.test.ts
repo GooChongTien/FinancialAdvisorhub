@@ -7,7 +7,7 @@ const MODULE_PAGES: Record<MiraModule, string> = {
   new_business: "/new-business",
   product: "/product",
   analytics: "/analytics",
-  todo: "/todo",
+  todo: "/smart-plan",
   broadcast: "/broadcast",
   visualizer: "/visualizer",
 };

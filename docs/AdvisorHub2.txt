@@ -1,0 +1,1267 @@
+AdvisorU Insurance portal key functions:
+1. login with user email and password
+2. User will land on homepage. see a expandable/collapsible side menu. At the side menu top is the AdviseU tenant logo. the side menu has main modules: Home, Products, Customers, Proposals, Visualizers, Servicing, Analytics, Smart Plan, News. below the modules, user can see "Ask Mira"(hide when user is at homepage), chats (top 15 recent chat list, scrollable, user and also click "All chats" and will land on Chat History page). At the bottom of the side menu, is the user profile icon+user name+role.
+3. At the bottom of the side menu, is the user profile icon+user name+role. when user click profile icon, user can select profile setting or logout. when user click profile setting, user will land on profile setting page. Profile setting page has "Personal Information"(non editable, managed my admin), "Security"(can update password), and "user preferences"(can update prefer language and currency). all the system display wordings should be based on the preferred language. Defaulted language is English, we should also support Mandarin, Malay, Spain, Tamil. The defaulted currency is SGD. All the money value in the system should follow this currency. includes: income, expense, asset, liability, existing insurance coverage amount, premium, budget, quotation amount. If the product's premium table is offering in different currency, system will auto covert. eg the product premium calculated in USD, but system will convert to the preferred display currency.
+4. land on homepage with Mira chat kit screen. User see Mira symbol at center top, with greeting to user, eg "Good morning, Alex"/ "Hi night owl, Alex", follow by introduction "I am Mira, your AI insurance assistant to help with customers, analytics, tasks, and more." follow by a few quick action button "Customer analytics (summarize the profile of my hot leads)" "Sales Performance (What are my sale trends for this quarter)" "Pending Tasks (Show me my pending tasks and upcoming appointments)" "Recommendations (Recommend me my priorities)". At chat bar at center bottom, with upload and audio icon in the right bottom of the chat bar, once user type message, the audio button become send button. When user click any of the quick action button, the chat panel will become at split view. the side menu will defaulted to collapse (if it is expanded), the chat panel is on left with around 30% screen width. the 70% screen on right is the particular module page. eg. 
+when user click "summarize the profile of my hot leads". chat panel will see "You have 3 hot leads now. 1. Alex - single, young white collar, he is interested in wealth accumulation for his retirement. he does not have any existing insurance coverage....2. Sarah... 3. Michael... What would you like to proceed next? ". On the right panel, we can see the page of customer list with filter lead status = hot, 3 results: Alex, Sarah, Michael. User may continue chat with Mira and operate right screen with this split view. In right top of the chatkit, user may click at full page view symbol to back to the full chat page view(the side menu should always show on left, do not cover it).In right top of the chat kit, user can also toggle on/off"auto navigation", when it is on, Mira will navigate user to target screen, when off, user can focus chat with Mira, but need to go to screen by themself. User may close the chat kit anytime. when user close the chat kit, this chat session is closed, if user want to continue this chat, user need to search from the chat history page. If user go back to homepage and type in chat bar again, user will open a new chat session. If user is at any page other than homepage, user will see a "Ask Mira" button at the side menu. when user click "Ask Mira" button at the side menu, user will open a new chat session in split view, auto navigation button on. (behind the screen, actually Mira agent first detect user's intent, then query the profile of hot leads, summaries the profile, then return chat response, and instruct FE to navigate to the customer list screen, filter the criteria)
+when user click "what are my sales trends for this quarter", user will land on split view. on the right screen, user see analytics page with filter YTQ view with graphs and charts. In chat panel Mira reply "You have closed sales with 3 leads and 1 existing customer this months. The total annual premium collected is 50k, your are on track to meet your target!". the explanation of Mira is align with what is shown on the right.(behind the screen, actually Mira agent first detect user's intent, then query user's YTQ sales performance, summaries the result, then return chat response, and instruct FE to navigate to the analytics screen, filter the criteria)
+when user click "show me my pending tasks and upcoming appointments", user will land on split view. on the right screen, user see "smart plan" page with filter upcoming task/appointment. If today has any today's tasks/appointment, Mira will remind user the priority of the tasks/appointments. (behind the screen, actually Mira agent first detect user's intent, then query user's tasks and appointments, summaries and help user prioritize, if today has any tasks/appointments, user should focus. if none for today, Mira will check if any in this week and should prepare, or plan what should focus today/this week. if any customer birthday is today or coming soon, Mira will also detect and remind user. then return chat response, and instruct FE to navigate to the "smart plan" screen, filter the criteria)
+when user click "Recommend me my priorities", this means user seek for advise from Mira. now the intent navigation is not clear, do not need to become split view. Mira will chat with user in full chat page view. Mira first analyze and suggest a few next step to users, "You have 4 proposal in progress, 2 service requests in progress, 3 upcoming appointments, what would you like to focus?"... after user clarify the intent, only determine if any navigation is needed.
+User may also prompt any other quick action intend that is not shown here. System can list the popular quick action at the home page. eg user may request for "quick quote". eg when user prompt "generate a quick of for Secure life, male, age 30, non smoker". Mira detected user want to do quick quote for term life product, Mira agent will check the product's point of sale flow of this product, whether quick quote is allowed, if allowed then call the product quotation calculation get the premium". user will land on a split page view, the quick quotation of Secure life is displayed on the right screen, Mira reply in chat "the premium for a 30 year old male non smoker is around 100 per month. A fact finding is required for this product. Initiated the proposal flow is user is interested". If user wants to know the quotation of ILP quotation, Mira agent know that this product does not offer quick quote, will tell user to through fact finding and financial planning in order to see the quotation.
+User may also give a quick prompt "add new lead "John Tan, phone number 12344321" (this use case especially suitable use with audio when agent is driving), Mira detect the intent of creating new lead, right will navigate user to "+New Lead" form, prefill the name = John Tan, phone number = 12344321, in the chat panel, ask user to confirm whether to add this new lead, once user confirm, right screen will see a new lead is created, and user land on customer detail page of this lead.
+User may also upload a excel file with multiple leads, and tell mira "create leads for me". Mira will first analyze the data and reply "10 leads are found in the file uploaded, do you want me to proceed create for you in customer module?", when user click "yes". system will turn to split view, in chat panel mira reply "10 leads has been created", on the right screen is showing customer list, sorted by last created. 
+If user's intent is beyond Mira knowledge, Mira will first seek for clarification. if user wants to chat anything beyond system functionality and beyond financial/insurance topic, Mira will politely tell user this is beyond her role and responsibility. 
+
+5. When user click "Product" on side menu, user will see top bar header "Product Management(Browse insurance solutions by line of business and generate a quote in seconds)", below the header is 4 tabs: "Life Insurance", "Health Insurance", "General Insurance", "Group Insurance". user can click the tab, or swipe left right to land on the page of the tab. The top bar will freeze on top, below the header is scrollable vertical page, user may scroll to see the product cards. The product card include a placeholder for product's image, product name, high level product description, label of coverage type, a small "learn more arrow" at the bottom of the product card. The product's image should represent the product benefit. eg. "A smiling old couple" represent a saving plan for retirement fund, "A happy climbing cat represent pet insurance". After user click on the product card, user will the introduction about this product, include the key coverages, benefits, insure eligibility rules... (typically the information of product brochure). Behind the scene, in the admin portal, admin can configure "allow quick quote" = Yes/No, "require fact finding" = Yes/No. If allow quick quote = Yes, user can see "Get Quote" button. After user click "Get Quote" user will see a quotation form, that ask for quotation require parameter, such as customer details(date of birth, gender, smoker status) and coverage details(sum assure, coverage term). For general insurance, we see "car model", "manufacture year" etc. After user click "generate quote", user will see the product benefit and premium summary. If "require fact finding" = Yes, user will see "start new proposal" and "edit quote" button. If "require fact finding" = No, user will see "proceed application" and "edit quote" button. After user click "proceed application", user just need fill up more application details such as name, contact, ID, auto credit payout details(for claim/benefit payout). User can fill up Name & Contact & ID manually(mandatory) or search & select customer available in the customer list. if user select customer from customer list, the available information will prefill here, and user can then proceed payment and complete the purchase here. If user enter name, contact & ID manually, system will check if this customer exist in the customer list, if yes, system will auto pull the detail of this customer. If not exist, after user complete the purchase, system will create this customer in the customer list, with portfolio having 1 active policy. 
+This is the list of sample products:
+| id                                   | product_name                     | product_code | product type                       | need type(tags)                                  | description                                                                                       | min age | max age | premium modes                    | min sum assured | max sum assured | key features                                                                                                         | premium table tag          | allow quick quote | require fact find | created_at             | updated_at             |
+| ------------------------------------ | -------------------------------- | ------------ | ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------- | ------- | -------------------------------- | --------------- | --------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------- | ----------------- | ---------------------- | ---------------------- |
+| 9ec0cd93-f449-4a1b-9e77-e8d94f65dd24 | LifeShield Plus                  | LSP-001      | Term Life with CI riders           | ["Death","Critical Illness","TPD"]               | Comprehensive term life plan with optional critical illness riders and premium waiver benefits.   | 18      | 65      | ["Monthly","Quarterly","Annual"] | 100000          | 2000000         | ["Guaranteed level premiums","Critical illness rider up to $350k","Premium waiver for disability"]                   | LIFE_TERM_LSP_001          | Yes               | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| b7c4c2b9-7b43-43ef-b55e-4c3dc3b0e57a | SecureIncome Pro                 | SIP-010      | Retirement Savings (Participating) | ["Retirement","Savings"]                         | Hybrid savings plan with guaranteed income payouts and loyalty bonuses from the 10th policy year. | 21      | 60      | ["Monthly","Annual"]             | 50000           | 500000          | ["Guaranteed cash value accumulation","Choice of 10, 15 or 20 year payout periods","5% loyalty bonus every 5 years"] | LIFE_RETIRE_PAR_SIP_010    | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| f4eda09b-4b12-4ec4-986e-0d2cf2050d3b | CareShield Health                | CSH-305      | Integrated Health Plan             | ["Hospitalisation"]                              | Integrated health plan with high annual limits and cashless hospital admission benefits.          | 18      | 60      | ["Monthly","Quarterly","Annual"] | 100000          | 1000000         | ["Direct billing hospital network","Worldwide emergency coverage","Enhanced outpatient benefits"]                    | HEALTH_INTEGRATED_CSH_305  | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 11111111-1111-1111-1111-111111111111 | PrimeLife Infinity               | PLI-201      | Whole Life (Participating)         | ["Death","Savings"]                              | Lifetime participating whole life plan with growing cash value and annual bonuses.                | 18      | 65      | ["Monthly","Quarterly","Annual"] | 50000           | 1000000         | ["Lifetime coverage","Reversionary and terminal bonuses","Cash value accessible via policy loans"]                   | LIFE_WHOLE_PAR_PLI_201     | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 22222222-2222-2222-2222-222222222222 | LegacySaver Prime                | LSP-320      | Whole Life Savings (Participating) | ["Death","Savings"]                              | Long-term savings-oriented whole life plan with guaranteed and bonus benefits.                    | 18      | 60      | ["Monthly","Annual"]             | 50000           | 1000000         | ["Capital-guaranteed at maturity","Annual bonuses","Optional premium waiver rider"]                                  | LIFE_WHOLE_SAVINGS_LSP_320 | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 33333333-3333-3333-3333-333333333333 | FutureGrow ILP                   | FGI-118      | Investment-Linked Plan (ILP)       | ["Death","Savings","Retirement"]                 | Flexible ILP with access to multiple funds and adjustable protection levels.                      | 18      | 60      | ["Monthly","Quarterly","Annual"] | 50000           | 2000000         | ["Choice of equity and bond funds","Top-up and withdrawal flexibility","Adjustable sum assured"]                     | LIFE_ILP_FGI_118           | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 44444444-4444-4444-4444-444444444444 | TermShield Basic                 | TSB-015      | Term Life                          | ["Death"]                                        | Affordable pure protection term plan for income replacement needs.                                | 18      | 65      | ["Monthly","Annual"]             | 100000          | 1000000         | ["Level term coverage","Simple underwriting","Convertible to whole life (optional)"]                                 | LIFE_TERM_TSB_015          | Yes               | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 55555555-5555-5555-5555-555555555555 | CareGuard CI Lite                | CCI-050      | Standalone Critical Illness (Lite) | ["Critical Illness"]                             | Entry-level CI plan with streamlined underwriting and lower coverage tiers.                       | 18      | 60      | ["Monthly","Quarterly","Annual"] | 50000           | 300000          | ["Covers major CI conditions","Simplified health questions","Optional early-stage CI add-on"]                        | LIFE_CI_LITE_CCI_050       | Yes               | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 66666666-6666-6666-6666-666666666666 | FamilyShield Term                | FST-122      | Term Life (Family Income)          | ["Death","TPD"]                                  | Term plan designed to replace family income in event of death or TPD.                             | 21      | 65      | ["Monthly","Annual"]             | 200000          | 1500000         | ["Family income benefit option","TPD coverage","Joint-life options for couples"]                                     | LIFE_TERM_FAMILY_FST_122   | Yes               | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 77777777-7777-7777-7777-777777777777 | SavingsBuilder Pro               | SBP-450      | Endowment Savings                  | ["Savings"]                                      | 15-year savings plan with guaranteed maturity benefits and bonuses.                               | 18      | 60      | ["Monthly","Annual"]             | 10000           | 500000          | ["Guaranteed maturity value","Annual bonuses","Premium holiday feature"]                                             | LIFE_ENDOWMENT_SBP_450     | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 88888888-8888-8888-8888-888888888888 | EducationSaver Junior            | ESJ-230      | Education Endowment                | ["Education","Savings"]                          | Education savings plan to fund children’s secondary and tertiary education.                       | 0       | 17      | ["Monthly","Annual"]             | 10000           | 300000          | ["Payouts aligned with school milestones","Premium waiver on parent’s death","Optional rider for CI on parent"]      | LIFE_EDU_ESJ_230           | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| 99999999-9999-9999-9999-999999999999 | GoldenNest Retirement Saver      | GNR-600      | Retirement Income (Participating)  | ["Retirement","Savings"]                         | Participating retirement plan with guaranteed income and bonus top-ups.                           | 30      | 60      | ["Monthly","Annual"]             | 50000           | 1000000         | ["Guaranteed lifetime income option","Bonuses to enhance payouts","Flexible retirement age selection"]               | LIFE_RETIRE_GNR_600        | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| aaaabbbb-0000-0000-0000-000000000001 | MediSecure Essential             | MSE-221      | Basic Health Plan                  | ["Hospitalisation"]                              | Essential hospital & surgical coverage with shared ward options.                                  | 18      | 65      | ["Monthly","Annual"]             | 50000           | 300000          | ["Affordable ward options","Co-insurance and deductible to lower premium","Pre- and post-hospitalisation cover"]     | HEALTH_BASIC_MSE_221       | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| aaaabbbb-0000-0000-0000-000000000002 | HealthPlus Supreme               | HPS-332      | Private Hospital Health Plan       | ["Hospitalisation"]                              | Premium health plan with access to private hospitals and higher limits.                           | 18      | 65      | ["Monthly","Quarterly","Annual"] | 300000          | 2000000         | ["Private hospital access","High annual and lifetime limits","Optional deductible buy-down"]                         | HEALTH_PRIVATE_HPS_332     | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| aaaabbbb-0000-0000-0000-000000000003 | IncomeCare Hospital Cash         | ICH-102      | Hospital Cash Plan                 | ["Hospitalisation"]                              | Pays daily hospital cash benefits to supplement income loss during hospitalisation.               | 18      | 65      | ["Monthly","Annual"]             | 5000            | 50000           | ["Daily cash benefit","ICU benefit booster","Recovery benefit after discharge"]                                      | HEALTH_HC_ICH_102          | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| aaaabbbb-0000-0000-0000-000000000004 | CriticalCare 100                 | CC1-900      | Standalone Critical Illness        | ["Critical Illness"]                             | Comprehensive CI plan covering up to 100 conditions.                                              | 18      | 60      | ["Monthly","Quarterly","Annual"] | 50000           | 500000          | ["Covers early, intermediate and major stages","Multiple-claim structure","Premium waiver on claim"]                 | HEALTH_CI_CC1_900          | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| aaaabbbb-0000-0000-0000-000000000005 | GlobalHealth Explorer            | GHE-710      | International Medical Plan         | ["Hospitalisation","Lifestyle"]                  | Worldwide medical coverage ideal for expatriates and frequent travellers.                         | 18      | 55      | ["Monthly","Annual"]             | 500000          | 3000000         | ["Global hospital network","Evacuation and repatriation benefits","Out-of-area emergency coverage"]                  | HEALTH_INTL_GHE_710        | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000001 | SmartDrive Auto                  | SDA-100      | Motor Insurance                    | ["Accidental","Lifestyle"]                       | Comprehensive car insurance covering accident, theft and third-party liability.                   | 21      | 70      | ["Annual","Single"]              | 10000           | 300000          | ["No-claim discount protection (optional)","New-for-old replacement (within first year)","Windscreen cover"]         | MOTOR_PRIVATE_SDA_100      | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000002 | TravelSafe Explorer              | TSE-210      | Travel Insurance (Leisure)         | ["Travel","Accidental","Lifestyle"]              | Travel insurance covering medical expenses, trip cancellation and baggage loss.                   | 18      | 70      | ["Single","Annual"]              | 50000           | 500000          | ["Overseas medical coverage","Trip cancellation protection","Baggage delay and loss benefits"]                       | TRAVEL_LEISURE_TSE_210     | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000003 | HomeProtect Basic                | HPB-320      | Home Insurance                     | ["Lifestyle"]                                    | Basic fire and home contents protection for owner-occupied properties.                            | 18      | 75      | ["Annual"]                       | 50000           | 1000000         | ["Covers building and contents","Owner-occupied residences","Alternative accommodation benefit"]                     | HOME_BASIC_HPB_320         | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000004 | HomeProtect Plus                 | HPP-330      | Enhanced Home Insurance            | ["Lifestyle","Savings"]                          | Enhanced home plan with accidental damage and higher contents limits.                             | 18      | 75      | ["Annual"]                       | 100000          | 1500000         | ["All-risks contents cover","Personal liability coverage","Higher building sum insured options"]                     | HOME_PLUS_HPP_330          | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000005 | PetCare Companion                | PCC-550      | Pet Insurance                      | ["Lifestyle"]                                    | Veterinary expense reimbursement and liability protection for pets.                               | 18      | 70      | ["Annual"]                       | 5000            | 20000           | ["Covers surgery and hospitalisation","Third-party liability","Optional routine care add-on"]                        | PET_PCC_550                | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000006 | CyberSafe Personal               | CSP-112      | Personal Cyber Insurance           | ["Lifestyle"]                                    | Protects against identity theft, cyber fraud and online scams.                                    | 18      | 75      | ["Annual"]                       | 5000            | 50000           | ["Identity theft restoration assistance","Online fraud protection","Data restoration benefits"]                      | CYBER_CSP_112              | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000007 | GadgetGuard Mobile               | GGM-777      | Gadget Insurance                   | ["Lifestyle"]                                    | Protection for smartphones against accidental damage, theft and loss.                             | 18      | 75      | ["Annual","Single"]              | 500             | 5000            | ["Screen damage cover","Worldwide protection","Rapid replacement service"]                                           | GADGET_GGM_777             | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000008 | DomesticHelper Protect           | DHP-221      | Maid Insurance                     | ["Accidental","Hospitalisation","Lifestyle"]     | Coverage for domestic helpers including medical, personal accident and liability.                 | 21      | 70      | ["Annual"]                       | 10000           | 100000          | ["Inpatient and surgical cover","Personal accident benefits","Employer’s liability protection"]                      | MAID_DHP_221               | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000009 | TravelSafe Student               | TSS-211      | Student Travel Insurance           | ["Travel","Accidental","Education","Lifestyle"]  | Travel insurance designed for students studying or travelling overseas.                           | 16      | 35      | ["Single","Annual"]              | 50000           | 500000          | ["Extended trip duration","Study interruption benefits","Laptop and gadget cover"]                                   | TRAVEL_STUDENT_TSS_211     | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| ccccdddd-0000-0000-0000-000000000010 | SmartDrive Motorcycle            | SDM-101      | Motorcycle Insurance               | ["Accidental","Lifestyle"]                       | Comprehensive motorcycle insurance with third-party and own damage cover.                         | 21      | 65      | ["Annual","Single"]              | 5000            | 50000           | ["Own damage cover","Third-party liability","Rider’s personal accident add-on"]                                      | MOTOR_BIKE_SDM_101         | Yes               | No                | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000001 | Group Life Elite                 | GLE-001      | Group Life                         | ["Death","TPD","Accidental"]                     | Employer-sponsored group life insurance for employees.                                            | 18      | 70      | ["Monthly","Annual"]             | 50000           | 1000000         | ["Flat or multiple-of-salary sum assured","Accidental death benefit","Flexible employer contribution options"]       | GROUP_LIFE_GLE_001         | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000002 | Group Hospitalisation & Surgical | GHS-020      | Group Medical                      | ["Hospitalisation"]                              | Group hospitalisation and surgical coverage for employees.                                        | 18      | 70      | ["Monthly","Annual"]             | 50000           | 500000          | ["Inpatient and day surgery cover","Panel clinic network","Optional outpatient rider"]                               | GROUP_MED_GHS_020          | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000003 | Group Personal Accident          | GPA-050      | Group PA                           | ["Accidental","Death","TPD","Disability Income"] | Group personal accident plan for on- and off-duty protection.                                     | 18      | 70      | ["Annual"]                       | 50000           | 500000          | ["Accidental death and TPD","Weekly income benefit for disability","Medical reimbursement for accidents"]            | GROUP_PA_GPA_050           | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000004 | Group TPD Protector              | GTP-090      | Group TPD                          | ["TPD"]                                          | Group total and permanent disability coverage for employees.                                      | 18      | 65      | ["Annual"]                       | 50000           | 500000          | ["Lump sum on TPD","Flexible benefit scales","Complementary to group life"]                                          | GROUP_TPD_GTP_090          | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000005 | Group Critical Illness           | GCI-115      | Group CI                           | ["Critical Illness"]                             | Group CI coverage providing lump sum on diagnosis of major conditions.                            | 18      | 65      | ["Annual"]                       | 50000           | 500000          | ["Covers major CI list","Employee-paid or employer-paid","Can be layered on group life"]                             | GROUP_CI_GCI_115           | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000006 | Group Term Life Lite             | GTL-101      | Group Term Life                    | ["Death"]                                        | Basic group term life solution for SMEs.                                                          | 18      | 65      | ["Annual"]                       | 20000           | 300000          | ["Affordable coverage for SMEs","Flat sum assured per employee","Simple enrolment process"]                          | GROUP_TERM_GTL_101         | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+| eeeeffff-0000-0000-0000-000000000007 | Group Maternity Rider            | GMR-777      | Group Maternity Rider              | ["Hospitalisation","Lifestyle"]                  | Maternity add-on rider for group medical plans.                                                   | 18      | 45      | ["Annual"]                       | 5000            | 20000           | ["Normal and C-section delivery cover","Complications of pregnancy","Newborn care benefits"]                         | GROUP_MATERNITY_GMR_777    | No                | Yes               | 2025-10-29 18:09:27+00 | 2025-10-29 18:09:27+00 |
+
+
+6.When user click "Customer" on side menu, user will see top bar header "Customer Management(Manage your leads and customers)". User see  "+New Lead" button on top. When user click "+New Lead" button, user will be asked to fill up a form with high level details: Name(mandatory), Phone Number(mandatory), Email(optional), Lead Source(drop down) > then click "saved & closed" Or "Save & schedule appointment". If user clicked saved & closed, and the lead is added. With relationship type = new, customer temperature = cold, last contacted = never contacted. When user click "save & schedule appointment", user will land on "Add event" form, title will prefill with "Appointment with <lead name>", event type = appointment, linked customer = <lead name>(non-editable). User can edit other event details, create event or cancel. Below header is a smart search bar, user may search by name, contact, ID... beside search bar, user can filter or/and sort(ascending or descending). user can filter with multiple filter criteria including customer type = individual/ entity, relationship type=new/existing, lead sources(event/referral/social media), last contacted(last 7 days/ last 30 days/more than 30 days/ never contacted), customer temperature(cold/warm/hot). If last contacted = more than 30days or never contacted, and (new proposal status = none and service request status = none), then temperature is cold. If last contacted = more than 30days or never contacted, but (new proposal status <> none or service request status <> none), then temperature is warm. If last contacted = last 30 days, temperature is warm. if last contacted = 7 days, temperature is hot. if customer has any policy bought from the advisor before regardless the policy status, the relationship type = existing. if customer never buy anything from the advisor, then the relationship type is new. User may sort(ascending or descending) the customer list by alphabet, by next appointment, by last created. Below the search bar is the list of customer cards (horizontal long width cards). The top bar will freeze on top, user may scroll to see the customer list. In the customer list, it is display as customer card, the header is Name, below name is phone number and ID number. below phone number and ID number, is last contacted, active proposal (count as 0 if none),active service request (count as 0 if none),active policy (count as 0 if none), Total premium paying per month (count, if has any active policy). Beside the Name header, we have label of customer type, relationship type and customer temperature. When user click the customer card, and will be redirect to customer detail page.
+7. At the customer details page, user will see top bar freeze on top. with header = <lead/customer name(individual)> or <company name(entity)>, below name is count of customer's proposal, service request and policy. eg Sarah Chen (1 active proposal, 0 service request, 2 active policies). Beside name is the label of relationship type and customer temperature. below the count of proposal, service request and policy, user can see 4 tabs: "overview", "portfolio", "servicing", "gap & opportunity". if relationship type = new, only "overview" is enable. another there 3 tabs are grey out and non clickable. if relationship type = existing, then all 4 tabs are enable, user can click it, or swipe left right to land on the page of the tab. at left top edge of the header, near to the side menu, there is a left arrow "<-" represent back to customer list page. Below the header is scrollable vertical page. 
+Under tab "Overview", user can see sections "Our journey", "Individual Details" or "Company Details", "Quick Action" and "Appointments". In section "Our Journey", create a horizontal timeline view component called “Our Journey” between advisor and customer. The purpose is to visually narrate the milestones between the advisor and their customer, from the first policy purchase to today.
+The timeline line runs through the middle, connecting milestone cards on alternating sides. Each milestone includes: Month & Year (e.g., “Jan 2019”), Event Title (e.g., “First Policy Purchased”), Short Description (optional, 1–2 lines), Icon representing the event type.
+Example Event Types (use icons + color cues)
+Event Type	Icon	Accent Color	Example Label
+First Policy	🛡️ Shield	Blue	“Jan 2019 – First Policy Purchased”
+New Policy	📄 Document	Indigo	“Jun 2020 – Added Health Plan”
+Marriage	💍 Rings	Gold	“Aug 2021 – Married”
+Newborn	👶 Baby	Pink	“May 2023 – Baby Arrival”
+Policy Claim	💰 Hand with Coin	Red	“Dec 2024 – Medical Claim Submitted”
+User can see the a Prezi-style focus: when you click any milestone card, the view smoothly centers on it and zooms in (spring-animated). Drag-to-pan and wheel zoom still work, and can hit Fit anytime. Below the timeline line, is a short paragraph "Mira Insight", explain about the journey with customer, and the customer profile. eg. "Sarah has be your customer for 3892 days. You have witness her up and down including married, new born, accidental claim and so on. She will be turning 40 year old on DD MMM, remember to celebrate with her and do a annual policy review with her..."
+In section "Individual Details", we can see Name, Phone Number, Email, National ID, Date of Birth, Gender, Marital Status, Occupation, Nationality, Address. 
+In the "Quick Action", use can click "New Proposal"(land on new proposal detail page), "Resume Proposal"(land on proposal list, filter particular customer's proposals, user select the proposal to be continued), "Schedule Appointment"(add event form is shown, prefill title and linked customer). In the "Appointments", use can see upcoming or past appointment summary card, when user click on it, user will land on the "smart plan" module, summary card.
+Under the tab of "Portfolio", user can see section "Coverage Overview" and "Active Policies". Under coverage overview, user can see what coverage type has been covered for client. the type includes: Hospitalisation, Death, Critical Illness, TPD, Disability Income, Accidental, Savings, Lifestyle, Travel. Illustrate using infographic icon, color the covered needs and grey out the uncovered needs. Under active policies, use can see the list of policy cards(horizontal card), and user can click the polices card to land on a new page to see the policy details. click back will back to policies list screen. the policy cards is with header Product name. Beside is the label of policy status, below is the policy number, coverage type, sum assured, premium, frequency.
+Under the tab of "Servicing", user can see section "Available service requests", "service request history". Under "available service requests", we can see submit claim, renew policy, reinstate policy, fund switching, premium payment, change customer details, change beneficiary, others. Under "Service Request History", user can see list of service request card, when user click the card, user can see the details of the request.
+Under Gap & Opportunity, user can see the gap assessment result of the customer. when user click regenerate, system will rerun based on the latest available information. user may see a brief summary about client's gap, or any opportunity to improve client's financial health, eg. invest cash in funds. user may generate and share the report to customer for more discussion. User can also the Financial Planning History, under this list, user can see the report generated & signed by user previously.
+If customer type= entity, we apply the similar concept, but in group life insurance concept. under "Overview", we have similar "Our Journey", while the "Individual Details" will become "Company Details", in "Company details", we capture Company Name, Business Registration No, Industry, Keyman, Number of employees, Annual Revenue. Under tab "portfolio", we display the need type related to company's employee such as term life, hospitalization, medical, outpatient dental, outpatient clinical. user can also see the group policy details. Under tab "Service Request", user can see the requests related to group life. such as "change of members", "Change rider" etc... For entity customer, we will hide the tab "Gap & Opportunity".
+
+8. When user click "Proposals" on side menu, user will see top bar header "Proposal Management(Track and manage your proposal pipeline)". Below header is the smart search bar, filter, and sort(ascending or descending). user may search by any criteria such as proposal number, customer name. user can filter by customer type = individual/entity, filter by stage = fact finding/ financial planning/ recommendation/ quotation/ application, filter by status = in progress, pending for UW, pending for payment, completed (only for new proposal completed within 7 days, after 7 days, the proposal will not show in proposal management anymore, will can see the details under customer portfolio> policy). Use can sort by Stage (order by new business journey Fact finding, Financial planning, recommendation, quotation, application), Last Updated, Created. The top bar will freeze on top, user may scroll to see the proposal list. In the proposal card (horizontal card), we can see header with Customer Name (Proposer Name), below is proposal number and last updated. beside customer name is the label of proposal status. on the right of the product card, is the progress completion illustrate with icons. user can see icon of "fact finding "-"financial planning"-"recommendation"-"quotation"-"application", the stage icons are chain together. the stage icon is in grey if not started yet. Is in blue color when the stage still in progress, the icon is surrounded by a pie progress bar to indicate the progress %. the icon turn green when the stage is 100% completed. For Individual, the standard process is "fact finding"-"financial planning"-"recommendation"-"quotation"-"application". For Entity, the standard process is "fact finding"-"recommendation"-"quotation"-"application". User can click on the proposal card to land on proposal detail page.
+
+9. When user click "Proposal Detail", user will see top bar header with Customer Name (Proposer Name), below header(subheader)is proposal number and last updated. beside customer name is the label of proposal status. Below the subheader , is the progress completion illustrate with icons. user can the icon of "fact finding "-"financial planning"-"recommendation"-"quotation"-"application" place at the center. The top bar is freeze on top, below is the scrollable vertical page. when user click on the stage icon, system will auto scroll to particular stage. stage are displayed in vertical order: fact finding, financial planning, recommendation, quotation, application.
+For Individual Life here is the detail of the journey:
+Proposal Journey
+├── Fact Finding
+│   ├── Individual Details
+│   │   ├── Title
+│   │   ├── Name
+│   │   ├── Gender
+│   │   ├── NRIC
+│   │   ├── Date of Birth
+│   │   ├── Nationality
+│   │   ├── Smoker Status
+│   │   ├── Marital Status
+│   │   ├── Occupation
+│   │   ├── Phone Number
+│   │   ├── Email
+│   │   └── Address
+│   ├── Dependents (add if any)
+│   │   ├── Title
+│   │   ├── Name
+│   │   ├── Gender
+│   │   ├── NRIC
+│   │   ├── Date of Birth
+│   │   ├── Nationality
+│   │   ├── Smoker Status
+│   │   ├── Marital Status (if adult)
+│   │   ├── Occupation (if adult)
+│   │   ├── Phone Number
+│   │   ├── Email
+│   │   └── Address
+├── Financial Need Analysis
+│   ├── Customer Knowledge Assessment (CKA)
+│   │   ├── Educational / Professional Qualification
+│   │   │   ├── Do you hold a diploma or higher qualification in any of the following subjects?
+│   │   │   │   (Select all that apply)
+│   │   │   │   - Accountancy
+│   │   │   │   - Actuarial Science
+│   │   │   │   - Business / Business Administration / Business Management / Business Studies
+│   │   │   │   - Commerce
+│   │   │   │   - Economics
+│   │   │   │   - Finance / Financial Engineering
+│   │   │   │   - Financial Planning / Insurance
+│   │   │   │   - Computational Finance
+│   │   │   │   - Chartered Financial Analyst (CFA)
+│   │   │   │   - Chartered Certified Accountants (ACCA)
+│   │   │   │   - No / N.A.
+│   │   ├── Investment Experience
+│   │   │   ├── Have you performed at least 6 transactions in the past 3 years in the following investment products?
+│   │   │   │   (Select all that apply)
+│   │   │   │   - Collective Investment Schemes (CIS)
+│   │   │   │   - Investment-linked Policies (ILP)
+│   │   │   │   - Yes / No / N.A.
+│   │   └── Work Experience
+│   │       ├── Do you have at least 3 consecutive years of professional working experience in the last 10 years?
+│   │       │   If yes, please select all relevant areas:
+│   │       │   - Accountancy
+│   │       │   - Actuarial Science
+│   │       │   - Treasury
+│   │       │   - Financial Risk Management
+│   │       │   - Development / structuring / management / training / sale / trading / research / analysis of investment products
+│   │       │   - Provision of legal advice in financial areas
+│   │       │   - Yes / No / N.A.
+│   └── Risk Profiling (RPQ)
+│       ├── How many years of investment experience do you have?
+│       │   - < 3 years
+│       │   - 3 to < 5 years
+│       │   - 5 to < 10 years
+│       │   - ≥ 10 years
+│       ├── To achieve higher returns, it’s often necessary to take greater risks. Which statement best describes you?
+│       │   “I am prepared to accept short-term losses of ___% of the value of my long-term investments.”
+│       │   - Up to 10%
+│       │   - 10%–20%
+│       │   - 20%–30%
+│       │   - 30%
+│       ├── Assuming your investment is making losses at the end of the investment horizon, how comfortable are you to hold until you potentially get a better performance?
+│       │   - < 3 years
+│       │   - 3 to < 5 years
+│       │   - 5 to < 10 years
+│       │   - ≥ 10 years
+│       ├── Assuming you have no annual income, how long are you able to finance your current standard of living from your assets?
+│       │   - < 3 years
+│       │   - 3 to < 5 years
+│       │   - 5 to < 10 years
+│       │   - ≥ 10 years
+│       ├── The riskiest assets you would consider investing in (as per your advisor’s recommendation):
+│       │   - Government Bonds / Unit Trusts investing in Bonds
+│       │   - Balanced or Mixed Assets
+│       │   - Equities
+│       │   - Emerging Markets / Derivatives
+│       ├── How many years are you away from your retirement?
+│       │   - < 3 years
+│       │   - 3 to < 5 years
+│       │   - 5 to < 10 years
+│       │   - ≥ 10 years
+│       ├── Result Calculation
+│       │   - Total Score displayed (e.g., 11 = Low to Medium Risk)
+│       └── Risk Bands
+│           - Low Risk: 6–10  
+│           - Low to Medium Risk: 11–15  
+│           - Medium to High Risk: 16–20  
+│           - High Risk: 21–24
+│   ├── Financial Planning
+│   │   ├── Income
+│   │   ├── Expense
+│   │   ├── Asset
+│   │   ├── Liability
+│   │   ├── Existing Insurance Coverage
+│   │   └── Affordability
+│   │── Needs & Goal Analysis & Summary
+│   └── Quick link to visualizer
+├── Recommendation
+│   ├── Product Recommendation (goal-seek based on customer’s needs & budget). Can recommend multiple products. the product card will display side by side, user can swipe left or right to see different product. The life assured can be proposer himself/herself. the life assured can be his/her dependents too. eg. If proposer is a young working husband, has a housewife and a 3 year old kid. system will recommend a life protection & CI & Medical Card to proposer, recommend a CI&Medical Card to wife, recommend a Medical Card and education saving plan to kid. the recommendation is generate from a rule based recommendation engine behind the scene, admin will configure the "Advise principle rules" based on all possible permutation. System will also detect if any cross sales of general insurance is possible. eg system will show a suggestion box if customer also interest to get home insurance if customer has a house, motor insurance if customer has vehicles, travel insurance if customer like to travel. User may tick "yes" if user interested to discuss later, a task will be created behind the scene. If user tick "no", the cross sales suggestion box will disappear. 
+│   └── Confirmation of Advice (signature is required)
+├── Quotation
+│   ├── User can see the quotations has been created based on recommendations has been signed), the multiple quotations is displayed in product card view. user can swipe left or right to see the quotations. user can remove the quotation card. When user click the product card, user can see the product benefit details, user can edit the product coverage details. User can generate benefit illustration. 
+│   └── Total Quotaion summary.
+└── Application (Application stage can only open if user complete all the previous stage (prerequisite rule, because UW journey is determine based on product selected))
+This is the final stage where a formal application/proposal form is completed for the chosen insurance policy. It consolidates personal details (for policy contract issuance), declarations, and detailed underwriting questions. Many fields here mirror those in Fact Finding but are officially recorded on the proposal form, along with health and compliance information. Key fields in the application stage include:
+
+Personal & Policy Details:
+
+Field Name	Description	Mandatory or Optional	Country	Type of Field
+Policy Owner Personal Details	The policy owner’s full name, identification number, date of birth, gender, nationality, and contact details as they should appear on the policy contract. (Usually auto-filled from the fact-find for the client.) If the owner is different from the life insured, both parties’ details are needed.	Mandatory – required for contract issuance.	Both	Text (multiple sub-fields: name, ID, DOB, etc.)
+Life Insured Details	If the life insured is a different person (e.g. a spouse or child), their full name, ID, DOB, gender, etc. This is needed since underwriting is on the life insured. (If the owner and insured are the same, this duplicates the personal info.)	Mandatory if different from owner (else not applicable).	Both	Text (multiple sub-fields)
+Plan Details Applied	The plan name, coverage amount, riders, and premium as applied for. Essentially this recaps the recommendation in the official application – including sum assured for each benefit and the premium amount/frequency. The application form will list the plan and any riders the client is buying.	Mandatory – core of the application.	Both	Text & Numeric (plan and monetary values)
+Beneficiary Information	Nominee(s) for the policy benefits in case of the death of the life insured. Typically: name of beneficiary, relationship to insured, date of birth/ID, and percentage of benefit distribution. (In SG, formal nomination may be a separate form due to the Insurance Act, but the application may still capture intended beneficiaries for record.) In MY, nominees can often be listed on the proposal form.	Optional (but recommended to fill). If no beneficiaries are named, benefits go to estate by default (or trustee for juvenile policy).	Both	Text (multiple entries: name, relationship, DOB, % share)
+
+Health and Lifestyle (Underwriting) Questions: (Since this is full underwriting, a series of questions assess the life insured’s health status and risk factors.)
+
+Field Name	Description	Mandatory or Optional	Country	Type of Field
+Height	The height of the life insured (in cm or feet/inches). Used to compute BMI with weight.	Mandatory – for underwriting (build assessment).	Both	Numeric (e.g. cm)
+Weight	The weight of the life insured. Combined with height to evaluate build (overweight/underweight can affect insurability).	Mandatory	Both	Numeric (e.g. kg)
+Smoking/Tobacco Use	Does the life insured use tobacco (cigarettes, vape, etc.)? Yes/No. If Yes, details such as type and quantity (e.g. “10 cigarettes per day”). This is crucial for underwriting class.	Mandatory – must be disclosed
+.	Both	Yes/No (with text details if Yes)
+Alcohol Consumption	A question about alcohol use, e.g. “Do you drink alcohol?” Yes/No, and if yes, how much/how often. Heavy alcohol use can be a risk factor, so underwriters ask for an estimate (e.g. units per week).	Mandatory – standard underwriting question.	Both	Yes/No (with details if Yes)
+Health History (Illnesses)	A series of medical history questions. Typically, the form will list major conditions or disease categories and ask if the life insured has EVER had or been treated for them. E.g.: “Have you ever had any of the following: heart disease, stroke, cancer, diabetes, etc.?” with Yes/No checkboxes. If “Yes” to any, the applicant must provide details (diagnosis, dates, treatment, doctor’s info). This field is often split into multiple questions for different body systems, but collectively it captures the life insured’s past or current serious illnesses.	Mandatory – each condition category must be answered Yes or No truthfully. Details are required for any “Yes.”	Both	Yes/No (with extensive text details if any Yes)
+Health History (Hospitalization/Surgeries)	A question on any past hospital admissions or surgeries: “Have you ever been hospitalized or had any surgery or medical procedure?” If Yes, provide dates, reasons, outcomes. This catches any significant events not covered in illness question (e.g. accidents, minor surgeries).	Mandatory (with details if Yes).	Both	Yes/No (plus text if Yes)
+Current Medical Treatment	“Are you currently on any medication or under any medical treatment or monitoring?” Yes/No, with details (what condition, what meds). This reveals ongoing health issues or maintenance medications.	Mandatory (with details if Yes).	Both	Yes/No (plus text)
+Family Medical History	Questions about family health history: e.g. “Do any of your immediate family (parents or siblings) have a history of major illnesses such as cancer, heart disease, etc., before age 60?” If Yes, provide relationship, condition, age at onset. This helps assess genetic predispositions.	Mandatory (with details if Yes).	Both	Yes/No (plus text details)
+Hazardous Activities	“Do you engage in any hazardous sports or activities (e.g. scuba diving, skydiving, motor racing, mountaineering) or have dangerous occupational duties?” Yes/No – if Yes, details on the activity (type, frequency, certifications). Insurers may exclude or rate up for high-risk hobbies.	Mandatory (details if Yes).	Both	Yes/No (plus text)
+Foreign Travel/Residence Plans	“Do you plan to reside or travel outside the country for an extended period or to hazardous regions?” Yes/No, if Yes specify countries and duration. (Certain countries or war zones might affect coverage or require special terms.)	Mandatory (details if Yes).	Both	Yes/No (plus text)
+Existing/Pending Insurance	A question about other life insurance in force or applications in progress: e.g. “Do you have any other life insurance or are you currently applying for insurance with any other company?” If Yes, provide details (company, sum assured, year). This helps insurers know total coverage on the life (important for reinsurance and to detect if someone is over-insuring or shopping due to declines). Also: “Have you ever had an application rated, postponed or declined?” – if Yes, details.	Mandatory – must disclose concurrent applications or prior issues.	Both	Yes/No (plus text details if Yes)
+
+Declarations and Compliance:
+
+Field Name	Description	Mandatory or Optional	Country	Type of Field
+Source of Funds for Premium	The origin of the funds that will be used to pay premiums. Options might include “Salary/Employment income, Savings, Business income, Inheritance, etc.” This is an anti-money-laundering (AML) requirement to ensure the premium money comes from legitimate sources.	Mandatory – required by AML guidelines.	Both	Dropdown (source options)
+Politically Exposed Person (PEP)	A declaration if the client (or life insured or any beneficial owner of the policy) is a PEP – meaning they or close family hold a high public office (e.g. politician, senior government/judicial/military official). This is important for AML due diligence. Typically a Yes/No question. If Yes, further details may be needed.	Mandatory – compliance requirement.	Both	Yes/No (and details if Yes)
+Tax Residency & FATCA	Declarations related to foreign tax status: e.g. FATCA (Foreign Account Tax Compliance Act) for U.S. persons and CRS (Common Reporting Standard) for other nationalities. The form asks if the owner is a tax resident of any country other than the home country. If Yes, they must provide the country and Tax Identification Number (TIN). In particular, “Are you a U.S. Citizen/U.S. tax resident?” with SSN/TIN if Yes (for FATCA reporting). And similarly for other countries (CRS).	Mandatory – required by law for international tax compliance.	Both	Yes/No (plus Country and TIN if Yes)
+Payment Method	The chosen premium payment method for the policy. Options include: Credit Card, GIRO/Direct Debit, Bank Transfer, Cash/Cheque (for initial). If credit card or bank account, the form will capture details (e.g. card number and expiry
+slideshare.net
+, or bank account number and bank name for direct debit). The payer’s name (if different) might also be noted.	Mandatory – to initiate premium collection.	Both	Dropdown (method) + Text (account details)
+Marketing Consent	An optional consent where the client can opt in or out of receiving marketing or promotional materials from the insurer/agency. Typically a checkbox: “I agree to receive marketing information…” Yes/No. (Not required for the policy, but included for data privacy regulations compliance.)	Optional – client’s choice.	Both	Checkbox (Yes/No)
+Acknowledgement of Product Disclosure	The client’s confirmation that they have received and understood the requisite disclosure documents. For example, acknowledging receipt of the product summary, benefit illustration, policy terms, or a “Your Guide to Life Insurance” booklet (in SG). Often this is a checkbox or part of a declaration paragraph that the client signs. It’s not a data field per se, but it’s recorded that the documents were given.	Mandatory – client must acknowledge receiving the important documents. (Usually captured by signature.)	Both	Checkbox/Signature
+Health Declaration	A statement that all health questions were answered truthfully and completely, and that no material information has been withheld. (This is usually a paragraph the client signs under.) Not a fillable “field” but part of the declarations section. It’s included here as it’s an important part of the application content.	Mandatory – part of the signed declaration.	Both	(Signature indicates agreement)
+Advisor’s Declaration	The financial advisor’s own declaration (signed) that they have explained the policy, that the info was provided by client, etc. (Not a client field, but part of the form.)	Mandatory for advisor to sign.	Both	Signature
+Signature of Applicant & Date	The applicant (policy owner) must sign the application form, and usually the life insured (if different) also signs to consent to insurance on their life. The date of signing is recorded. This signature field is the formal acceptance of all declarations above and the request for coverage. Without it, the application is not valid.	Mandatory – legal execution of the form.	Both	Signature (with date field)
+
+If the proposer is entity, the progress is "fact find "-"recommendation"-"quotation"-"application". The top bar is freeze on top, below is the scrollable vertical page. when user click on the stage icon, system will auto scroll to particular stage. stage are displayed in vertical order: fact finding, recommendation, quotation, application.
+For Entity here is the detail of the journey:
+Fact finding: company details, keyman details, upload employee list
+recommendation by advisor, quotation, application
+
+
+
+10. When user click "Servicing" on side menu, user will see the top bar header "Service Request Management", user can click "+ New service request". User need to select customer, available service type, then fill up the service form. Below the header is a smart search bar, with filter and sort. User can filter by service request type, status. user can sort(ascending/descending) by last updated, date created. The top bar header is freeze, user can scroll to see the list of service request detail cards. when user click the card, user can see the details of service request. 
+
+11. When user click "Visualizers" on side menu, user will see the header "Visualizers (creative sandbox to turn numbers into stories)". On the top, user of the page, user can search and select customer name from customer list. After selected, system will pull user's income, expense, assets, and liability and create a wealth & cash flow projection chart. This chart is not directly referring to customer, but a NPC that has similar details as customer. user can also add life event to help customer see the impact of life event to the wealth and cash flow projection to this "NPC". eg married, new born, buy new house, buy new car, need large expense. If sick/injured, NPC will need medical cost and temporary loss of income until recover. If death, NPC's family will loss the main income earner. user may edit/add the details of income, expenses, asset and liability here if customer willing to provide more. but this will not overide the detail in the Financial Planning or Recommendation. User can also run scenario if user is insured by insurance, how the project look compared to no insurance coverage. Apart from chart view, system also offer sankey diagram view. 
+When the selected customer is changed, the details of the "NPC" also get updated.
+If user click "Ask Mira" at the side menu, a split view will appear, mira understand user intent might want to ask about visualizer, mira is ready to answer anything about related to this page.
+
+Learn the sankey digram logic form this mini app (only focus on sankey diagram):
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import * as d3 from "d3";
+import { Play, Pause, RotateCcw, Download, Upload, Save, Plus, Edit2, Trash2, TrendingUp, TrendingDown, DollarSign, Calendar } from "lucide-react";
+
+/**
+ * Cashflow Visualizer — React + D3 (stabilized)
+ *
+ * Fixes
+ * - Resolves SyntaxError (unterminated string) from an incomplete JSX line.
+ * - Fixes "Unexpected token, expected ," by completing the event handlers and effect blocks.
+ * - Prevents React error #130 by validating/guarding props and refs for child components.
+ * - Ensures `rows` is always an array and numbers are valid before rendering.
+ * - Places x-axis at y=0; years render as 2025 (no commas); balance dots have no stroke.
+ * - Outflow category "Investment" is teal and ordered under Closing Balance; divider "Other Outflows" retained.
+ * - Closing Balance of 0 renders a thin labeled bar.
+ *
+ * Tests
+ * - Preserves earlier runtime tests and adds more to cover edge-cases.
+ */
+
+// ---------- Constants ----------
+const SPEEDS_MS: Record<string, number> = { slow: 2000, normal: 1000, fast: 500 };
+const STORAGE_KEY = "cashflow-visualizer-state-v1";
+
+const INFLOW_CATEGORIES = [
+  "Active Income",
+  "Dividend",
+  "Passive Income",
+  "Business",
+  "Rental",
+  "Other",
+] as const;
+
+const OUTFLOW_CATEGORIES = [
+  "Expenses",
+  "Installment",
+  "Investment",
+  "Tax",
+  "Other",
+] as const;
+
+// ---------- Types ----------
+export type Item = {
+  id: string;
+  type: "inflow" | "outflow";
+  category: (typeof INFLOW_CATEGORIES[number]) | (typeof OUTFLOW_CATEGORIES[number]) | string;
+  name: string;
+  value: number; // amount per period
+  rate: number; // annual % (return for inflow, interest for outflow)
+  period: "Monthly" | "Annually";
+  frequency: "Recurring" | "One-off";
+  startYear: number;
+  endYear: number | null; // Recurring only
+};
+
+// ---------- Utilities ----------
+function cryptoRandomId() {
+  try {
+    // @ts-ignore
+    if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+      const arr = new Uint32Array(3);
+      // @ts-ignore
+      crypto.getRandomValues(arr);
+      return Array.from(arr, (n) => n.toString(36)).join("");
+    }
+  } catch {}
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+export function isActiveInYear(it: Item, year: number): boolean {
+  if (year < it.startYear) return false;
+  if (it.frequency === "One-off") return year === it.startYear;
+  if (it.endYear == null) return true; // Recurring, no end
+  return year <= it.endYear; // inclusive end
+}
+
+export function grownValueAtYear(it: Item, year: number): number {
+  const years = Math.max(0, year - it.startYear);
+  const annual = it.value * (it.period === "Monthly" ? 12 : 1);
+  return annual * Math.pow(1 + (it.rate || 0) / 100, years);
+}
+
+export function aggregateByYear(items: Item[], year: number) {
+  const actives = (items || []).filter((it) => isActiveInYear(it, year));
+  const inflowItems = actives
+    .filter((i) => i.type === "inflow")
+    .map((i) => ({ ...i, calculatedValue: grownValueAtYear(i, year) }));
+  const outflowItems = actives
+    .filter((i) => i.type === "outflow")
+    .map((i) => ({ ...i, calculatedValue: grownValueAtYear(i, year) }));
+
+  const totalInflows = inflowItems.reduce((s, i: any) => s + i.calculatedValue, 0);
+  const totalOutflows = outflowItems.reduce((s, i: any) => s + i.calculatedValue, 0);
+  const outflowsInvestment = outflowItems
+    .filter((i) => i.category === "Investment")
+    .reduce((s, i: any) => s + i.calculatedValue, 0);
+  const outflowsOther = totalOutflows - outflowsInvestment;
+  const netCash = totalInflows - totalOutflows;
+  return { inflowItems, outflowItems, totalInflows, totalOutflows, outflowsInvestment, outflowsOther, netCash };
+}
+
+// ---------- Runtime tests ----------
+(function devTests() {
+  const y = 2022;
+  const inflow: Item = { id: "i", type: "inflow", category: "Active Income", name: "Salary", value: 1000, rate: 0, period: "Monthly", frequency: "Recurring", startYear: y, endYear: y + 1 };
+  const inv: Item = { id: "o1", type: "outflow", category: "Investment", name: "DCA", value: 100, rate: 0, period: "Monthly", frequency: "Recurring", startYear: y, endYear: y + 1 };
+  const exp: Item = { id: "o2", type: "outflow", category: "Expenses", name: "Rent", value: 200, rate: 0, period: "Monthly", frequency: "Recurring", startYear: y, endYear: y + 1 };
+
+  console.assert(isActiveInYear(inflow, y) && isActiveInYear(inflow, y + 1) && !isActiveInYear(inflow, y + 2), "isActiveInYear endYear inclusive failed");
+  console.assert(grownValueAtYear(inflow, y) === 12000, "annualization failed");
+  const a0 = aggregateByYear([inflow, inv, exp], y);
+  console.assert(a0.totalInflows === 12000, "totalInflows calc failed");
+  console.assert(a0.totalOutflows === (100 + 200) * 12, "totalOutflows calc failed");
+  console.assert(a0.outflowsInvestment === 1200, "investment split failed");
+  console.assert(a0.outflowsOther === 2400, "other split failed");
+})();
+
+(function devTestsBalance() {
+  const base = 2020;
+  const xs: Item[] = [
+    { id: "a", type: "inflow", category: "Active Income", name: "A", value: 100, rate: 0, period: "Monthly", frequency: "Recurring", startYear: base, endYear: base + 2 },
+    { id: "b", type: "outflow", category: "Expenses", name: "B", value: 40, rate: 0, period: "Monthly", frequency: "Recurring", startYear: base, endYear: base + 2 },
+  ];
+  let run = 0; const out: number[] = [];
+  for (let y = base; y <= base + 2; y++) { const c = aggregateByYear(xs, y); run += c.totalInflows - c.totalOutflows; out.push(run); }
+  console.assert(out[0] === 720 && out[1] === 1440 && out[2] === 2160, "cumulative balance failed");
+})();
+
+// Extra tests: zero/empty safety
+(function devTestsSafety() {
+  const y = 2030;
+  const a0 = aggregateByYear([], y);
+  console.assert(a0.totalInflows === 0 && a0.totalOutflows === 0 && a0.netCash === 0, "empty aggregate safety failed");
+})();
+
+// ---------- Main Component ----------
+export default function CashflowVisualizer() {
+  const systemYear = new Date().getFullYear();
+
+  // State
+  const [items, setItems] = useState<Item[]>([]);
+  const [currentYear, setCurrentYear] = useState<number>(systemYear);
+  const [endYear, setEndYear] = useState<number>(systemYear + 10);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [speed, setSpeed] = useState<"slow" | "normal" | "fast">("normal");
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [editing, setEditing] = useState<Item | null>(null);
+
+  // Refs
+  const sankeyRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<HTMLDivElement | null>(null);
+
+  // Load/Save
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed?.items)) setItems(parsed.items);
+        if (typeof parsed?.endYear === "number") setEndYear(parsed.endYear);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, endYear }));
+  }, [items, endYear]);
+
+  // Animation
+  useEffect(() => {
+    if (!isPlaying) return;
+    if (currentYear >= endYear) { setIsPlaying(false); return; }
+    const id = setInterval(() => setCurrentYear((y) => Math.min(y + 1, endYear)), SPEEDS_MS[speed]);
+    return () => clearInterval(id);
+  }, [isPlaying, speed, currentYear, endYear]);
+
+  // Per-year for currentYear
+  const { inflowItems, outflowItems, totalInflows, totalOutflows } = useMemo(() => {
+    const c = aggregateByYear(items, currentYear);
+    return { inflowItems: c.inflowItems, outflowItems: c.outflowItems, totalInflows: c.totalInflows, totalOutflows: c.totalOutflows };
+  }, [items, currentYear]);
+
+  // Series across years
+  const series = useMemo(() => {
+    const rows: { year: number; inflows: number; outflows: number; outflowsInvestment: number; outflowsOther: number; balance: number }[] = [];
+    let running = 0;
+    for (let y = systemYear; y <= endYear; y++) {
+      const c = aggregateByYear(items, y);
+      running += c.totalInflows - c.totalOutflows;
+      rows.push({ year: y, inflows: c.totalInflows, outflows: c.totalOutflows, outflowsInvestment: c.outflowsInvestment, outflowsOther: c.outflowsOther, balance: running });
+    }
+    return rows;
+  }, [items, endYear, systemYear]);
+
+  const balance = useMemo(() => series.find((r) => r.year === currentYear)?.balance ?? 0, [series, currentYear]);
+  const prevBalance = useMemo(() => series.find((r) => r.year === currentYear - 1)?.balance ?? 0, [series, currentYear]);
+
+  // Preset
+  function presetData() {
+    return {
+      items: [
+        { id: cryptoRandomId(), type: "inflow",  category: "Active Income", name: "Salary",          value: 5000, rate: 3,  period: "Monthly",  frequency: "Recurring", startYear: systemYear, endYear: null },
+        { id: cryptoRandomId(), type: "inflow",  category: "Dividend",      name: "ETF Dividends",   value: 2000, rate: 2,  period: "Annually", frequency: "Recurring", startYear: systemYear, endYear: null },
+        { id: cryptoRandomId(), type: "outflow", category: "Investment",    name: "Index Fund DCA",  value: 800,  rate: 0,  period: "Monthly",  frequency: "Recurring", startYear: systemYear, endYear: null },
+        { id: cryptoRandomId(), type: "outflow", category: "Expenses",      name: "Living Expenses", value: 3500, rate: 2,  period: "Monthly",  frequency: "Recurring", startYear: systemYear, endYear: null },
+      ] as Item[],
+      endYear: systemYear + 10,
+    };
+  }
+  function usePreset() { const p = presetData(); setItems(p.items); setEndYear(p.endYear); setCurrentYear(systemYear); }
+  function resetToPreset() { usePreset(); }
+
+  // Import/Export
+  function exportJSON() {
+    const payload = { items, endYear };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `cashflow-data-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url);
+  }
+  function importFromFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try { const data = JSON.parse(String(ev.target?.result || "{}")); if (Array.isArray(data.items)) setItems(data.items); if (data.endYear) setEndYear(Number(data.endYear)); }
+      catch { alert("Invalid JSON"); }
+    };
+    reader.readAsText(file);
+    e.currentTarget.value = "";
+  }
+
+  // CRUD
+  function beginAdd() {
+    setEditing({ id: cryptoRandomId(), type: "inflow", category: "Active Income", name: "", value: 0, rate: 0, period: "Monthly", frequency: "Recurring", startYear: systemYear, endYear: null });
+    setShowModal(true);
+  }
+  function beginEdit(row: Item) { setEditing({ ...row }); setShowModal(true); }
+  function removeItem(id: string) { setItems((xs) => xs.filter((x) => x.id !== id)); }
+  function saveItem() {
+    if (!editing) return;
+    const e = editing;
+    if (!e.name || !e.category || !e.type || !e.period) return alert("Please complete the form.");
+    if (e.value <= 0) return alert("Value must be > 0.");
+    setItems((xs) => {
+      const idx = xs.findIndex((x) => x.id === e.id);
+      if (idx >= 0) { const clone = xs.slice(); clone[idx] = e; return clone; }
+      return [...xs, e];
+    });
+    setShowModal(false); setEditing(null);
+  }
+
+  // UI
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-900 text-white p-4 sm:p-6">
+      <header className="text-center mb-6">
+        <h1 className="text-4xl sm:text-5xl font-bold text-yellow-300 mb-2">Cashflow Visualizer</h1>
+        <p className="text-gray-300">Project your inflows & outflows; see balance over time</p>
+      </header>
+
+      {/* Controls */}
+      <section className="bg-slate-800/50 backdrop-blur rounded-xl p-3 sm:p-4 mb-6 flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => setIsPlaying((v) => !v)}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+        >
+          {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+          {isPlaying ? "Pause" : "Play"}
+        </button>
+
+        <button
+          onClick={() => setCurrentYear(systemYear)}
+          className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
+          title="Reset to current year"
+        >
+          <RotateCcw size={18} />
+        </button>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-400">Speed</span>
+          <select
+            value={speed}
+            onChange={(e) => setSpeed(e.target.value as any)}
+            className="px-3 py-2 bg-slate-700 rounded-lg border border-slate-600 text-sm"
+          >
+            <option value="slow">Slow</option>
+            <option value="normal">Normal</option>
+            <option value="fast">Fast</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-400">End Year</span>
+          <input
+            type="number"
+            value={endYear}
+            onChange={(e) => setEndYear(Math.max(systemYear, Number(e.target.value) || systemYear))}
+            className="px-3 py-2 bg-slate-700 rounded-lg border border-slate-600 w-28"
+          />
+        </div>
+
+        <button onClick={usePreset} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
+          <Save size={18} />
+          Preset
+        </button>
+
+        <button onClick={resetToPreset} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
+          <RotateCcw size={18} />
+          Reset Preset
+        </button>
+
+        <button onClick={exportJSON} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+          <Download size={18} />
+          Export
+        </button>
+
+        <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer">
+          <Upload size={18} />
+          Import
+          <input type="file" accept=".json" onChange={importFromFile} className="hidden" />
+        </label>
+      </section>
+
+      {/* Main grid: Sankey + Chart */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Panel title="Your Cash Flow">
+          {items.length > 0 ? (
+            <SankeyDiagram
+              refEl={sankeyRef}
+              inflowItems={inflowItems}
+              outflowItems={outflowItems}
+              totalInflows={totalInflows}
+              totalOutflows={totalOutflows}
+              balance={balance}
+              prevBalance={prevBalance}
+            />
+          ) : (
+            <EmptyViz text="Add items to see cash flow visualization" />
+          )}
+
+          {/* Summary cards */}
+          <div className="mt-4 bg-slate-900/40 rounded-lg p-4 border border-slate-700">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <SummaryCard icon={<TrendingUp size={20} className="text-emerald-400" />} title="Inflows" value={`$${Math.round(totalInflows).toLocaleString()}`} boxClass="bg-emerald-600/20 border-emerald-500/30" textClass="text-emerald-400" />
+              <SummaryCard icon={<TrendingDown size={20} className="text-rose-400" />} title="Outflows" value={`$${Math.round(totalOutflows).toLocaleString()}`} boxClass="bg-rose-600/20 border-rose-500/30" textClass="text-rose-400" />
+              <SummaryCard icon={<DollarSign size={20} className="text-amber-400" />} title={balance >= 0 ? "Closing Balance" : "Deficit"} value={`${balance >= 0 ? "$" : "-$"}${Math.abs(Math.round(balance)).toLocaleString()}`} boxClass="bg-amber-600/20 border-amber-500/30" textClass="text-amber-400" />
+              <SummaryCard icon={<Calendar size={20} className="text-blue-400" />} title="Year" value={`${currentYear}`} boxClass="bg-blue-600/20 border-blue-500/30" textClass="text-blue-400" />
+            </div>
+          </div>
+        </Panel>
+
+        <Panel title="Your Balance Projection">
+          {items.length > 0 ? (
+            <ProjectionChart
+              refEl={chartRef}
+              rows={series}
+              currentYear={currentYear}
+              startYear={systemYear}
+              endYear={endYear}
+              interactive={!isPlaying}
+              onYearSelect={(y) => !isPlaying && setCurrentYear(y)}
+            />
+          ) : (
+            <EmptyViz text="Add items to see balance projection" />
+          )}
+        </Panel>
+      </section>
+
+      {/* Manager */}
+      <section className="bg-slate-800/50 backdrop-blur rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Inflow & Outflow Manager</h2>
+          <button onClick={beginAdd} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+            <Plus size={18} /> Add Item
+          </button>
+        </div>
+
+        {items.length === 0 ? (
+          <p className="text-gray-400 text-center py-10">No items yet. Click “Add Item” or “Preset”.</p>
+        ) : (
+          <div className="space-y-3">
+            {items.map((it) => (
+              <div key={it.id} className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between hover:bg-slate-700 transition-colors">
+                <div className="flex items-center gap-4">
+                  <span className={`w-3 h-3 rounded-full ${it.type === "inflow" ? "bg-green-500" : it.category === "Investment" ? "bg-teal-400" : "bg-red-500"}`} />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-lg">{it.name || (it.type === "inflow" ? "Inflow" : "Outflow")}</span>
+                      <span className="text-sm text-gray-400">({it.category})</span>
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      ${it.value.toLocaleString()} • {it.rate}% • {it.period} • {it.frequency} • {it.startYear}
+                      {it.frequency === "Recurring" && it.endYear ? ` - ${it.endYear}` : ""}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => beginEdit(it)} className="p-2 hover:bg-slate-600 rounded-lg"><Edit2 size={18} /></button>
+                  <button onClick={() => removeItem(it.id)} className="p-2 hover:bg-slate-600 rounded-lg text-red-400"><Trash2 size={18} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {showModal && editing && (
+        <Modal onClose={() => { setShowModal(false); setEditing(null); }}>
+          <h3 className="text-2xl font-bold mb-1">{items.find((x) => x.id === editing.id) ? "Edit Item" : "Add Item"}</h3>
+          <p className="text-gray-400 mb-4">Fill in the details of your inflow or outflow.</p>
+
+          {/* Form */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Type</label>
+                <select
+                  value={editing.type}
+                  onChange={(e) => setEditing((prv) => ({
+                    ...(prv as Item),
+                    type: e.target.value as Item["type"],
+                    category: e.target.value === "inflow" ? "Active Income" : "Expenses",
+                  }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-cyan-500"
+                >
+                  <option value="inflow">Inflow</option>
+                  <option value="outflow">Outflow</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Category</label>
+                <select
+                  value={editing.category}
+                  onChange={(e) => setEditing((prv) => ({ ...(prv as Item), category: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                >
+                  {(editing.type === "inflow" ? INFLOW_CATEGORIES : OUTFLOW_CATEGORIES).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Name</label>
+                <input
+                  type="text"
+                  value={editing.name}
+                  onChange={(e) => setEditing((prv) => ({ ...(prv as Item), name: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                  placeholder="e.g., Salary, Rent, DCA"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Amount ($)</label>
+                <input
+                  type="number"
+                  value={editing.value}
+                  onChange={(e) => setEditing((prv) => ({ ...(prv as Item), value: Number(e.target.value) }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Period</label>
+                <select
+                  value={editing.period}
+                  onChange={(e) => setEditing((prv) => ({ ...(prv as Item), period: e.target.value as Item["period"] }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                >
+                  <option>Monthly</option>
+                  <option>Annually</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text sm font-medium mb-2">{editing.type === "inflow" ? "Annual Return (%)" : "Annual Interest (%)"}</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={editing.rate}
+                  onChange={(e) => setEditing((prv) => ({ ...(prv as Item), rate: Number(e.target.value) }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Frequency</label>
+              <select
+                value={editing.frequency}
+                onChange={(e) => setEditing((prv) => ({ ...(prv as Item), frequency: e.target.value as Item["frequency"] }))}
+                className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+              >
+                <option>Recurring</option>
+                <option>One-off</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Start Year</label>
+                <input
+                  type="number"
+                  value={editing.startYear}
+                  onChange={(e) => setEditing((prv) => ({ ...(prv as Item), startYear: Number(e.target.value) }))}
+                  className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                />
+              </div>
+              {editing.frequency === "Recurring" && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">End Year (optional)</label>
+                  <input
+                    type="number"
+                    value={editing.endYear ?? ""}
+                    onChange={(e) => setEditing((prv) => ({ ...(prv as Item), endYear: e.target.value ? Number(e.target.value) : null }))}
+                    className="w-full px-4 py-2 bg-slate-700 rounded-lg border border-slate-600"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={saveItem} className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium">Save</button>
+              <button onClick={() => { setShowModal(false); setEditing(null); }} className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium">Cancel</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ---------- UI Fragments ----------
+function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-slate-800/50 backdrop-blur rounded-xl p-4 sm:p-6">
+      <h2 className="text-xl font-bold mb-4">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function EmptyViz({ text }: { text: string }) {
+  return <div className="h-96 flex items-center justify-center text-gray-400">{text}</div>;
+}
+
+function SummaryCard({ icon, title, value, boxClass, textClass }: { icon: React.ReactNode; title: string; value: string; boxClass: string; textClass: string; }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className={`p-2.5 rounded-lg border ${boxClass}`}>{icon}</div>
+      <div>
+        <div className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{title}</div>
+        <div className={`text-2xl font-bold ${textClass}`}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800 rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-end">
+          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl leading-none">×</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Sankey ----------
+function SankeyDiagram({ refEl, inflowItems = [], outflowItems = [], totalInflows = 0, totalOutflows = 0, balance = 0, prevBalance = 0 }:{
+  refEl: React.RefObject<HTMLDivElement>;
+  inflowItems: (Item & { calculatedValue: number })[];
+  outflowItems: (Item & { calculatedValue: number })[];
+  totalInflows: number; totalOutflows: number; balance: number; prevBalance: number; }) {
+  useEffect(() => {
+    const el = refEl?.current; if (!el) return;
+    const width = Math.max(320, el.clientWidth || 800);
+    const height = 460;
+    const margin = { top: 24, right: 120, bottom: 24, left: 120 };
+
+    d3.select(el).selectAll('*').remove();
+    const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+    const w = width - margin.left - margin.right;
+    const h = height - margin.top - margin.bottom;
+
+    // Columns
+    const nodeWidth = 64;
+    const colLeftX = 0;
+    const colCenterX = w / 2 - nodeWidth / 2;
+    const colRightX = w - nodeWidth;
+
+    // Identity: Opening + Inflows = Total Cash = Closing/Deficit + Outflows
+    const totalCash = prevBalance + totalInflows;
+    const prevAbs = Math.abs(prevBalance);
+    const balAbs = Math.abs(balance);
+
+    const maxVal = Math.max(
+      1,
+      prevAbs,
+      Math.abs(totalCash),
+      balAbs,
+      totalInflows,
+      totalOutflows,
+      ...outflowItems.map((x) => x.calculatedValue),
+      ...inflowItems.map((x) => x.calculatedValue)
+    );
+    const scaleH = d3.scaleLinear().domain([0, maxVal]).range([0, h * 0.75]);
+
+    // LEFT: Opening + inflows
+    let yCursor = 16;
+    const hasPrev = prevAbs > 0;
+    const prevNode = hasPrev
+      ? { name: prevBalance >= 0 ? "Opening Balance" : "Opening Deficit", x: colLeftX, y: yCursor, width: nodeWidth, height: Math.max(18, scaleH(prevAbs)), value: prevAbs, color: prevBalance >= 0 ? "#f1c40f" : "#ff6b6b" }
+      : null as any;
+    if (hasPrev) yCursor += (prevNode as any).height + 14;
+
+    const inflowNodes = inflowItems.map((it) => {
+      const nh = Math.max(18, scaleH(it.calculatedValue));
+      const node = { ...it, x: colLeftX, y: yCursor, width: nodeWidth, height: nh, color: "#10ac84" };
+      yCursor += nh + 14;
+      return node;
+    });
+
+    // CENTER: Total Cash
+    const centerH = Math.max(20, scaleH(Math.abs(totalCash)));
+    const centerNode = { name: "Total Cash", x: colCenterX, y: h / 2 - centerH / 2, width: nodeWidth, height: centerH, value: totalCash, color: "#f1c40f" };
+
+    // RIGHT: Balance then Investment (teal) then divider then Others (red)
+    let rightY = 16;
+    const rightPrimaryNode = { name: balance >= 0 ? "Closing Balance" : "Deficit", x: colRightX, y: rightY, width: nodeWidth, height: Math.max(6, scaleH(balAbs)), value: balAbs, color: balance >= 0 ? "#f1c40f" : "#ff6b6b" };
+    rightY += rightPrimaryNode.height + 14;
+
+    const investmentOutflows = outflowItems.filter((it) => it.category === "Investment");
+    const otherOutflows = outflowItems.filter((it) => it.category !== "Investment");
+    const outflowNodes: any[] = [];
+
+    investmentOutflows.forEach((it) => {
+      const nh = Math.max(18, scaleH(it.calculatedValue));
+      const node = { ...it, x: colRightX, y: rightY, width: nodeWidth, height: nh, color: "#14b8a6" };
+      rightY += nh + 14;
+      outflowNodes.push(node);
+    });
+
+    if (investmentOutflows.length > 0 && otherOutflows.length > 0) {
+      g.append('text')
+        .attr('x', colRightX + nodeWidth / 2)
+        .attr('y', rightY + 4)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#9ca3af')
+        .attr('font-size', 11)
+        .attr('font-style', 'italic')
+        .text('Other Outflows');
+      rightY += 16;
+    }
+
+    otherOutflows.forEach((it) => {
+      const nh = Math.max(18, scaleH(it.calculatedValue));
+      const node = { ...it, x: colRightX, y: rightY, width: nodeWidth, height: nh, color: "#ff6b6b" };
+      rightY += nh + 14;
+      outflowNodes.push(node);
+    });
+
+    // LINKS
+    const links: any[] = [];
+    if (prevNode) links.push({ source: prevNode, target: centerNode, value: (prevNode as any).value, color: (prevNode as any).color });
+    inflowNodes.forEach((n) => links.push({ source: n, target: centerNode, value: n.calculatedValue, color: "#10ac84" }));
+    links.push({ source: centerNode, target: rightPrimaryNode, value: balAbs, color: rightPrimaryNode.color });
+    outflowNodes.forEach((n) => links.push({ source: centerNode, target: n, value: n.calculatedValue, color: n.color }));
+
+    links.forEach((lk) => {
+      const sx = lk.source.x + lk.source.width;
+      const sy = lk.source.y + lk.source.height / 2;
+      const tx = lk.target.x;
+      const ty = lk.target.y + lk.target.height / 2;
+      const cx = (sx + tx) / 2;
+      const path = `M ${sx} ${sy} C ${cx} ${sy}, ${cx} ${ty}, ${tx} ${ty}`;
+      g.append('path')
+        .attr('d', path)
+        .attr('fill', 'none')
+        .attr('stroke', lk.color)
+        .attr('stroke-width', Math.max(2, scaleH(lk.value)))
+        .attr('opacity', 0.4);
+    });
+
+    function drawNode(node: any, label: string) {
+      const grp = g.append('g');
+      grp
+        .append('rect')
+        .attr('x', node.x)
+        .attr('y', node.y)
+        .attr('width', node.width)
+        .attr('height', node.height)
+        .attr('fill', node.color)
+        .attr('rx', 6)
+        .attr('opacity', 0.85);
+
+      const isLeft = node.x < w / 2;
+      grp
+        .append('text')
+        .attr('x', isLeft ? node.x - 10 : node.x + node.width + 10)
+        .attr('y', node.y + node.height / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', isLeft ? 'end' : 'start')
+        .attr('fill', '#e5e7eb')
+        .attr('font-size', 12)
+        .text(label);
+
+      grp
+        .append('text')
+        .attr('x', node.x + node.width / 2)
+        .attr('y', node.y + node.height / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#fff')
+        .attr('font-weight', 700)
+        .attr('font-size', 11)
+        .text(`$${(((typeof node.calculatedValue === 'number') ? node.calculatedValue : node.value) ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`);
+    }
+
+    if (prevNode) drawNode(prevNode, (prevNode as any).name);
+    inflowNodes.forEach((n) => drawNode(n, n.name));
+    drawNode({ ...centerNode, value: totalCash }, 'Total Cash');
+    drawNode(rightPrimaryNode, rightPrimaryNode.name);
+    outflowNodes.forEach((n) => drawNode(n, n.name));
+  }, [refEl, inflowItems, outflowItems, totalInflows, totalOutflows, balance, prevBalance]);
+
+  return <div ref={refEl} className="w-full" />;
+}
+
+// ---------- Projection Chart ----------
+function ProjectionChart({ refEl, rows, currentYear, startYear, endYear, interactive = false, onYearSelect }:{
+  refEl: React.RefObject<HTMLDivElement>;
+  rows: { year:number; inflows:number; outflows:number; outflowsInvestment:number; outflowsOther:number; balance:number }[];
+  currentYear:number; startYear:number; endYear:number; interactive?:boolean; onYearSelect?:(y:number)=>void; }) {
+  useEffect(() => {
+    const el = refEl?.current; if (!el) return;
+
+    const width = Math.max(320, el.clientWidth || 800);
+    const height = 420;
+    const margin = { top: 24, right: 64, bottom: 56, left: 80 };
+
+    d3.select(el).selectAll('*').remove();
+    const svg = d3.select(el).append('svg').attr('width', width).attr('height', height);
+
+    const w = width - margin.left - margin.right;
+    const h = height - margin.top - margin.bottom;
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Gradients
+    const defs = svg.append('defs');
+    const gradInfl = defs.append('linearGradient').attr('id', 'gradInfl').attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+    gradInfl.append('stop').attr('offset', '0%').attr('stop-color', '#10b981').attr('stop-opacity', 0.8);
+    gradInfl.append('stop').attr('offset', '100%').attr('stop-color', '#10b981').attr('stop-opacity', 0.2);
+
+    const gradInv = defs.append('linearGradient').attr('id', 'gradInv').attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+    gradInv.append('stop').attr('offset', '0%').attr('stop-color', '#14b8a6').attr('stop-opacity', 0.2);
+    gradInv.append('stop').attr('offset', '100%').attr('stop-color', '#14b8a6').attr('stop-opacity', 0.8);
+
+    const gradOut = defs.append('linearGradient').attr('id', 'gradOut').attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+    gradOut.append('stop').attr('offset', '0%').attr('stop-color', '#ef4444').attr('stop-opacity', 0.2);
+    gradOut.append('stop').attr('offset', '100%').attr('stop-color', '#ef4444').attr('stop-opacity', 0.8);
+
+    // Scales
+    const x = d3.scaleLinear().domain([startYear, endYear]).range([0, w]);
+    const maxPos = d3.max(rows, (d) => Math.max(d.inflows, d.balance)) ?? 1;
+    const maxNeg = d3.max(rows, (d) => Math.max(d.outflowsInvestment + d.outflowsOther, 0)) ?? 0; // below zero
+    const y = d3.scaleLinear().domain([Math.min(-maxNeg * 1.15, 0), Math.max(maxPos * 1.1, 1)]).range([h, 0]);
+
+    // Gridlines
+    g.selectAll('.grid-line')
+      .data(y.ticks(8))
+      .join('line')
+      .attr('class', 'grid-line')
+      .attr('x1', 0)
+      .attr('x2', w)
+      .attr('y1', (d) => y(d as number))
+      .attr('y2', (d) => y(d as number))
+      .attr('stroke', '#374151')
+      .attr('stroke-dasharray', '2,2')
+      .attr('opacity', 0.2);
+
+    // Baseline (x-axis at y=0)
+    const zeroY = y(0);
+    g.append('line')
+      .attr('x1', 0)
+      .attr('x2', w)
+      .attr('y1', zeroY)
+      .attr('y2', zeroY)
+      .attr('stroke', '#6b7280')
+      .attr('stroke-width', 2)
+      .attr('opacity', 0.8);
+
+    const areaInfl = d3.area<any>().x((d: any) => x(d.year)).y0(y(0)).y1((d: any) => y(d.inflows)).curve(d3.curveMonotoneX);
+    const areaInv = d3.area<any>().x((d: any) => x(d.year)).y0(y(0)).y1((d: any) => y(-d.outflowsInvestment)).curve(d3.curveMonotoneX);
+    const areaOut = d3.area<any>().x((d: any) => x(d.year)).y0(y(0)).y1((d: any) => y(-d.outflowsOther)).curve(d3.curveMonotoneX);
+
+    g.append('path').datum(rows).attr('fill', 'url(#gradInfl)').attr('d', areaInfl as any);
+    g.append('path').datum(rows).attr('fill', 'url(#gradInv)').attr('d', areaInv as any);
+    g.append('path').datum(rows).attr('fill', 'url(#gradOut)').attr('d', areaOut as any);
+
+    g.append('path')
+      .datum(rows)
+      .attr('fill', 'none')
+      .attr('stroke', '#10b981')
+      .attr('stroke-width', 2.5)
+      .attr('d', d3.line<any>().x((d) => x(d.year)).y((d) => y(d.inflows)).curve(d3.curveMonotoneX));
+
+    g.append('path')
+      .datum(rows)
+      .attr('fill', 'none')
+      .attr('stroke', '#14b8a6')
+      .attr('stroke-width', 2.5)
+      .attr('d', d3.line<any>().x((d) => x(d.year)).y((d) => y(-d.outflowsInvestment)).curve(d3.curveMonotoneX));
+
+    g.append('path')
+      .datum(rows)
+      .attr('fill', 'none')
+      .attr('stroke', '#ef4444')
+      .attr('stroke-width', 2.5)
+      .attr('d', d3.line<any>().x((d) => x(d.year)).y((d) => y(-d.outflowsOther)).curve(d3.curveMonotoneX));
+
+    // Balance glowing line
+    const netLine = d3.line<any>().x((d: any) => x(d.year)).y((d: any) => y(d.balance)).curve(d3.curveMonotoneX);
+    g.append('path').datum(rows).attr('fill', 'none').attr('stroke', '#eab308').attr('stroke-width', 8).attr('opacity', 0.28).attr('d', netLine as any).style('filter', 'blur(4px)');
+    g.append('path').datum(rows).attr('fill', 'none').attr('stroke', '#eab308').attr('stroke-width', 3.2).attr('d', netLine as any);
+
+    // Dots (no black stroke)
+    const sparse = Math.max(1, Math.floor(rows.length / 20));
+    g.selectAll('.dot')
+      .data(rows.filter((_: any, i: number) => i % sparse === 0))
+      .join('circle')
+      .attr('cx', (d) => x(d.year))
+      .attr('cy', (d) => y(d.balance))
+      .attr('r', (d: any) => (d.year === currentYear ? 7 : 4))
+      .attr('fill', '#eab308')
+      .attr('stroke', 'none')
+      .style('filter', (d: any) => (d.year === currentYear ? 'drop-shadow(0 0 6px #eab308)' : 'none'));
+
+    // Cursor line
+    const cx = x(currentYear);
+    const cursor = g.append('line')
+      .attr('x1', cx)
+      .attr('x2', cx)
+      .attr('y1', 0)
+      .attr('y2', h)
+      .attr('stroke', '#3b82f6')
+      .attr('stroke-width', 3)
+      .attr('stroke-dasharray', '8,6')
+      .attr('opacity', 0.65)
+      .style('filter', 'drop-shadow(0 0 4px #3b82f6)');
+
+    // Axes (years without commas; x-axis drawn at y=0)
+    const xAxis = d3.axisBottom(x).ticks(Math.min(10, endYear - startYear)).tickFormat((d: any) => d.toString());
+    const yAxis = d3.axisLeft(y).ticks(8).tickFormat((d: any) => `$${(d / 1000).toFixed(0)}k`);
+
+    const gx = g.append('g').attr('transform', `translate(0,${zeroY})`).call(xAxis as any);
+    gx.selectAll('text').attr('fill', '#9ca3af').attr('font-size', 11);
+    gx.selectAll('line').attr('stroke', '#4b5563');
+    gx.select('.domain').attr('stroke', '#4b5563');
+
+    const gy = g.append('g').call(yAxis as any);
+    gy.selectAll('text').attr('fill', '#9ca3af').attr('font-size', 11);
+    gy.selectAll('line').attr('stroke', '#4b5563');
+    gy.select('.domain').attr('stroke', '#4b5563');
+
+    // Interactivity overlay
+    if (interactive && onYearSelect) {
+      const overlay = g.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('width', w)
+        .attr('height', h)
+        .attr('fill', 'transparent')
+        .style('cursor', 'crosshair') as any;
+
+      function clampYear(ySel: number) {
+        return Math.max(startYear, Math.min(endYear, ySel));
+      }
+
+      function updateFromX(mx: number) {
+        const ySel = Math.round(x.invert(mx));
+        const clamped = clampYear(ySel);
+        cursor.attr('x1', x(clamped)).attr('x2', x(clamped));
+        onYearSelect(clamped);
+      }
+
+      overlay
+        .on('mousemove', (event: MouseEvent) => {
+          const [mx] = d3.pointer(event as any);
+          updateFromX(mx);
+        })
+        .on('click', (event: MouseEvent) => {
+          const [mx] = d3.pointer(event as any);
+          updateFromX(mx);
+        })
+        .on('touchstart', (event: any) => {
+          const t = event.targetTouches && event.targetTouches[0];
+          if (!t) return; const pt = d3.pointer(t, overlay.node());
+          updateFromX(pt[0]); event.preventDefault();
+        })
+        .on('touchmove', (event: any) => {
+          const t = event.targetTouches && event.targetTouches[0];
+          if (!t) return; const pt = d3.pointer(t, overlay.node());
+          updateFromX(pt[0]); event.preventDefault();
+        })
+        .on('touchend', (event: any) => { event.preventDefault(); });
+    }
+  }, [refEl, rows, currentYear, startYear, endYear, interactive, onYearSelect]);
+
+  return <div ref={refEl} className="w-full" />;
+}
+
+
+
+12. When user click "Smart Plan" on side menu, user will "Smart Plan" header. THis module is a comprehensive task and appointment manager designed to help advisors stay organized. It combines a traditional list view with a full-featured calendar, allowing you to track interactions, schedule meetings, and never miss a client's special day.
+Key Features
+Dual View Modes:
+List View: A linear list of tasks sorted by date, title, or type. Best for processing a backlog of items.
+Calendar View: A visual grid supporting Month, Week, and Today views.
+Smart Filtering & Search:
+Time Range: Filter by Today, This Week, This Month, or All Time.
+Event Type: Show only Appointments, Tasks, or both.
+Customer: Filter tasks linked to a specific client.
+Search: Real-time search by title, notes, or client name.
+Drag & Drop Scheduling: In Calendar view, you can drag any task or appointment to a new date to instantly reschedule it.
+Connect to Calendar: You can connect to their calendar. compatible with Google Calendar, Outlook, and Apple Calendar.
+
+Creating & Managing Tasks
+Creating a Task/Appointment:
+Click the "New Event" button in the top right.
+A dialog appears where you can enter:
+Title: The name of the task.
+Type: Choose between "Task" (to-do item) or "Appointment" (scheduled meeting).
+Date & Time: When it's happening.
+Duration: How long it will take (for appointments).
+Linked Customer: Optionally link it to a specific client (pulls from your Leads database).
+Notes: Additional details.
+Click "Create Event" to save.
+Managing Tasks:
+Edit: Click on any task card (in List or Calendar view) to open the Task Detail. User can see tabs "Notes", "Summary by Mira". Under note page, user can choose "text note", "voice note", or "upload documents". When user click "Summary by Mira" tab, user can see AI already summary the notes for user. eg the task is review customer policy, linked customer is John Tan. user may upload customer's policy, system AI assistant will summary the for user on the summary page. If Mira detected over the note, user has intent to create or update any customer or proposal, mira will list the details in the summary, and ask user if they want to proceed.
+eg in the note advisor upload a policy of John Tan, and in the note mentioned "John Tan want to upgrade the medical plan". In summary, Mira detect John want to upgrade medical plan, Mira ask user if Mira could help to create a draft proposal for John Tan, when user click yes, user can see a proposal number has been created, when user click the proposal, user will be land on the draft proposal. If no intend detected about create/update customer or proposal, Mira will just if a normal abstract summary.
+If the task is not linked to any customer, Mira will just give a normal abstract summary and will not help create or update any customer or proposal details.
+when use click "Ask Mira" on the side menu now. Mira know user's intent is to ask more about this summary, Mira is ready to answer anything about this task.
+
+Delete: Inside the edit dialog, there is a "Delete" button. A confirmation popup will appear to prevent accidental deletions.
+Complete:
+In List View, click the checkbox on the left of the task card.
+In Calendar View, completed tasks appear dimmed with a strikethrough.
+Note: Completion status is saved to the database if supported, otherwise it falls back to your local browser storage.
+
+Managing Appointments:
+Edit: Click on any appointment card (in list or calendar view) to open the Appointment Detail. User can see a tabs "Transcript", "Notes", "Summary by Mira". In transcript tab, user can "start recording" "upload recording/ transcript" or paste a meeting link to add Mira to the meeting. After one transcript ended, use can see at the bottom user can see "start recording" "upload recording/ transcript" or paste a meeting link to add Mira to the meeting again to add anohter.  Under note page, user can choose "text note", "voice note", or "upload documents". When user click "Summary by Mira" tab, user can see AI already summary the notes for user. eg the appointment is linked with customer Sarah Chen (new lead), during the discussion between user and Sarah, in the transcript, user is going through fact finding and financial planning with Sarah, Mira will summaries the details has been captured. eg Name = Sarah Chen, Date of Birth = 2 Mar 1993, Marital status = Married, Income = 10k/ month, expenses = 6k/ month. Mira will ask user if Mira should proceed with create new proposal with fact finding and financial planning details update. If user click Yes, user can see a proposal number has been created, when user click the proposal, user will be land on the draft proposal. If no intend detected about create/update customer or proposal, Mira will just if a normal abstract summary.
+If the appointment is not linked to any customer, Mira will just give a normal abstract summary and will not help create or update any customer or proposal details.
+when use click "Ask Mira" on the side menu now. Mira know user's intent is to ask more about this summary, Mira is ready to answer anything about this task.
+
+
+Birthday Reminder Logic
+The module includes a smart Birthday Reminder system that ensures you never forget to wish a client a happy birthday.
+How it works:
+The system automatically scans all your Leads/Customers.
+It checks their date_of_birth.
+It dynamically generates a "synthetic" task for every birthday that falls within your current view (e.g., if you are viewing "This Month", it shows all birthdays this month).
+Visuals: Birthday tasks are distinctively marked with a Pink Cake Icon 🎂 and a pink label.
+Logic Details:
+It calculates the birthday for the current year.
+If a birthday is near the end of the year and you are looking ahead, it smartly calculates for the next year too.
+Toggle: You can show/hide birthdays using the "Show Birthdays" switch in the Filter menu.
+Action: You can "complete" a birthday task (e.g., after sending a wish) just like a regular task. This hides it or marks it as done for the current year.
+
+13. When user click "Analytics" on side menu, user will see Analytics header on top. Analytics Dashboard provides a visualization-first view of your portfolio performance. It aggregates data from Leads, Policies, and Proposals to give you real-time insights into your sales pipeline and business growth.
+Key Features
+Time Range Filtering:
+User can toggle the entire dashboard view between 30D (Last 30 Days), 90D (Last 90 Days), YTD (Year-to-Date), and 12M (Last 12 Months).
+All KPIs, charts, and goals automatically recalculate based on the selected range.
+KPI Cards (Key Performance Indicators):
+New Policies: Total count of policies created within the selected period.
+Total Premium: Sum of the premium_amount for all policies in the period.
+Active Proposals: Number of proposals currently marked as "In Progress".
+New Customers: Count of converted clients (leads where is_client is true).
+Visual Charts:
+Monthly Performance (Area Chart): Visualizes your Premium growth trend month-over-month.
+Policies vs Team Avg (Bar Chart): Compares your "New Policies" count against a calculated team average (currently derived from your own historical average for context).
+Goal-Based Tracker:
+Quarterly Premium Target: Tracks your last 3 months' premium against a target of $250,000.
+New Customer Acquisition: Tracks new leads against a target of 200.
+Avg. Proposal Completion: Shows how complete your proposals are on average (based on completion_percentage).
+Product Mix (Sales by category) pie chart
+Conversion funnel (Lead to Completed journey) bar chart
+Top performing Product (count policies sold)
+When user click on any of this "pivot chart/table", use will be land a on the page with queried data. when user click back, user will back to dashboard.
+If user click "Ask Mira" at the side menu, a split view will appear, mira understand user intent might want to know the summary of sales performance, mira will ask "Do you want me to summary your sales performance?" when user say yes, mira will start explain the data.
+
+
+14. When user click "News" on side menu, user will "News" header. The News is a broadcast Center, a communication hub designed to keep advisors updated with the latest news, training materials, and campaign details. It functions like a specialized news feed with pinning, categorization, and read-status tracking.
+Key Features
+Categorization:
+Broadcasts are organized into three distinct categories, each with its own color-coded badge and icon:
+Announcements (Blue/Megaphone): General news and updates.
+Training (Teal/Graduation Cap): Educational content and guides.
+Campaigns (Orange/Trending Up): Sales campaigns and promotions.
+Filtering: You can filter the feed to show "All" or drill down into specific categories using the filter menu.
+Pinned Broadcasts:
+Important announcements can be Pinned by admins.
+Pinned items always appear at the very top of the feed in a special "Pinned Announcements" section with a distinct visual style (gradient background).
+Read Status Tracking:
+Unread Indicators: New or unread broadcasts have a Blue Dot indicator.
+Mark as Read:
+Hovering over a card instantly marks it as read.
+Clicking to view the full details also marks it as read.
+Persistence: Read status is stored locally in your browser (sessionStorage), so it persists during your session but doesn't require a database write for every view.
+Search & Sort:
+Search: Real-time search filters broadcasts by Title or Content.
+Sort: You can sort the feed by Newest First, Oldest First, or Title (A-Z).
+If user click "Ask Mira" at the side menu, a split view will appear, mira understand user intent might want to know the summary of news, mira is ready to answer anything about related to this page.
+

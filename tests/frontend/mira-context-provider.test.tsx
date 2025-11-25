@@ -128,9 +128,9 @@ describe("MiraContextProvider", () => {
 
     const navigate = snapshot.navigate;
     await act(async () => {
-      navigate("/advisor/todo");
+      navigate("/advisor/smart-plan");
     });
-    await waitFor(() => snapshot && snapshot.context.page === "/advisor/todo");
+    await waitFor(() => snapshot && snapshot.context.page === "/advisor/smart-plan");
     expect(snapshot.context.pageData).toEqual({});
     const secondContext = snapshot.context.getContext();
     expect(secondContext.module).toBe("todo");

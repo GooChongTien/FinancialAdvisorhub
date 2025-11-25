@@ -1,14 +1,15 @@
-import React, { useMemo, useState } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
 import { Button } from "@/admin/components/ui/button";
-import { Calendar, FileText, Plus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
+import { createPageUrl } from "@/admin/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { Calendar, FileText } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AddEventDialog from "./AddEventDialog";
-// Editing of personal details is disabled; updates should go via Service Request (clients)
+import CompanyDetailsCard from "./CompanyDetailsCard";
+// Editing of personal details is disabled; updates should go via Service Request (customers)
 // or through Fact Finding (leads). Edit dialog import removed.
 import { useToast } from "@/admin/components/ui/toast";
 export default function CustomerOverview({ lead }) {
@@ -29,7 +30,7 @@ export default function CustomerOverview({ lead }) {
     [linkedProposals],
   );
 
-  const updateClientMutation = useMutation({
+  const updateCustomerMutation = useMutation({
     mutationFn: async (updates) => {
       const payload = {};
       if (updates.contact_number !== lead.contact_number)
@@ -50,7 +51,7 @@ export default function CustomerOverview({ lead }) {
             changed_by,
           });
         }
-      } catch (_) {}
+      } catch (_) { }
       return updated;
     },
     onSuccess: () => {
@@ -59,7 +60,7 @@ export default function CustomerOverview({ lead }) {
       showToast({
         type: "success",
         title: "Saved",
-        description: "Client information updated.",
+        description: "Customer information updated.",
       });
     },
     onError: (error) => {
@@ -138,7 +139,7 @@ export default function CustomerOverview({ lead }) {
   return (
     <div className="space-y-6">
       {" "}
-      {/* Lead Status (for non-clients) */}
+      {/* Lead Status (for non-customers) */}
       {!lead.is_client && (
         <Card className="shadow-lg border-slate-200">
           <CardHeader className="border-b border-slate-100">
@@ -151,11 +152,10 @@ export default function CustomerOverview({ lead }) {
                   <p className="text-sm text-slate-500 mb-1">Current Status</p>
                   <p className="text-2xl font-bold text-slate-900">{systemDeterminedStatus.status}</p>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  systemDeterminedStatus.status === "Proposal" ? "bg-yellow-100 text-yellow-700" :
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${systemDeterminedStatus.status === "Proposal" ? "bg-yellow-100 text-yellow-700" :
                   systemDeterminedStatus.status === "Contacted" ? "bg-blue-100 text-blue-700" :
-                  "bg-slate-100 text-slate-700"
-                }`}>
+                    "bg-slate-100 text-slate-700"
+                  }`}>
                   {systemDeterminedStatus.status}
                 </div>
               </div>
@@ -175,115 +175,108 @@ export default function CustomerOverview({ lead }) {
         </Card>
       )}
 
-      <Card className="shadow-lg border-slate-200">
-        {" "}
-        <CardHeader className="border-b border-slate-100">
-          <CardTitle>Personal Details</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="mb-4 text-xs text-slate-500">
-            {lead.is_client ? (
-              <p>
-                For existing clients, update personal details via a Service Request.
-              </p>
-            ) : (
-              <p>
-                For new leads, create/update details within the Fact Finding journey.
-              </p>
-            )}
-          </div>
-          {" "}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {" "}
-            <div>
-              {" "}
-              <p className="text-sm text-slate-500">Name</p>{" "}
-              <p className="font-semibold text-slate-900 mt-1">
-                {lead.name}
-              </p>{" "}
-            </div>{" "}
-            <div>
-              {" "}
-              <p className="text-sm text-slate-500">Contact Number</p>{" "}
-              <p className="font-semibold text-slate-900 mt-1">
-                {lead.contact_number}
-              </p>{" "}
-            </div>{" "}
-            {lead.email && (
+      {lead.customer_type === "Entity" ? (
+        <CompanyDetailsCard
+          data={lead}
+          currency={lead.currency || "USD"}
+          className="shadow-lg border-slate-200"
+        />
+      ) : (
+        <Card className="shadow-lg border-slate-200">
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle>Personal Details</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="mb-4 text-xs text-slate-500">
+              {lead.is_client ? (
+                <p>
+                  For existing customers, update personal details via a Service Request.
+                </p>
+              ) : (
+                <p>
+                  For new leads, create/update details within the Fact Finding journey.
+                </p>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                {" "}
-                <p className="text-sm text-slate-500">Email</p>{" "}
-                <p className="font-semibold text-slate-900 mt-1">
-                  {lead.email}
-                </p>{" "}
+                <p className="text-sm text-slate-500">Name</p>
+                <p className="font-semibold text-slate-900 mt-1">{lead.name}</p>
               </div>
-            )}{" "}
-            {lead.national_id && (
               <div>
-                {" "}
-                <p className="text-sm text-slate-500">National ID</p>{" "}
+                <p className="text-sm text-slate-500">Contact Number</p>
                 <p className="font-semibold text-slate-900 mt-1">
-                  {lead.national_id}
-                </p>{" "}
-              </div>
-            )}{" "}
-            {lead.date_of_birth && (
-              <div>
-                {" "}
-                <p className="text-sm text-slate-500">Date of Birth</p>{" "}
-                <p className="font-semibold text-slate-900 mt-1">
-                  {" "}
-                  {format(new Date(lead.date_of_birth), "MMM d, yyyy")}{" "}
-                </p>{" "}
-              </div>
-            )}{" "}
-            {lead.gender && (
-              <div>
-                {" "}
-                <p className="text-sm text-slate-500">Gender</p>{" "}
-                <p className="font-semibold text-slate-900 mt-1">
-                  {lead.gender}
-                </p>{" "}
-              </div>
-            )}{" "}
-            {lead.marital_status && (
-              <div>
-                {" "}
-                <p className="text-sm text-slate-500">Marital Status</p>{" "}
-                <p className="font-semibold text-slate-900 mt-1">
-                  {lead.marital_status}
-                </p>{" "}
-              </div>
-            )}{" "}
-            {lead.occupation && (
-              <div>
-                {" "}
-                <p className="text-sm text-slate-500">Occupation</p>{" "}
-                <p className="font-semibold text-slate-900 mt-1">
-                  {lead.occupation}
-                </p>{" "}
-              </div>
-            )}{" "}
-            {lead.nationality && (
-              <div>
-                {" "}
-                <p className="text-sm text-slate-500">Nationality</p>{" "}
-                <p className="font-semibold text-slate-900 mt-1">
-                  {lead.nationality}
-                </p>{" "}
-              </div>
-            )}{" "}
-            {lead.address && (
-              <div className="md:col-span-3">
-                <p className="text-sm text-slate-500">Address</p>
-                <p className="font-medium text-slate-900 mt-1 whitespace-pre-wrap">
-                  {lead.address}
+                  {lead.contact_number}
                 </p>
               </div>
-            )}
-          </div>{" "}
-        </CardContent>{" "}
-      </Card>{" "}
+              {lead.email && (
+                <div>
+                  <p className="text-sm text-slate-500">Email</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {lead.email}
+                  </p>
+                </div>
+              )}
+              {lead.national_id && (
+                <div>
+                  <p className="text-sm text-slate-500">National ID</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {lead.national_id}
+                  </p>
+                </div>
+              )}
+              {lead.date_of_birth && (
+                <div>
+                  <p className="text-sm text-slate-500">Date of Birth</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {format(new Date(lead.date_of_birth), "MMM d, yyyy")}
+                  </p>
+                </div>
+              )}
+              {lead.gender && (
+                <div>
+                  <p className="text-sm text-slate-500">Gender</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {lead.gender}
+                  </p>
+                </div>
+              )}
+              {lead.marital_status && (
+                <div>
+                  <p className="text-sm text-slate-500">Marital Status</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {lead.marital_status}
+                  </p>
+                </div>
+              )}
+              {lead.occupation && (
+                <div>
+                  <p className="text-sm text-slate-500">Occupation</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {lead.occupation}
+                  </p>
+                </div>
+              )}
+              {lead.nationality && (
+                <div>
+                  <p className="text-sm text-slate-500">Nationality</p>
+                  <p className="font-semibold text-slate-900 mt-1">
+                    {lead.nationality}
+                  </p>
+                </div>
+              )}
+              {lead.address && (
+                <div className="md:col-span-3">
+                  <p className="text-sm text-slate-500">Address</p>
+                  <p className="font-medium text-slate-900 mt-1 whitespace-pre-wrap">
+                    {lead.address}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}{" "}
       <Card className="shadow-lg border-slate-200">
         {" "}
         <CardHeader className="border-b border-slate-100">
@@ -374,7 +367,11 @@ export default function CustomerOverview({ lead }) {
                 <p className="text-xs font-semibold text-slate-500 mb-2">Upcoming</p>
                 <div className="space-y-2">
                   {upcomingAppointments.map((a) => (
-                    <div key={a.id} className="p-3 border border-slate-200 rounded-lg flex items-center justify-between">
+                    <div
+                      key={a.id}
+                      className="p-3 border border-slate-200 rounded-lg flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => navigate("/advisor/smart-plan")}
+                    >
                       <div>
                         <p className="font-medium text-slate-900">{a.title || "Appointment"}</p>
                         <p className="text-xs text-slate-500">
@@ -394,7 +391,11 @@ export default function CustomerOverview({ lead }) {
                 <p className="text-xs font-semibold text-slate-500 mb-2">Past</p>
                 <div className="space-y-2">
                   {pastAppointments.map((a) => (
-                    <div key={a.id} className="p-3 border border-slate-200 rounded-lg flex items-center justify-between opacity-80">
+                    <div
+                      key={a.id}
+                      className="p-3 border border-slate-200 rounded-lg flex items-center justify-between opacity-80 cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={() => navigate("/advisor/smart-plan")}
+                    >
                       <div>
                         <p className="font-medium text-slate-900">{a.title || "Appointment"}</p>
                         <p className="text-xs text-slate-500">

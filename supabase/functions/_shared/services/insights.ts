@@ -232,7 +232,7 @@ export async function generateProactiveInsights(advisorId?: string | null): Prom
         updated_at: oldest.date,
         ctaLabel: "Review tasks",
         ui_actions: [
-          buildNavigateAction("todo", "/todo", "Open To-Do list filtered to overdue", {
+          buildNavigateAction("todo", "/smart-plan", "Open Smart Plan filtered to overdue", {
             filter: "overdue",
           }),
         ],

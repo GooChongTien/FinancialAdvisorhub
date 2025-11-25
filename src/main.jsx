@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.jsx";
 import { ToastProvider } from "@/admin/components/ui/toast";
 import "./index.css";
+import "./lib/i18n/config"; // Initialize i18n before rendering
 import { PreferencesProvider } from "@/admin/state/PreferencesContext.jsx";
 import { LeadDirectoryProvider } from "@/admin/state/LeadDirectoryProvider.jsx";
 import { MiraInsightsProvider } from "@/admin/state/providers/MiraInsightsProvider.jsx";

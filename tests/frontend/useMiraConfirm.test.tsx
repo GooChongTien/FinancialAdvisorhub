@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { act } from "react";
 import { MiraConfirmProvider, useMiraConfirm } from "@/lib/mira/useMiraConfirm";
 
 function mountHarness(onReady: (api: any) => void) {
@@ -17,15 +18,19 @@ function mountHarness(onReady: (api: any) => void) {
     return null;
   }
 
-  root.render(
-    <MiraConfirmProvider>
-      <Harness />
-    </MiraConfirmProvider>,
-  );
+  act(() => {
+    root.render(
+      <MiraConfirmProvider>
+        <Harness />
+      </MiraConfirmProvider>,
+    );
+  });
 
   return {
     cleanup: () => {
-      root.unmount();
+      act(() => {
+        root.unmount();
+      });
       div.remove();
     },
   };
@@ -58,13 +63,23 @@ describe("useMiraConfirm", () => {
     harnessCleanup = harness.cleanup;
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const promise = api.requestConfirmation({
-      action: "execute",
-      api_call: { method: "POST", endpoint: "/test", payload: { foo: "bar" } },
+    let promise: Promise<boolean>;
+    await act(async () => {
+      promise = api.requestConfirmation({
+        action: "execute",
+        api_call: { method: "POST", endpoint: "/test", payload: { foo: "bar" } },
+      });
     });
 
-    await waitForDialog();
-    document.querySelector("[data-testid='mira-confirm-approve']").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await act(async () => {
+      await waitForDialog();
+      document
+        .querySelector("[data-testid='mira-confirm-approve']")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await act(async () => {
+      await promise;
+    });
     await expect(promise).resolves.toBe(true);
   });
 
@@ -76,12 +91,22 @@ describe("useMiraConfirm", () => {
     harnessCleanup = harness.cleanup;
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    const promise = api.requestConfirmation({
-      action: "execute",
-      api_call: { method: "DELETE", endpoint: "/test" },
+    let promise: Promise<boolean>;
+    await act(async () => {
+      promise = api.requestConfirmation({
+        action: "execute",
+        api_call: { method: "DELETE", endpoint: "/test" },
+      });
     });
-    await waitForDialog();
-    document.querySelector("[data-testid='mira-confirm-cancel']").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await act(async () => {
+      await waitForDialog();
+      document
+        .querySelector("[data-testid='mira-confirm-cancel']")
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await act(async () => {
+      await promise;
+    });
     await expect(promise).resolves.toBe(false);
   });
 });

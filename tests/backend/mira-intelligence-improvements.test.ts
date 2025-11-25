@@ -187,7 +187,7 @@ describe('Mira Intelligence Improvements', () => {
   describe('Intent Classification - Task Management', () => {
     const todoContext: MiraContext = {
       module: 'todo',
-      page: '/todo',
+      page: '/smart-plan',
       pageData: {},
     };
 
@@ -274,8 +274,8 @@ describe('Mira Intelligence Improvements', () => {
       { query: 'show hot leads', context: { module: 'customer', page: '/customer' } },
       { query: 'start proposal', context: { module: 'new_business', page: '/new-business' } },
       { query: 'generate quote', context: { module: 'new_business', page: '/new-business' } },
-      { query: 'show my tasks', context: { module: 'todo', page: '/todo' } },
-      { query: 'create reminder', context: { module: 'todo', page: '/todo' } },
+      { query: 'show my tasks', context: { module: 'todo', page: '/smart-plan' } },
+      { query: 'create reminder', context: { module: 'todo', page: '/smart-plan' } },
       { query: 'show dashboard', context: { module: 'analytics', page: '/analytics' } },
     ];
 

@@ -3,7 +3,9 @@ const normalize = (value?: string | null) =>
 
 export const MIRA_POPUP_TARGETS = {
   NEW_LEAD_FORM: "customers.new_lead_form",
-  TODO_NEW_TASK: "todo.new_task_dialog",
+  SMART_PLAN_NEW_TASK: "smart_plan.new_task_dialog",
+  // Legacy alias for backward compatibility
+  TODO_NEW_TASK: "smart_plan.new_task_dialog",
   BROADCAST_COMPOSER: "broadcast.compose_dialog",
   PROPOSAL_SUBMIT_CONFIRM: "new_business.proposal_submit_confirm",
 } as const;

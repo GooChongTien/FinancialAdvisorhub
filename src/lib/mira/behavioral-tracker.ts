@@ -234,8 +234,15 @@ export class BehavioralTracker {
    * Observe URL changes for SPA navigation
    */
   private observeUrlChanges() {
+    if (typeof window === "undefined" || typeof window.location === "undefined") {
+      return;
+    }
+
     let lastUrl = window.location.href;
     const checkUrlChange = () => {
+      if (typeof window === "undefined" || typeof window.location === "undefined") {
+        return;
+      }
       const currentUrl = window.location.href;
       if (currentUrl !== lastUrl) {
         lastUrl = currentUrl;

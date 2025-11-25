@@ -7,6 +7,7 @@ export type MiraModule =
   | "analytics"
   | "todo"
   | "broadcast"
+  | "news"
   | "visualizer";
 
 export interface MiraContext {

@@ -21,20 +21,50 @@ import { useMiraPrefillListener } from "@/admin/hooks/useMiraPrefillListener.js"
 import { MIRA_PREFILL_TARGETS } from "@/lib/mira/prefillTargets.ts";
 
 const EMPTY_FORM = {
+  customer_type: "Individual",
   name: "",
   contact_number: "",
   email: "",
   lead_source: "Referral",
+  // Entity-specific fields
+  company_name: "",
+  business_registration_no: "",
+  industry: "",
+  num_employees: "",
+  annual_revenue: "",
 };
 
 function validateLead(formData) {
   const errors = {};
-  const trimmedName = formData.name.trim();
-  if (!trimmedName) {
-    errors.name = "Name is required.";
+  const isEntity = formData.customer_type === "Entity";
+
+  // For entity customers, company name is the primary identifier
+  if (isEntity) {
+    if (!formData.company_name?.trim()) {
+      errors.company_name = "Company name is required.";
+    } else if (formData.company_name.trim().length < 3) {
+      errors.company_name = "Company name must be at least 3 characters.";
+    }
+
+    // Business registration number validation (optional, but format-checked if provided)
+    if (formData.business_registration_no?.trim()) {
+      const regNoPattern = /^[A-Z0-9]{4,15}$/i;
+      if (!regNoPattern.test(formData.business_registration_no.trim())) {
+        errors.business_registration_no = "Invalid format (4-15 alphanumeric characters).";
+      }
+    }
+
+    // Industry is optional - no validation needed
   }
 
-  const rawContact = formData.contact_number.trim();
+  // Name validation (for individuals, it's required; for entities, it's the contact person)
+  const trimmedName = formData.name?.trim() || "";
+  if (!trimmedName) {
+    errors.name = isEntity ? "Contact person name is required." : "Name is required.";
+  }
+
+  // Contact number validation
+  const rawContact = formData.contact_number?.trim() || "";
   if (!rawContact) {
     errors.contact_number = "Contact number is required.";
   } else {
@@ -44,12 +74,29 @@ function validateLead(formData) {
     }
   }
 
-  if (formData.email) {
+  // Email validation
+  if (formData.email?.trim()) {
     const emailPattern =
       // eslint-disable-next-line no-control-regex
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(formData.email.trim())) {
       errors.email = "Enter a valid email address.";
+    }
+  }
+
+  // Number of employees validation (optional for entities)
+  if (isEntity && formData.num_employees) {
+    const numEmployees = parseInt(formData.num_employees, 10);
+    if (isNaN(numEmployees) || numEmployees < 1) {
+      errors.num_employees = "Number of employees must be a positive number.";
+    }
+  }
+
+  // Annual revenue validation (optional for entities)
+  if (isEntity && formData.annual_revenue) {
+    const revenue = parseFloat(formData.annual_revenue);
+    if (isNaN(revenue) || revenue < 0) {
+      errors.annual_revenue = "Annual revenue must be a positive number.";
     }
   }
 
@@ -62,7 +109,18 @@ export default function NewLeadDialog({ open, onClose, onSubmit, isLoading }) {
   const [touched, setTouched] = useState({});
 
   useMiraPrefillListener(MIRA_PREFILL_TARGETS.NEW_LEAD_FORM, (payload) => {
-    const allowedKeys = ["name", "contact_number", "email", "lead_source"];
+    const allowedKeys = [
+      "customer_type",
+      "name",
+      "contact_number",
+      "email",
+      "lead_source",
+      "company_name",
+      "business_registration_no",
+      "industry",
+      "num_employees",
+      "annual_revenue",
+    ];
     const updates = allowedKeys.reduce((acc, key) => {
       if (payload[key] === undefined || payload[key] === null) return acc;
       acc[key] = String(payload[key]);
@@ -88,19 +146,38 @@ export default function NewLeadDialog({ open, onClose, onSubmit, isLoading }) {
 
   const handleSubmit = (saveAction) => {
     setAction(saveAction);
-    setTouched({
+    const isEntity = formData.customer_type === "Entity";
+
+    // Mark all required fields as touched for validation display
+    const touchedFields = {
       name: true,
       contact_number: true,
       email: true,
-    });
+    };
+
+    if (isEntity) {
+      touchedFields.company_name = true;
+      // Optional fields - only mark as touched if they have content and might have errors
+      if (formData.business_registration_no?.trim()) {
+        touchedFields.business_registration_no = true;
+      }
+    }
+
+    setTouched(touchedFields);
+
     if (!isFormValid) {
       return;
     }
+
     const submitData = {
       ...formData,
       status: "Not Initiated",
       last_contacted: new Date().toISOString(),
+      // Convert numeric fields for entity customers
+      num_employees: formData.num_employees ? parseInt(formData.num_employees, 10) : null,
+      annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : null,
     };
+
     onSubmit(submitData, saveAction);
   };
   const handleClose = () => {
@@ -109,10 +186,12 @@ export default function NewLeadDialog({ open, onClose, onSubmit, isLoading }) {
     setTouched({});
     onClose();
   };
+  const isEntity = formData.customer_type === "Entity";
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       {" "}
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         {" "}
         <DialogHeader>
           {" "}
@@ -123,11 +202,164 @@ export default function NewLeadDialog({ open, onClose, onSubmit, isLoading }) {
         </DialogHeader>{" "}
         <div className="space-y-4 py-4">
           {" "}
+          {/* Customer Type Selector */}
+          <div className="space-y-2">
+            {" "}
+            <Label htmlFor="customer_type">
+              Customer Type <span className="text-red-500">*</span>
+            </Label>{" "}
+            <Select
+              value={formData.customer_type}
+              onValueChange={(value) =>
+                setFormData({ ...formData, customer_type: value })
+              }
+            >
+              {" "}
+              <SelectTrigger>
+                {" "}
+                <SelectValue />{" "}
+              </SelectTrigger>{" "}
+              <SelectContent>
+                {" "}
+                <SelectItem value="Individual">Individual</SelectItem>{" "}
+                <SelectItem value="Entity">Entity (Company)</SelectItem>{" "}
+              </SelectContent>{" "}
+            </Select>{" "}
+          </div>
+          {/* Entity-specific fields */}
+          {isEntity && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="company_name">
+                  Company Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="company_name"
+                  value={formData.company_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, company_name: e.target.value })
+                  }
+                  onBlur={() =>
+                    setTouched((prev) => ({ ...prev, company_name: true }))
+                  }
+                  placeholder="Enter company name"
+                  className={cn(
+                    touched.company_name && errors.company_name && "border-red-400 focus-visible:outline-red-500",
+                  )}
+                />
+                {touched.company_name && errors.company_name && (
+                  <p className="text-sm text-red-600">{errors.company_name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="business_registration_no">
+                  Business Registration No. <span className="text-gray-400 text-xs">(Optional)</span>
+                </Label>
+                <Input
+                  id="business_registration_no"
+                  value={formData.business_registration_no}
+                  onChange={(e) =>
+                    setFormData({ ...formData, business_registration_no: e.target.value })
+                  }
+                  onBlur={() =>
+                    setTouched((prev) => ({ ...prev, business_registration_no: true }))
+                  }
+                  placeholder="e.g., 202300001A"
+                  className={cn(
+                    touched.business_registration_no &&
+                      errors.business_registration_no &&
+                      "border-red-400 focus-visible:outline-red-500",
+                  )}
+                />
+                {touched.business_registration_no && errors.business_registration_no && (
+                  <p className="text-sm text-red-600">{errors.business_registration_no}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="industry">
+                  Industry <span className="text-gray-400 text-xs">(Optional)</span>
+                </Label>
+                <Input
+                  id="industry"
+                  value={formData.industry}
+                  onChange={(e) =>
+                    setFormData({ ...formData, industry: e.target.value })
+                  }
+                  onBlur={() =>
+                    setTouched((prev) => ({ ...prev, industry: true }))
+                  }
+                  placeholder="e.g., Technology, Finance, Healthcare"
+                  className={cn(
+                    touched.industry && errors.industry && "border-red-400 focus-visible:outline-red-500",
+                  )}
+                />
+                {touched.industry && errors.industry && (
+                  <p className="text-sm text-red-600">{errors.industry}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="num_employees">Number of Employees</Label>
+                  <Input
+                    id="num_employees"
+                    type="number"
+                    value={formData.num_employees}
+                    onChange={(e) =>
+                      setFormData({ ...formData, num_employees: e.target.value })
+                    }
+                    onBlur={() =>
+                      setTouched((prev) => ({ ...prev, num_employees: true }))
+                    }
+                    placeholder="50"
+                    min="1"
+                    className={cn(
+                      touched.num_employees &&
+                        errors.num_employees &&
+                        "border-red-400 focus-visible:outline-red-500",
+                    )}
+                  />
+                  {touched.num_employees && errors.num_employees && (
+                    <p className="text-sm text-red-600">{errors.num_employees}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="annual_revenue">Annual Revenue</Label>
+                  <Input
+                    id="annual_revenue"
+                    type="number"
+                    value={formData.annual_revenue}
+                    onChange={(e) =>
+                      setFormData({ ...formData, annual_revenue: e.target.value })
+                    }
+                    onBlur={() =>
+                      setTouched((prev) => ({ ...prev, annual_revenue: true }))
+                    }
+                    placeholder="5000000"
+                    min="0"
+                    step="0.01"
+                    className={cn(
+                      touched.annual_revenue &&
+                        errors.annual_revenue &&
+                        "border-red-400 focus-visible:outline-red-500",
+                    )}
+                  />
+                  {touched.annual_revenue && errors.annual_revenue && (
+                    <p className="text-sm text-red-600">{errors.annual_revenue}</p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+          {/* Contact Person / Name */}
           <div className="space-y-2">
             {" "}
             <Label htmlFor="name">
               {" "}
-              Name <span className="text-red-500">*</span>{" "}
+              {isEntity ? "Contact Person Name" : "Name"} <span className="text-red-500">*</span>{" "}
             </Label>{" "}
             <Input
               id="name"
@@ -138,7 +370,7 @@ export default function NewLeadDialog({ open, onClose, onSubmit, isLoading }) {
               onBlur={() =>
                 setTouched((prev) => ({ ...prev, name: true }))
               }
-              placeholder="Enter full name"
+              placeholder={isEntity ? "Enter contact person name" : "Enter full name"}
               className={cn(
                 touched.name && errors.name && "border-red-400 focus-visible:outline-red-500",
               )}

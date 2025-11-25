@@ -163,7 +163,7 @@ describe("Context + UI Action integration", () => {
   });
 
   it("surfaces the confirmation dialog for execute actions marked as confirm_required", async () => {
-    const harnessRef = renderHarness("/todo");
+    const harnessRef = renderHarness("/smart-plan");
     const harness = harnessRef.current;
     expect(harness).toBeTruthy();
     await waitFor(() => expect(harness?.isReady()).toBe(true));

@@ -52,7 +52,7 @@ All routes are centralized in `src/admin/utils/index.js`:
 /proposals/detail → Proposal Detail
 /policies/detail → Policy Detail
 /analytics → Analytics Dashboard
-/todo → To-Do & Calendar
+/smart-plan → Smart Plan
 /broadcast → Broadcast Messages
 /profile-settings → Profile Settings
 ```

@@ -528,7 +528,7 @@ export default function RecommendationSection({ proposal, onSave, isSaving }) {
               <Label>Recommended Products & Coverage</Label>{" "}
               <Textarea
                 rows={6}
-                placeholder="List the recommended insurance products, coverage amounts, and why they suit the client's needs..."
+                placeholder="List the recommended insurance products, coverage amounts, and why they suit the customer's needs..."
                 value={formData.recommendations}
                 onChange={(e) =>
                   setFormData({ ...formData, recommendations: e.target.value })
@@ -585,13 +585,13 @@ export default function RecommendationSection({ proposal, onSave, isSaving }) {
                 />{" "}
                 <Label htmlFor="confirm" className="font-medium">
                   {" "}
-                  Client confirms understanding and acceptance of advice{" "}
+                  Customer confirms understanding and acceptance of advice{" "}
                 </Label>{" "}
               </div>{" "}
             </div>{" "}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Client Signature</Label>
+                <Label>Customer Signature</Label>
                 <SignaturePad
                   value={formData.client_signature_data}
                   onChange={(data) =>

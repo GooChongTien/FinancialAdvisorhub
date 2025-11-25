@@ -12,6 +12,7 @@ export type ActionCategory =
   | "analytics"
   | "todo"
   | "broadcast"
+  | "news"
   | "product"
   | "navigation"
   | "data"

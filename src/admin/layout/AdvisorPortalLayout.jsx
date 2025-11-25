@@ -13,7 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/admin/components/ui/dropdown-menu";
+import { LanguageSwitcherCompact } from "@/admin/components/ui/LanguageSwitcher.jsx";
 import { MiraDrawerProvider, useMiraDrawer } from "@/admin/state/MiraDrawerProvider.jsx";
+import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
 import { MiraChatProvider, useMiraChat } from "@/admin/state/providers/MiraChatProvider.jsx";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,33 +27,21 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   Home,
   LineChart,
   Loader2,
   LogOut,
+  Megaphone,
   MessageCircle,
   MoreHorizontal,
-  Radio,
   Settings,
   Sparkles,
   Users
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-
-const navigationItems = [
-  { title: "Home", url: "/advisor/home", icon: Home },
-  { title: "Customer", url: "/advisor/customers", icon: Users },
-  { title: "New Business", url: "/advisor/new-business", icon: Briefcase },
-  { title: "Visualizer", url: "/advisor/visualizer", icon: LineChart },
-  { title: "Products", url: "/advisor/product", icon: Calculator },
-  { title: "Analytics", url: "/advisor/analytics", icon: BarChart3 },
-  { title: "To Do", url: "/advisor/todo", icon: CheckSquare, showOverdue: true },
-  { title: "Broadcast", url: "/advisor/broadcast", icon: Radio, showUnread: true },
-  // NOTE: Mira Ops page is accessible via direct URL (/advisor/mira/ops) but hidden from sidebar
-  // See MIRA_CONSOLIDATED_IMPLEMENTATION_PLAN.md - Future Sprint: Move to Admin Portal
-  // { title: "Mira Ops", url: "/advisor/mira/ops", icon: Activity },
-];
 
 export default function AdvisorPortalLayout() {
   return (
@@ -67,6 +57,19 @@ function LayoutWithChatProvider() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { updatePrefs } = usePreferences();
+  const { t } = useTranslation();
+  const navigationItems = React.useMemo(() => ([
+    { title: t("navigation.home"), url: "/advisor/home", icon: Home },
+    { title: t("navigation.products"), url: "/advisor/product", icon: Calculator },
+    { title: t("navigation.customers"), url: "/advisor/customers", icon: Users },
+    { title: t("navigation.newBusiness"), url: "/advisor/new-business", icon: Briefcase },
+    { title: t("navigation.servicing"), url: "/advisor/service-requests", icon: ClipboardList },
+    { title: t("navigation.dashboard"), url: "/advisor/visualizers", icon: LineChart },
+    { title: t("navigation.analytics"), url: "/advisor/analytics", icon: BarChart3 },
+    { title: t("navigation.smartPlan"), url: "/advisor/smart-plan", icon: CheckSquare, showOverdue: true },
+    { title: t("navigation.news"), url: "/advisor/news", icon: Megaphone, showUnread: true },
+  ]), [t]);
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") {
@@ -117,7 +120,7 @@ function LayoutWithChatProvider() {
     staleTime: Infinity,
   });
 
-  // Unread broadcasts (per-session) indicator
+  // Unread news (per-session) indicator
   const { data: broadcasts = [] } = useQuery({
     queryKey: ["nav-broadcasts"],
     queryFn: () =>
@@ -129,10 +132,12 @@ function LayoutWithChatProvider() {
     const onRead = () => setBroadcastReadTick((t) => t + 1);
     if (typeof window !== "undefined") {
       window.addEventListener("advisorhub:broadcast-read", onRead);
+      window.addEventListener("advisorhub:news-read", onRead);
     }
     return () => {
       if (typeof window !== "undefined") {
         window.removeEventListener("advisorhub:broadcast-read", onRead);
+        window.removeEventListener("advisorhub:news-read", onRead);
       }
     };
   }, []);
@@ -141,8 +146,11 @@ function LayoutWithChatProvider() {
     try {
       if (typeof window === "undefined") return 0;
       return (broadcasts || []).reduce((acc, b) => {
-        const key = `advisorhub:broadcast-read:${b.id}`;
-        const read = window.sessionStorage.getItem(key) === "1";
+        const keys = [
+          `advisorhub:news-read:${b.id}`,
+          `advisorhub:broadcast-read:${b.id}`,
+        ];
+        const read = keys.some((key) => window.sessionStorage.getItem(key) === "1");
         return acc + (read ? 0 : 1);
       }, 0);
     } catch {
@@ -151,7 +159,7 @@ function LayoutWithChatProvider() {
   }, [broadcasts, broadcastReadTick]);
 
   const { data: todoItems = [] } = useQuery({
-    queryKey: ["nav-todo-overdue"],
+    queryKey: ["nav-smart-plan-overdue"],
     queryFn: () =>
       adviseUAdminApi.entities.Task.list?.("-date", 100) ??
       adviseUAdminApi.entities.Task.filter?.({ status: "overdue" }) ??
@@ -215,6 +223,10 @@ function LayoutWithChatProvider() {
     const from = encodeURIComponent(location.pathname + location.search);
     navigate(`/advisor/chat?from=${from}`);
   }, [location.pathname, location.search, navigate, setActiveThread]);
+
+  const handlePreferredLanguageChange = React.useCallback((languageCode) => {
+    updatePrefs({ language: languageCode });
+  }, [updatePrefs]);
 
   // Auth gate: redirect unauthenticated users to Login
   useEffect(() => {
@@ -457,6 +469,12 @@ function LayoutWithChatProvider() {
 
           {/* User Profile Section - Bottom */}
           <div className="mt-auto border-t border-menu-divider px-2 py-4">
+            {!sidebarCollapsed && (
+              <LanguageSwitcherCompact
+                className="mb-3 w-full"
+                onLanguageChange={handlePreferredLanguageChange}
+              />
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -508,11 +526,11 @@ function LayoutWithChatProvider() {
                   onClick={() => navigate("/advisor/profile-settings")}
                 >
                   <Settings className="mr-2 h-4 w-4" />
-                  Profile Settings
+                  {t("settings.profileSettings")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  {t("common.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

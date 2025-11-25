@@ -40,13 +40,13 @@ describe("useMiraPopupListener", () => {
 
   it("invokes handler when popup id matches", () => {
     const handler = vi.fn();
-    cleanup = mountHarness(MIRA_POPUP_TARGETS.TODO_NEW_TASK, handler);
+    cleanup = mountHarness(MIRA_POPUP_TARGETS.SMART_PLAN_NEW_TASK, handler);
 
     act(() => {
       window.dispatchEvent(
         new CustomEvent("mira:popup", {
           detail: {
-            popup: "todo.new_task_dialog",
+            popup: "smart_plan.new_task_dialog",
             correlationId: "123",
           },
         }),
@@ -55,7 +55,7 @@ describe("useMiraPopupListener", () => {
 
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
-        popup: "todo.new_task_dialog",
+        popup: "smart_plan.new_task_dialog",
         correlationId: "123",
       }),
     );

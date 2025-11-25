@@ -60,6 +60,7 @@ export interface MiraUserPreferences {
     analytics: { enabled: boolean };
     todo: { enabled: boolean };
     broadcast: { enabled: boolean };
+    news: { enabled: boolean };
     visualizer: { enabled: boolean };
   };
 
@@ -121,6 +122,7 @@ export const DEFAULT_PREFERENCES: MiraUserPreferences = {
     analytics: { enabled: true },
     todo: { enabled: true },
     broadcast: { enabled: true },
+    news: { enabled: true },
     visualizer: { enabled: true },
   },
 

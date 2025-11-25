@@ -343,16 +343,16 @@ export default function ApplicationSection({
         console.warn('email_outbox insert failed:', e?.message || e);
       }
 
-      // Attempt client confirmation email via Edge Function (uses service role within function)
+      // Attempt customer confirmation email via Edge Function (uses service role within function)
       try {
-        const clientEmail = submitted?.applicant_info?.email || '';
-        if (clientEmail) {
-          const clientBody = `Dear Client,\n\nYour application has been submitted.\n\nReference: ${confirmation_number}\nApplicant: ${submitted.applicant_info?.name || ''}\nSubmitted: ${new Date().toLocaleString()}\n\nWe will contact you shortly.`;
+        const customerEmail = submitted?.applicant_info?.email || '';
+        if (customerEmail) {
+          const customerBody = `Dear Customer,\n\nYour application has been submitted.\n\nReference: ${confirmation_number}\nApplicant: ${submitted.applicant_info?.name || ''}\nSubmitted: ${new Date().toLocaleString()}\n\nWe will contact you shortly.`;
           await supabase.functions.invoke('email-sender', {
             body: {
-              to_email: clientEmail,
+              to_email: customerEmail,
               subject: `Your Application (${confirmation_number})`,
-              body: clientBody,
+              body: customerBody,
               template: 'application_submitted_client',
             },
           });
@@ -484,7 +484,7 @@ export default function ApplicationSection({
       )
       .join("%0D%0A");
     const body = encodeURIComponent(
-      `Dear ${formData.applicant_info?.name || "Client"},%0D%0A%0D%0A` +
+      `Dear ${formData.applicant_info?.name || "Customer"},%0D%0A%0D%0A` +
         `Thank you for your application. Please find your submission details below.%0D%0A%0D%0A` +
         `Reference: ${formData.reference_number || ""}%0D%0A` +
         `Submitted on: ${new Date(

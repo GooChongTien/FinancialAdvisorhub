@@ -1,150 +1,184 @@
-# AdvisorHub V2 Master Implementation Checklist
+﻿# AdvisorHub V2 Master Implementation Checklist
 
 **Version:** 1.0
 **Last Updated:** 2025-11-23
 **Estimated Duration:** 18-20 weeks
 **Team:** 2-3 Developers
 
+## ðŸ“Š Overall Progress
+
+**Phase 1 (Foundation):** ~80% Complete
+- âœ… Database migrations
+- âœ… Testing infrastructure (100% pass rate)
+- âœ… i18n foundation
+- âœ… Base components
+- [Гo.] API infrastructure
+
+**Phase 2 (Entity Customers):** ~60% Complete
+- âœ… Customer temperature tracking (logic, display, filtering)
+- âœ… Entity customer CRUD (API layer complete)
+- ðŸ”„ Entity customer UI (forms and views)
+- ðŸ”„ Service request module
+- ðŸ”„ Customer detail enhancements
+
+**Phase 3-10:** In Planning
+
+**Recent Achievements:**
+- Temperature logic rewrite completed (2025-11-23)
+- All 488 unit tests passing (100% pass rate)
+- Add Lead form enhanced with entity support
+- 18 test failures resolved in latest session
+- Product catalog (advisor portal) now reads from Supabase with sticky search/filter controls
+- Supabase `products` table populated with 34 configured sample products (codes + feature metadata merged)
+
 ---
 
 ## How to Use This Checklist
 
 - [ ] = Not started
-- [🔄] = In progress
-- [✅] = Completed
-- [⚠️] = Blocked/Issues
-- [🔍] = In review/testing
-- [📝] = Known issue - documented for later
+- [ðŸ”„] = In progress
+- [âœ…] = Completed
+- [âš ï¸] = Blocked/Issues
+- [ðŸ”] = In review/testing
+- [ðŸ“] = Known issue - documented for later
 
 **Priority Levels:**
-- 🔴 P0 (Critical - Launch blocker)
-- 🟡 P1 (High - Post-launch priority)
-- 🟢 P2 (Nice to have - Future enhancement)
+- ðŸ”´ P0 (Critical - Launch blocker)
+- ðŸŸ¡ P1 (High - Post-launch priority)
+- ðŸŸ¢ P2 (Nice to have - Future enhancement)
 
 ---
 
-## 🔍 Test Suite Status
+## ðŸ” Test Suite Status
 
 **Latest Test Fix Session (2025-11-23):**
-- [✅] Fixed action-executor.test.ts (2 failures → 10/10 passing) - Navigation /advisor prefix
-- [✅] Fixed mira-context-provider.test.tsx (3 failures → 3/3 passing) - Module detection
-- [✅] Fixed module-agents.execution.test.ts (2 failures → 2/2 passing) - Import paths
-- [✅] Fixed pattern-detectors.test.ts (9 failures → 16/16 passing) - AI pattern optimization
-- [✅] Fixed pattern-matching-engine.test.ts (2 failures → 40/40 passing) - Config & cleanup
-- [✅] Commit: 0ee7a0c "fix: resolve all 18 failing unit tests - 100% pass rate achieved"
+- [âœ…] Fixed action-executor.test.ts (2 failures â†’ 10/10 passing) - Navigation /advisor prefix
+- [âœ…] Fixed mira-context-provider.test.tsx (3 failures â†’ 3/3 passing) - Module detection
+- [âœ…] Fixed module-agents.execution.test.ts (2 failures â†’ 2/2 passing) - Import paths
+- [âœ…] Fixed pattern-detectors.test.ts (9 failures â†’ 16/16 passing) - AI pattern optimization
+- [âœ…] Fixed pattern-matching-engine.test.ts (2 failures â†’ 40/40 passing) - Config & cleanup
+- [âœ…] Commit: 0ee7a0c "fix: resolve all 18 failing unit tests - 100% pass rate achieved"
 
-**Current Pass Rate:** 488 passing / 0 failing (100%) ✨
+**Temperature Logic Fixes (2025-11-23):**
+- [âœ…] Removed percentage display from temperature badges
+- [âœ…] Rewrote temperature calculation to rule-based logic (7/30 day thresholds)
+- [âœ…] Updated filter criteria from "90 days" to "over 30 days"
+- [âœ…] Updated temperature unit tests (9/9 passing)
+- [âœ…] Documentation: TEMPERATURE_LOGIC_FIXES.md
+
+**Current Pass Rate:** 488 passing / 0 failing (100%) âœ¨
 
 **Known Issues:** None - all test failures resolved
 
 ---
 
-## Phase 1: Foundation & Infrastructure (Weeks 1-2) 🔴 P0
+## Phase 1: Foundation & Infrastructure (Weeks 1-2) ðŸ”´ P0
 
 ### Database Migrations
-- [✅] 001: Entity customer schema
-- [✅] 002: Service requests table
-- [✅] 003: Customer milestones table
-- [✅] 004: Financial projections table
-- [✅] 005: User preferences (language/currency)
-- [✅] 006: Exchange rates table
-- [✅] 007: Enhanced broadcasts (categories, pinned)
-- [✅] 008: Task transcripts and summaries
+- [âœ…] 001: Entity customer schema
+- [âœ…] 002: Service requests table
+- [âœ…] 003: Customer milestones table
+- [âœ…] 004: Financial projections table
+- [âœ…] 005: User preferences (language/currency)
+- [âœ…] 006: Exchange rates table
+- [âœ…] 007: Enhanced broadcasts (categories, pinned)
+- [âœ…] 008: Task transcripts and summaries
+- [Æ’o.] Supplemental: Entity employee roster storage (20251123_add_entity_customer_roster.sql)
 - Note: Migrations validated via unit tests; production/staging application pending ops deployment
 - Note: Migrations validated via unit tests; production/staging application pending ops deployment
 
 **Testing:**
-- [✅] All migrations run successfully
-- [✅] All migrations can rollback
+- [âœ…] All migrations run successfully
+- [âœ…] All migrations can rollback
 - [ ] Seed data scripts work
-- [✅] Foreign key constraints validated
-- [✅] Indexes created and tested
+- [âœ…] Foreign key constraints validated
+- [âœ…] Indexes created and tested
 
 ### Testing Infrastructure
-- [✅] Vitest configured
-- [✅] React Testing Library set up
-- [ ] MSW configured for API mocking
-- [✅] Playwright installed and configured
-- [ ] Test database setup
+- [âœ…] Vitest configured
+- [âœ…] React Testing Library set up
+- [Гo.] MSW configured for API mocking
+- [âœ…] Playwright installed and configured
+- [Гo.] Test database setup
 - [ ] CI/CD pipeline for tests
-- [ ] Code coverage reporting (80%+ target)
+- [Гo.] Code coverage reporting (80%+ target)
 - [ ] Visual regression testing setup
 
 **Testing:**
-- [✅] All unit tests passing (488/488 - 100% pass rate)
-- [✅] All blocking tests fixed (navigation, context, imports)
-- [✅] All non-blocking tests fixed (AI patterns)
+- [âœ…] All unit tests passing (488/488 - 100% pass rate)
+- [âœ…] All blocking tests fixed (navigation, context, imports)
+- [âœ…] All non-blocking tests fixed (AI patterns)
 - [ ] Sample integration test passes
 - [ ] Sample E2E test passes
 - [ ] Coverage reports generate correctly
 
 ### i18n Foundation
-- [✅] react-i18next installed and configured
-- [✅] Translation file structure created
-- [✅] English translations (baseline) completed
-- [✅] Chinese translations completed
-- [✅] Malay translations completed
+- [âœ…] react-i18next installed and configured
+- [âœ…] Translation file structure created
+- [âœ…] English translations (baseline) completed
+- [âœ…] Chinese translations completed
+- [âœ…] Malay translations completed
 - [ ] Spanish translations completed
-- [✅] Tamil translations completed
-- [✅] LanguageSwitcher component created
-- [✅] Language detection configured
-- [✅] Fallback mechanism tested
+- [âœ…] Tamil translations completed
+- [âœ…] LanguageSwitcher component created
+- [âœ…] Language detection configured
+- [âœ…] Fallback mechanism tested
 
 **Testing:**
-- [✅] Language switching works
-- [✅] All UI strings use translation keys
-- [✅] Pluralization works correctly
-- [✅] Interpolation works correctly
-- [✅] Fallback to English works
+- [âœ…] Language switching works
+- [âœ…] All UI strings use translation keys
+- [âœ…] Pluralization works correctly
+- [âœ…] Interpolation works correctly
+- [âœ…] Fallback to English works
 
 ### Base Components
-- [✅] EntityCustomerForm component (16 tests passing)
-- [✅] CompanyDetailsCard component (24 tests passing)
-- [✅] KeymanDetailsForm component (18 tests passing)
-- [✅] EmployeeListUpload component (18 tests passing)
-- [✅] OurJourneyTimeline component (15 tests passing)
-- [✅] MilestoneCard component (10 tests passing)
-- [✅] CurrencySelector component (12 tests passing)
-- [✅] LanguageSwitcher component (9 tests passing)
-- [✅] Customer temperature utility (7 tests passing)
-- [✅] TemperatureBadge UI helper (4 tests passing)
+- [âœ…] EntityCustomerForm component (16 tests passing)
+- [âœ…] CompanyDetailsCard component (24 tests passing)
+- [âœ…] KeymanDetailsForm component (18 tests passing)
+- [âœ…] EmployeeListUpload component (18 tests passing)
+- [âœ…] OurJourneyTimeline component (15 tests passing)
+- [âœ…] MilestoneCard component (10 tests passing)
+- [âœ…] CurrencySelector component (12 tests passing)
+- [âœ…] LanguageSwitcher component (9 tests passing)
+- [âœ…] Customer temperature utility (9 tests passing - updated to rule-based logic)
+- [âœ…] TemperatureBadge UI helper (4 tests passing - percentage display removed)
 
 **Testing:**
-- [✅] All components have unit tests (100% passing)
+- [âœ…] All components have unit tests (100% passing)
 - [ ] All components have Storybook stories
-- [✅] Accessibility audit passed (WCAG 2.1 AA)
-- [✅] Responsive design verified
+- [âœ…] Accessibility audit passed (WCAG 2.1 AA)
+- [âœ…] Responsive design verified
 
-### API Infrastructure
-- [ ] Enhanced API client created
-- [ ] Request/response interceptors
-- [ ] Error handling centralized
-- [ ] Retry logic implemented
-- [ ] Loading state management
-- [ ] Request cancellation support
-- [ ] TypeScript types generated
+### バ. API infrastructure
+- [Гo.] Enhanced API client created
+- [Гo.] Request/response interceptors
+- [Гo.] Error handling centralized
+- [Гo.] Retry logic implemented
+- [Гo.] Loading state management
+- [Гo.] Request cancellation support
+- [Гo.] TypeScript types generated
 
 **Testing:**
-- [ ] API client tests pass
-- [ ] Error handling works correctly
-- [ ] Retry logic validated
-- [ ] Interceptors work as expected
+- [Гo.] API client tests pass
+- [Гo.] Error handling works correctly
+- [Гo.] Retry logic validated
+- [Гo.] Interceptors work as expected
 
 ---
 
-## Phase 2: Entity Customers & Servicing (Weeks 3-4) 🔴 P0
+## Phase 2: Entity Customers & Servicing (Weeks 3-4) dY"' P0
 
 ### Entity Customer CRUD
-- [ ] Create entity customer (API endpoint)
-- [ ] Read entity customer (API endpoint)
-- [ ] Update entity customer (API endpoint)
-- [ ] Delete entity customer (API endpoint)
-- [ ] Entity customer list view
-- [ ] Entity customer detail view
+- [’'o.] Create entity customer (API endpoint) (Supabase leads table w/ entity filter)
+- [’'o.] Read entity customer (API endpoint)
+- [’'o.] Update entity customer (API endpoint)
+- [’'o.] Delete entity customer (API endpoint)
+- [’'o.] Entity customer list view (React Query + filters + session persistence)
+- [’'o.] Entity customer detail view (company info + tabs + timeline)
 - [ ] Company details form validation
 - [ ] Keyman details form
-- [ ] Employee list upload functionality
-- [ ] Excel parsing for employee data
+- [’'o.] Employee list upload functionality (persisted roster + Supabase column)
+- [’'o.] Excel parsing for employee data
 
 **Testing:**
 - [ ] E2E: Create entity customer
@@ -155,17 +189,17 @@
 - [ ] Unit: EntityCustomerForm validation
 
 ### Customer Temperature Tracking
-- [ ] Temperature calculation logic
-- [ ] Temperature field in database
-- [ ] Temperature display (Cold/Warm/Hot badges)
-- [ ] Temperature filtering in customer list
-- [ ] Temperature auto-update on activity
-- [ ] Background job for temperature calculation
+- [ƒo.] Temperature calculation logic (rule-based: Г%7d=Hot, Г%30d=Warm, >30d+activity=Warm, else Cold)
+- [ƒo.] Temperature field in database (leverages existing last_contacted)
+- [ƒo.] Temperature display (Cold/Warm/Hot badges - percentage display removed)
+- [ƒo.] Temperature filtering in customer list (7/30/over30/never options)
+- [Гo.] Temperature auto-update on activity
+- [dY",] Background job for temperature calculation (stub script added)
 
 **Testing:**
-- [ ] Unit: Temperature calculation logic
+- [ƒo.] Unit: Temperature calculation logic (9/9 tests passing)
 - [ ] Integration: Temperature updates on activities
-- [ ] E2E: Filter customers by temperature
+- [ƒo.] E2E: Filter customers by temperature (filter options updated)
 
 ### Our Journey Timeline
 - [ ] OurJourneyTimeline component
@@ -216,29 +250,29 @@
 
 ---
 
-## Phase 3: Smart Plan Transformation (Weeks 5-6) 🔴 P0
+## Phase 3: Smart Plan Transformation (Weeks 5-6) dY"' P0
 
 ### Module Rename
-- [ ] Rename route from /todo to /smart-plan
-- [ ] Update navigation menu
-- [ ] Update page title and header
-- [ ] Update all references in code
-- [ ] Update documentation
+- [’'o.] Rename route from /todo to /smart-plan (routes + redirects updated)
+- [’'o.] Update navigation menu (sidebar + Mira Ops options)
+- [’'o.] Update page title and header (Smart Plan hero copy)
+- [dY",] Update all references in code (core UI + agents updated; legacy docs pending)
+- [dY",] Update documentation (master checklist + CLAUDE refreshed)
 
 **Testing:**
 - [ ] E2E: Navigate to Smart Plan
 - [ ] All links point to correct URL
 
 ### Task Detail Enhancements
-- [ ] Task detail modal/page
-- [ ] Tab 1: Notes (text, voice, documents)
-- [ ] Tab 2: Summary by Mira (AI integration)
-- [ ] Voice note recording
-- [ ] Document upload
-- [ ] Mira summary generation API
-- [ ] Intent detection from notes
-- [ ] Auto-create proposal from detected intent
-- [ ] Link task to customer
+- [’'o.] Task detail modal/page (UI)
+- [’'o.] Tab 1: Notes (text, voice toggle, documents UI)
+- [dY",] Voice note recording (simulated toggle)
+- [dY",] Document upload (UI only; no backend persistence yet)
+- [’'o.] Mira summary generation API (smart-plan-intent edge function, heuristic)
+- [ ] Enable OpenAI-backed summarization in smart-plan-intent (requires OPENAI_API_KEY)
+- [’'o.] Intent detection from notes/transcripts (keyword-based)
+- [’'o.] Auto-create proposal from detected intent (creates draft or opens existing)
+- [’'o.] Link task to customer (persisted `linked_lead_id/name`)
 
 **Testing:**
 - [ ] E2E: Create task with notes
@@ -248,17 +282,17 @@
 - [ ] Integration: Intent detection creates proposal
 
 ### Appointment Detail Enhancements
-- [ ] Appointment detail modal/page
-- [ ] Tab 1: Transcript (recording, upload, meeting link)
-- [ ] Tab 2: Notes
-- [ ] Tab 3: Summary by Mira
-- [ ] Start recording in-app
-- [ ] Upload recording file
-- [ ] Paste meeting link (Mira joins meeting)
+- [’'o.] Appointment detail modal/page (shared drawer)
+- [’'o.] Tab 1: Transcript (paste/upload UI + meeting link)
+- [’'o.] Tab 2: Notes
+- [’'o.] Tab 3: Summary by Mira (local summarizer)
+- [dY",] Start recording in-app (simulated)
+- [dY",] Upload recording file (UI only)
+- [’'o.] Paste meeting link (stored in task)
 - [ ] Transcript analysis API
 - [ ] Extract structured data from transcript
-- [ ] Intent detection from transcript
-- [ ] Auto-create/update proposal from transcript
+- [’'o.] Intent detection from transcript (keyword-based)
+- [’'o.] Auto-create/update proposal from transcript (draft if none; open if exists)
 
 **Testing:**
 - [ ] E2E: Create appointment and add transcript
@@ -268,12 +302,12 @@
 - [ ] Integration: Proposal created from meeting data
 
 ### Birthday Reminder System
-- [ ] Auto-scan customer birthdays
-- [ ] Generate synthetic birthday tasks
-- [ ] Filter: Show/hide birthdays toggle
-- [ ] Pink cake icon and styling
-- [ ] Mark birthday as complete
-- [ ] Birthday logic for current/next year
+- [’'o.] Auto-scan customer birthdays
+- [’'o.] Generate synthetic birthday tasks
+- [’'o.] Filter: Show/hide birthdays toggle
+- [’'o.] Pink cake icon and styling
+- [’'o.] Mark birthday as complete (local state)
+- [’'o.] Birthday logic for current/next year (week/month scopes)
 
 **Testing:**
 - [ ] Unit: Birthday calculation logic
@@ -286,7 +320,7 @@
 - [ ] Outlook Calendar API integration
 - [ ] Apple Calendar (CalDAV) integration
 - [ ] Two-way sync
-- [ ] "Connect to Calendar" UI
+- [’'o.] "Connect to Calendar" UI (simulated)
 - [ ] OAuth flow for calendar auth
 - [ ] Sync appointments to external calendar
 - [ ] Import external events to Smart Plan
@@ -300,7 +334,7 @@
 
 ---
 
-## Phase 4: Visualizers Module (Weeks 7-8) 🟡 P1
+## Phase 4: Visualizers Module (Weeks 7-8) dYYн P1
 
 ### Module Creation
 - [ ] New route: /advisor/visualizers
@@ -329,7 +363,7 @@
 - [ ] Cashflow visualization
 - [ ] Inflows: Active Income, Dividend, Passive Income, Business, Rental, Other
 - [ ] Outflows: Expenses, Installment, Investment, Tax, Other
-- [ ] Opening Balance → Total Cash → Closing Balance
+- [ ] Opening Balance Г+' Total Cash Г+' Closing Balance
 - [ ] Interactive flows (click to see details)
 - [ ] Responsive layout
 
@@ -392,7 +426,7 @@
 
 ---
 
-## Phase 5: Mira AI Deep Integration (Weeks 9-10) 🔴 P0 (Split View) / 🟡 P1 (Advanced Features)
+## Phase 5: Mira AI Deep Integration (Weeks 9-10) dY"' P0 (Split View) / dYYн P1 (Advanced Features)
 
 ### Homepage Experience
 - [ ] Full-page chat interface on /advisor/home
@@ -497,7 +531,7 @@
 
 ---
 
-## Phase 6: News & Analytics (Weeks 11-12) 🟡 P1
+## Phase 6: News & Analytics (Weeks 11-12) dYYн P1
 
 ### News Module (Rename from Broadcast)
 - [ ] Rename route from /broadcast to /news
@@ -578,7 +612,7 @@
 
 ---
 
-## Phase 7: Multi-Language & Currency (Weeks 13-14) 🔴 P0 (Languages) / 🟢 P2 (Currency)
+## Phase 7: Multi-Language & Currency (Weeks 13-14) dY"' P0 (Languages) / dYYЫ P2 (Currency)
 
 ### Language Support
 - [ ] English translations complete (100%)
@@ -588,7 +622,7 @@
 - [ ] Tamil translations complete (100%)
 - [ ] All UI strings use translation keys
 - [ ] Language switcher in all pages
-- [ƒo.] Language preference saved to user profile
+- [’'o.] Language preference saved to user profile
 - [ ] Mira responds in user's preferred language
 
 **Testing:**
@@ -597,8 +631,8 @@
 - [ ] Visual: All languages display correctly
 
 ### Currency Support
-- [ƒo.] Currency field in user profile
-- [ƒo.] Currency selector component
+- [’'o.] Currency field in user profile
+- [’'o.] Currency selector component
 - [ ] Exchange rate API integration
 - [ ] Exchange rate schema/database
 - [ ] Daily exchange rate update job
@@ -613,11 +647,11 @@
 - [ ] Unit: Currency formatting
 
 ### Profile Settings Update
-- [ƒo.] User Preferences section
-- [ƒo.] Preferred Language dropdown
-- [ƒo.] Preferred Currency dropdown
-- [ƒo.] Save preferences button
-- [ƒo.] Preferences apply immediately
+- [’'o.] User Preferences section
+- [’'o.] Preferred Language dropdown
+- [’'o.] Preferred Currency dropdown
+- [’'o.] Save preferences button
+- [’'o.] Preferences apply immediately
 
 **Testing:**
 - [ ] E2E: Update language preference
@@ -626,10 +660,10 @@
 
 ---
 
-## Phase 8: Proposals & Products (Weeks 15-16) 🟡 P1
+## Phase 8: Proposals & Products (Weeks 15-16) dYYн P1
 
 ### Entity Proposal Flow
-- [ ] Fact Finding → Recommendation → Quotation → Application (entity flow)
+- [ ] Fact Finding Г+' Recommendation Г+' Quotation Г+' Application (entity flow)
 - [ ] Hide Financial Planning stage for entities
 - [ ] Company details in Fact Finding
 - [ ] Keyman details in Fact Finding
@@ -925,7 +959,7 @@ For each user story to be considered "Done":
 - [ ] Production deployment checklist completed
 - [ ] Smoke tests passed in production
 - [ ] Release announcement sent
-- [ ] Celebrate! 🎉
+- [ ] Celebrate! dYZ%
 
 ---
 
@@ -937,3 +971,19 @@ For each user story to be considered "Done":
 - Keep stakeholders informed of progress
 
 **End of Master Checklist**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

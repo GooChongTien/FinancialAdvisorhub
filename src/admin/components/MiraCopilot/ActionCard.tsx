@@ -9,6 +9,7 @@ const MODULE_COLORS: Record<string, { badge: string; text: string }> = {
   analytics: { badge: "bg-amber-100 text-amber-700", text: "Analytics" },
   todo: { badge: "bg-rose-100 text-rose-700", text: "Tasks" },
   broadcast: { badge: "bg-purple-100 text-purple-700", text: "Broadcasts" },
+  news: { badge: "bg-purple-100 text-purple-700", text: "News" },
   visualizer: { badge: "bg-cyan-100 text-cyan-700", text: "Visualizer" },
 };
 

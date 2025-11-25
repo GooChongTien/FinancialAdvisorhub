@@ -1,34 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import { differenceInCalendarDays, format, endOfDay, startOfDay } from "date-fns";
-import TemperatureBadge from "@/admin/components/ui/TemperatureBadge.jsx";
-import { calculateCustomerTemperature } from "@/lib/customer-temperature";
-import {
-  Search,
-  Plus,
-  Phone,
-  Mail,
-  Building2,
-  FileText,
-  ChevronDown,
-  ChevronUp,
-  Filter,
-  X,
-  Users,
-  ArrowUpDown,
-} from "lucide-react";
-import PageHeader from "@/admin/components/ui/page-header.jsx";
-import { Card, CardContent } from "@/admin/components/ui/card";
-import { Input } from "@/admin/components/ui/input";
-import { Button } from "@/admin/components/ui/button";
 import { Badge } from "@/admin/components/ui/badge";
-import { Skeleton } from "@/admin/components/ui/skeleton";
+import { Button } from "@/admin/components/ui/button";
+import { Card, CardContent } from "@/admin/components/ui/card";
 import { Label } from "@/admin/components/ui/label";
-import NewLeadDialog from "@/admin/modules/customers/components/NewLeadDialog";
-import { useToast } from "@/admin/components/ui/toast";
+import PageHeader from "@/admin/components/ui/page-header.jsx";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/admin/components/ui/popover";
+import SearchFilterBar from "@/admin/components/ui/search-filter-bar.jsx";
 import {
   Select,
   SelectContent,
@@ -36,38 +17,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/admin/components/ui/select";
-import AddEventDialog from "@/admin/modules/customers/components/AddEventDialog";
-import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
-import { formatCurrency } from "@/lib/utils";
-import SearchFilterBar from "@/admin/components/ui/search-filter-bar.jsx";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/admin/components/ui/popover";
+import { Skeleton } from "@/admin/components/ui/skeleton";
+import TemperatureBadge from "@/admin/components/ui/TemperatureBadge.jsx";
+import { useToast } from "@/admin/components/ui/toast";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
-import { MIRA_PREFILL_TARGETS, matchesPrefillTarget, resolvePrefillTarget } from "@/lib/mira/prefillTargets.ts";
 import useMiraPopupListener from "@/admin/hooks/useMiraPopupListener.js";
+import AddEventDialog from "@/admin/modules/customers/components/AddEventDialog";
+import NewLeadDialog from "@/admin/modules/customers/components/NewLeadDialog";
+import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
+import { createPageUrl } from "@/admin/utils";
+import { calculateCustomerTemperature } from "@/lib/customer-temperature";
 import { MIRA_POPUP_TARGETS } from "@/lib/mira/popupTargets.ts";
-
-// Lead Status Logic:
-// 1. "Not Initiated" - No ongoing opportunity yet. If remains for >90 days without purchase, lead should be purged.
-// 2. "Contacted" - Advisor has scheduled an upcoming appointment with customer, but no proposal started yet.
-// 3. "Proposal" - Lead has at least 1 ongoing proposal with the advisor.
-const ONGOING_PROPOSAL_STATUSES = new Set([
-  "Not Initiated",
-  "Contacted",
-  "Proposal",
-]);
+import { MIRA_PREFILL_TARGETS, matchesPrefillTarget, resolvePrefillTarget } from "@/lib/mira/prefillTargets.ts";
+import { formatCurrency } from "@/lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { differenceInCalendarDays, format } from "date-fns";
+import {
+  ArrowUpDown,
+  Building2,
+  FileText,
+  Filter,
+  Mail,
+  Phone,
+  Plus,
+  Users,
+  X
+} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function Customer() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const { prefs } = usePreferences();
   const storageKeys = {
     search: "advisorhub:customers-search",
-    status: "advisorhub:customers-status",
+    customerType: "advisorhub:customers-customer-type",
     source: "advisorhub:customers-source",
     createdStart: "advisorhub:customers-created-start",
     createdEnd: "advisorhub:customers-created-end",
@@ -83,9 +71,9 @@ export default function Customer() {
     return window.sessionStorage.getItem(storageKeys.search) ?? "";
   });
   const [showNewLeadDialog, setShowNewLeadDialog] = useState(false);
-  const [statusFilter, setStatusFilter] = useState(() => {
+  const [customerTypeFilter, setCustomerTypeFilter] = useState(() => {
     if (typeof window === "undefined") return "all";
-    return window.sessionStorage.getItem(storageKeys.status) ?? "all";
+    return window.sessionStorage.getItem(storageKeys.customerType) ?? "all";
   });
   const [sourceFilter, setSourceFilter] = useState(() => {
     if (typeof window === "undefined") return "all";
@@ -149,8 +137,8 @@ export default function Customer() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.sessionStorage.setItem(storageKeys.status, statusFilter);
-  }, [statusFilter]);
+    window.sessionStorage.setItem(storageKeys.customerType, customerTypeFilter);
+  }, [customerTypeFilter]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -212,26 +200,26 @@ export default function Customer() {
     );
   }, [filtersCollapsed]);
 
-useEffect(() => {
-  if (typeof window === "undefined") return undefined;
-  const onPrefill = (event) => {
-    const detail = event?.detail ?? {};
-    const action = detail?.action ?? null;
-    if (!action) return;
-    const target = resolvePrefillTarget(action);
-    if (!matchesPrefillTarget(target, MIRA_PREFILL_TARGETS.NEW_LEAD_FORM)) return;
-    const correlationId = detail?.correlationId ?? action?.correlationId ?? action?.id ?? null;
-    launchAutoLeadDialog(correlationId);
-  };
-  window.addEventListener("mira:prefill", onPrefill);
-  return () => {
-    window.removeEventListener("mira:prefill", onPrefill);
-  };
-}, [launchAutoLeadDialog]);
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onPrefill = (event) => {
+      const detail = event?.detail ?? {};
+      const action = detail?.action ?? null;
+      if (!action) return;
+      const target = resolvePrefillTarget(action);
+      if (!matchesPrefillTarget(target, MIRA_PREFILL_TARGETS.NEW_LEAD_FORM)) return;
+      const correlationId = detail?.correlationId ?? action?.correlationId ?? action?.id ?? null;
+      launchAutoLeadDialog(correlationId);
+    };
+    window.addEventListener("mira:prefill", onPrefill);
+    return () => {
+      window.removeEventListener("mira:prefill", onPrefill);
+    };
+  }, [launchAutoLeadDialog]);
 
-useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
-  launchAutoLeadDialog(correlationId);
-});
+  useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
+    launchAutoLeadDialog(correlationId);
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -269,7 +257,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     () => ({
       view: "customer_list",
       searchTerm,
-      statusFilter,
+      customerTypeFilter,
       sourceFilter,
       lastContactedFilter,
       relationshipFilter,
@@ -281,7 +269,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     }),
     [
       searchTerm,
-      statusFilter,
+      customerTypeFilter,
       sourceFilter,
       lastContactedFilter,
       relationshipFilter,
@@ -318,8 +306,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       "any",
       "7",
       "30",
-      "90",
-      "over90",
+      "over30",
       "never",
     ]);
     if (preset === "hot-leads" && !lastContactTarget) {
@@ -349,7 +336,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     // Optional temperature alias: map to lastContacted filter
     const temperatureParam = params.get("temperature");
     if (temperatureParam) {
-      const map = { hot: "7", warm: "7", cool: "over90" };
+      const map = { hot: "7", warm: "30", cool: "over30", cold: "over30" };
       const mapped = map[String(temperatureParam).toLowerCase()];
       if (mapped && mapped !== lastContactedFilter) {
         setLastContactedFilter(mapped);
@@ -357,9 +344,6 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     }
 
     if (preset === "hot-leads") {
-      if (statusFilter !== "all") {
-        setStatusFilter("all");
-      }
       if (sourceFilter !== "all") {
         setSourceFilter("all");
       }
@@ -370,17 +354,19 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     relationshipFilter,
     sortOrder,
     sourceFilter,
-    statusFilter,
   ]);
 
   const createLeadMutation = useMutation({
     mutationFn: ({ payload }) => adviseUAdminApi.entities.Lead.create(payload),
     onSuccess: (newLead, variables) => {
       queryClient.invalidateQueries(["leads"]);
+      const leadName = newLead?.name ?? t("customers.toasts.fallbackName");
       showToast({
         type: "success",
-        title: "Lead created",
-        description: `${newLead?.name ?? "The lead"} has been added to your pipeline.`,
+        title: t("customers.toasts.createTitle"),
+        description: t("customers.toasts.createDescription", {
+          name: leadName,
+        }),
       });
       setShowNewLeadDialog(false);
       setPendingLead(newLead);
@@ -395,8 +381,9 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to create lead",
-        description: error?.message ?? "Please check the details and try again.",
+        title: t("customers.toasts.createErrorTitle"),
+        description:
+          error?.message ?? t("customers.toasts.createErrorDescription"),
       });
     },
   });
@@ -408,8 +395,8 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
       queryClient.invalidateQueries(["tasks-today"]);
       showToast({
         type: "success",
-        title: "Event scheduled",
-        description: "The appointment has been added to your planner.",
+        title: t("customers.toasts.scheduleTitle"),
+        description: t("customers.toasts.scheduleDescription"),
       });
       setShowScheduleDialog(false);
       setLeadForScheduling(null);
@@ -424,21 +411,22 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to schedule event",
-        description: error?.message ?? "Please review the details and try again.",
+        title: t("customers.toasts.scheduleErrorTitle"),
+        description:
+          error?.message ?? t("customers.toasts.scheduleErrorDescription"),
       });
     },
   });
 
-  const leadSources = useMemo(() => {
-    const sources = new Set();
-    leads.forEach((lead) => {
-      if (lead.lead_source) {
-        sources.add(lead.lead_source);
-      }
-    });
-    return Array.from(sources).sort((a, b) => a.localeCompare(b));
-  }, [leads]);
+  // Static list of allowed lead sources per specification
+  const leadSources = useMemo(
+    () => [
+      { value: "Event", label: t("customers.leadSources.event") },
+      { value: "Referral", label: t("customers.leadSources.referral") },
+      { value: "Social Media", label: t("customers.leadSources.social") },
+    ],
+    [t],
+  );
 
   const upcomingAppointments = useMemo(() => {
     const map = new Map();
@@ -514,28 +502,37 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
         }
       }
 
-      if (statusFilter !== "all" && lead.status !== statusFilter) {
-        return false;
+      if (customerTypeFilter !== "all") {
+        const customerType = lead.customer_type || "Individual"; // Default to Individual if not specified
+        if (customerTypeFilter !== customerType) {
+          return false;
+        }
       }
 
       if (sourceFilter !== "all" && lead.lead_source !== sourceFilter) {
         return false;
       }
 
-      if (relationshipFilter === "clients" && !lead.is_client) {
-        return false;
+      // Relationship filter: New (no policies) vs Existing (has policies)
+      if (relationshipFilter === "new") {
+        if (lead.is_client) {
+          return false;
+        }
       }
 
-      const isLeadRecord =
-        !lead.is_client ||
-        (lead.is_client && lead.status && ONGOING_PROPOSAL_STATUSES.has(lead.status));
-      if (relationshipFilter === "leads" && !isLeadRecord) {
-        return false;
+      if (relationshipFilter === "existing") {
+        if (!lead.is_client) {
+          return false;
+        }
       }
 
       if (temperatureFilter !== "all") {
-        const temperature = calculateCustomerTemperature(lead);
-        if (temperatureFilter !== temperature) {
+        const temperatureResult = calculateCustomerTemperature({
+          lastInteractionAt: lead.last_contacted,
+          activeProposals: lead.active_proposals ?? 0,
+          openServiceRequests: lead.open_service_requests ?? 0,
+        });
+        if (temperatureFilter !== temperatureResult.bucket) {
           return false;
         }
       }
@@ -563,11 +560,8 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
         if (lastContactedFilter === "30") {
           return daysAgo <= 30;
         }
-        if (lastContactedFilter === "90") {
-          return daysAgo <= 90;
-        }
-        if (lastContactedFilter === "over90") {
-          return daysAgo > 90;
+        if (lastContactedFilter === "over30") {
+          return daysAgo > 30;
         }
       }
 
@@ -627,7 +621,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
   }, [
     leads,
     searchTerm,
-    statusFilter,
+    customerTypeFilter,
     sourceFilter,
     relationshipFilter,
     temperatureFilter,
@@ -641,7 +635,7 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     setVisibleCount(PAGE_SIZE);
   }, [
     searchTerm,
-    statusFilter,
+    customerTypeFilter,
     sourceFilter,
     relationshipFilter,
     temperatureFilter,
@@ -654,78 +648,120 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     [filteredLeads, visibleCount],
   );
 
-  const getStatusColor = (status) => {
-    const colors = {
-      "Not Initiated": "bg-slate-100 text-slate-700",
-      "Contacted": "bg-blue-100 text-blue-700",
-      "Proposal": "bg-yellow-100 text-yellow-700",
-    };
-    return colors[status] || "bg-slate-100 text-slate-700";
-  };
+  const customerTypeLabels = useMemo(
+    () => ({
+      all: t("customers.filters.allTypes"),
+      Individual: t("customers.list.customerType.individual"),
+      Entity: t("customers.list.customerType.entity"),
+    }),
+    [t],
+  );
 
-  // Temperature calculation now uses calculateCustomerTemperature utility
+  const relationshipLabels = useMemo(
+    () => ({
+      all: t("customers.filters.allRelationships"),
+      new: t("customers.filters.new"),
+      existing: t("customers.filters.existing"),
+      leads: t("customers.filters.leadsOnly"),
+      clients: t("customers.filters.clientsOnly"),
+    }),
+    [t],
+  );
 
-  const lastContactedLabels = {
-    "7": "Last 7 days",
-    "30": "Last 30 days",
-    "90": "Last 90 days",
-    over90: "Over 90 days ago",
-    never: "Never contacted",
-  };
+  const temperatureLabels = useMemo(
+    () => ({
+      all: t("customers.filters.allTemperatures"),
+      hot: t("customers.filters.hot"),
+      warm: t("customers.filters.warm"),
+      cold: t("customers.filters.cold"),
+    }),
+    [t],
+  );
 
-  const lastContactedOptions = [
-    { value: "any", label: "Any time" },
-    { value: "7", label: "Last 7 days" },
-    { value: "30", label: "Last 30 days" },
-    { value: "90", label: "Last 90 days" },
-    { value: "over90", label: "More than 90 days" },
-    { value: "never", label: "Never contacted" },
-  ];
+  const lastContactedOptions = useMemo(
+    () => [
+      { value: "any", label: t("customers.filters.anyTime") },
+      { value: "7", label: t("customers.filters.last7Days") },
+      { value: "30", label: t("customers.filters.last30Days") },
+      { value: "over30", label: t("customers.filters.over30Days") },
+      { value: "never", label: t("customers.filters.never") },
+    ],
+    [t],
+  );
+
+  const lastContactedLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        lastContactedOptions.map((option) => [option.value, option.label]),
+      ),
+    [lastContactedOptions],
+  );
+
+  const getLeadSourceLabel = useCallback(
+    (value) =>
+      leadSources.find((source) => source.value === value)?.label ?? value,
+    [leadSources],
+  );
 
   const activeFilters = useMemo(() => {
     const chips = [];
-    if (statusFilter !== "all") {
+    if (customerTypeFilter !== "all") {
       chips.push({
-        key: "status",
-        label: `Status: ${statusFilter}`,
-        onRemove: () => setStatusFilter("all"),
+        key: "customerType",
+        label: t("customers.badges.type", {
+          value: customerTypeLabels[customerTypeFilter] ?? customerTypeFilter,
+        }),
+        onRemove: () => setCustomerTypeFilter("all"),
       });
     }
     if (relationshipFilter !== "all") {
+      const relationshipLabel =
+        relationshipLabels[relationshipFilter] ?? relationshipFilter;
       chips.push({
         key: "relationship",
-        label:
-          relationshipFilter === "clients"
-            ? "Relationship: Customers"
-            : "Relationship: Leads",
+        label: t("customers.badges.relationship", { value: relationshipLabel }),
         onRemove: () => setRelationshipFilter("all"),
       });
     }
     if (temperatureFilter !== "all") {
       chips.push({
         key: "temperature",
-        label: `Temperature: ${temperatureFilter.charAt(0).toUpperCase() + temperatureFilter.slice(1)}`,
+        label: t("customers.badges.temperature", {
+          value: temperatureLabels[temperatureFilter] ?? temperatureFilter,
+        }),
         onRemove: () => setTemperatureFilter("all"),
       });
     }
     if (sourceFilter !== "all") {
       chips.push({
         key: "source",
-        label: `Source: ${sourceFilter}`,
+        label: t("customers.badges.source", {
+          value: getLeadSourceLabel(sourceFilter),
+        }),
         onRemove: () => setSourceFilter("all"),
       });
     }
     if (createdDateStart || createdDateEnd) {
       const labelParts = [];
       if (createdDateStart) {
-        labelParts.push(`from ${format(new Date(createdDateStart), "MMM d, yyyy")}`);
+        labelParts.push(
+          t("customers.badges.createdFrom", {
+            date: format(new Date(createdDateStart), "MMM d, yyyy"),
+          }),
+        );
       }
       if (createdDateEnd) {
-        labelParts.push(`to ${format(new Date(createdDateEnd), "MMM d, yyyy")}`);
+        labelParts.push(
+          t("customers.badges.createdTo", {
+            date: format(new Date(createdDateEnd), "MMM d, yyyy"),
+          }),
+        );
       }
       chips.push({
         key: "created",
-        label: `Created ${labelParts.join(" ")}`,
+        label: t("customers.badges.created", {
+          range: labelParts.join(" "),
+        }),
         onRemove: () => {
           setCreatedDateStart("");
           setCreatedDateEnd("");
@@ -735,17 +771,30 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
     if (lastContactedFilter !== "any") {
       chips.push({
         key: "lastContacted",
-        label: `Last contacted: ${
-          lastContactedLabels[lastContactedFilter] ?? lastContactedFilter
-        }`,
+        label: t("customers.badges.lastContacted", {
+          value: lastContactedLabels[lastContactedFilter]
+            ?? lastContactedFilter,
+        }),
         onRemove: () => setLastContactedFilter("any"),
       });
     }
     return chips;
-  }, [lastContactedFilter, relationshipFilter, temperatureFilter, sourceFilter, statusFilter]);
+  }, [
+    customerTypeFilter,
+    customerTypeLabels,
+    getLeadSourceLabel,
+    lastContactedFilter,
+    lastContactedLabels,
+    relationshipFilter,
+    relationshipLabels,
+    temperatureFilter,
+    temperatureLabels,
+    sourceFilter,
+    t,
+  ]);
 
   const clearAllFilters = useCallback(() => {
-    setStatusFilter("all");
+    setCustomerTypeFilter("all");
     setSourceFilter("all");
     setLastContactedFilter("any");
     setRelationshipFilter("all");
@@ -784,7 +833,9 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
                 type="button"
                 onClick={filter.onRemove}
                 className="rounded-full p-0.5 text-primary-600 transition hover:bg-primary-100"
-                aria-label={`Remove ${filter.label}`}
+                aria-label={t("customers.badges.remove", {
+                  label: filter.label,
+                })}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -796,195 +847,215 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
             onClick={clearAllFilters}
             className={buttonClassName}
           >
-            Clear All Filters
+            {t("customers.filters.clearAllFilters")}
           </Button>
         </div>
       );
     },
-    [activeFilters, clearAllFilters],
+    [activeFilters, clearAllFilters, t],
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <PageHeader
-          title="Customer Management"
-              subtitle="Manage your leads and customers"
-          icon={Users}
-          actions={(
-            <Button onClick={() => setShowNewLeadDialog(true)} className="bg-primary-600 shadow-lg hover:bg-primary-700">
-              <Plus className="mr-2 h-4 w-4" />
-              New Lead
-            </Button>
-          )}
-        />
+        {/* Sticky Header Section */}
+        <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200 space-y-6">
+          <PageHeader
+            title={t("customers.title")}
+            subtitle={t("customers.subtitle")}
+            icon={Users}
+            className="mb-0"
+            actions={(
+              <Button onClick={() => setShowNewLeadDialog(true)} className="bg-primary-600 shadow-lg hover:bg-primary-700">
+                <Plus className="mr-2 h-4 w-4" />
+                {t("customers.newLead")}
+              </Button>
+            )}
+          />
 
-        {/* Unified Search/Filter/Sort Bar */}
-        <SearchFilterBar
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
-          placeholder="Search by name, contact, or ID..."
-          filterButton={
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={activeFilters.length > 0 ? "default" : "outline"}
-                  size="icon"
-                  className={activeFilters.length > 0 ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                  title="Filter"
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                  <div className="flex items-center justify-between sticky top-0 bg-white pb-3">
-                    <h4 className="font-semibold text-sm text-slate-900">Filters</h4>
-                    <Button variant="ghost" size="sm" onClick={clearAllFilters}>
-                      Clear All
-                    </Button>
-                  </div>
-
-                  {/* Lead Status */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Lead Status</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All statuses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem value="Not Initiated">Not Initiated</SelectItem>
-                        <SelectItem value="Contacted">Contacted</SelectItem>
-                        <SelectItem value="Proposal">Proposal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Lead Source */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Lead Source</Label>
-                    <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All sources" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All sources</SelectItem>
-                        {leadSources.map((source) => (
-                          <SelectItem key={source} value={source}>{source}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Relationship */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Relationship</Label>
-                    <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All relationships" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All relationships</SelectItem>
-                        <SelectItem value="leads">Leads only</SelectItem>
-                        <SelectItem value="clients">Customers only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Temperature */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Temperature</Label>
-                    <Select value={temperatureFilter} onValueChange={setTemperatureFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All temperatures" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All temperatures</SelectItem>
-                        <SelectItem value="hot">Hot (&le;7 days)</SelectItem>
-                        <SelectItem value="warm">Warm (&le;30 days)</SelectItem>
-                        <SelectItem value="cool">Cool (&gt;30 days)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Last Contacted */}
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-700 mb-2">Last Contacted</Label>
-                    <Select value={lastContactedFilter} onValueChange={setLastContactedFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Any time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {lastContactedOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Active Filters */}
-                  {activeFilters.length > 0 && (
-                    <div className="pt-3 border-t">
-                      {renderFilterBadges({ badgeClassName: "text-xs" })}
+          {/* Unified Search/Filter/Sort Bar */}
+          <SearchFilterBar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            placeholder={t("customers.searchPlaceholder")}
+            filterButton={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={activeFilters.length > 0 ? "default" : "outline"}
+                    size="icon"
+                    className={activeFilters.length > 0 ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
+                    title={t("common.filter")}
+                  >
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                    <div className="flex items-center justify-between sticky top-0 bg-white pb-3">
+                      <h4 className="font-semibold text-sm text-slate-900">
+                        {t("customers.filters.title")}
+                      </h4>
+                      <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                        {t("customers.filters.clearAll")}
+                      </Button>
                     </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          }
-          sortButton={
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={sortOrder !== "lastContacted" ? "default" : "outline"}
-                  size="icon"
-                  className={sortOrder !== "lastContacted" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                  title="Sort"
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56">
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
-                  <div className="space-y-2">
-                    <Button
-                      variant={sortOrder === "lastContacted" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortOrder("lastContacted")}
-                    >
-                      Last Contacted
-                    </Button>
-                    <Button
-                      variant={sortOrder === "name" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortOrder("name")}
-                    >
-                      Name (A-Z)
-                    </Button>
-                    <Button
-                      variant={sortOrder === "nextAppointment" ? "default" : "ghost"}
-                      className="w-full justify-start"
-                      onClick={() => setSortOrder("nextAppointment")}
-                    >
-                      Next Appointment
-                    </Button>
+
+                    {/* Customer Type */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">
+                        {t("customers.filters.customerType")}
+                      </Label>
+                      <Select value={customerTypeFilter} onValueChange={setCustomerTypeFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("customers.filters.allTypes")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("customers.filters.allTypes")}</SelectItem>
+                          <SelectItem value="Individual">{t("customers.filters.individual")}</SelectItem>
+                          <SelectItem value="Entity">{t("customers.filters.entity")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Lead Source */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">
+                        {t("customers.filters.leadSource")}
+                      </Label>
+                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("customers.filters.allSources")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("customers.filters.allSources")}</SelectItem>
+                          {leadSources.map((source) => (
+                            <SelectItem key={source.value} value={source.value}>{source.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Relationship */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">
+                        {t("customers.filters.relationship")}
+                      </Label>
+                      <Select value={relationshipFilter} onValueChange={setRelationshipFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("customers.filters.allRelationships")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("customers.filters.allRelationships")}</SelectItem>
+                          <SelectItem value="new">{t("customers.filters.new")}</SelectItem>
+                          <SelectItem value="existing">{t("customers.filters.existing")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Temperature */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">
+                        {t("customers.filters.temperature")}
+                      </Label>
+                      <Select value={temperatureFilter} onValueChange={setTemperatureFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("customers.filters.allTemperatures")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("customers.filters.allTemperatures")}</SelectItem>
+                          <SelectItem value="hot">{t("customers.filters.hot")}</SelectItem>
+                          <SelectItem value="warm">{t("customers.filters.warm")}</SelectItem>
+                          <SelectItem value="cold">{t("customers.filters.cold")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Last Contacted */}
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">
+                        {t("customers.filters.lastContacted")}
+                      </Label>
+                      <Select value={lastContactedFilter} onValueChange={setLastContactedFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("customers.filters.anyTime")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {lastContactedOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Active Filters */}
+                    {activeFilters.length > 0 && (
+                      <div className="pt-3 border-t">
+                        {renderFilterBadges({ badgeClassName: "text-xs" })}
+                      </div>
+                    )}
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          }
-          rightActions={
-            <div className="text-sm text-slate-500">
-              {leads.length
-                ? `${Math.min(visibleCount, filteredLeads.length)} of ${leads.length}`
-                : "No leads"}
-            </div>
-          }
-        />
+                </PopoverContent>
+              </Popover>
+            }
+            sortButton={
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={sortOrder !== "lastContacted" ? "default" : "outline"}
+                    size="icon"
+                    className={sortOrder !== "lastContacted" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
+                    title={t("customers.sort.title")}
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56">
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-sm text-slate-900 mb-3">
+                      {t("customers.sort.title")}
+                    </h4>
+                    <div className="space-y-2">
+                      <Button
+                        variant={sortOrder === "lastContacted" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortOrder("lastContacted")}
+                      >
+                        {t("customers.sort.lastContacted")}
+                      </Button>
+                      <Button
+                        variant={sortOrder === "name" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortOrder("name")}
+                      >
+                        {t("customers.sort.name")}
+                      </Button>
+                      <Button
+                        variant={sortOrder === "nextAppointment" ? "default" : "ghost"}
+                        className="w-full justify-start"
+                        onClick={() => setSortOrder("nextAppointment")}
+                      >
+                        {t("customers.sort.nextAppointment")}
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            }
+            rightActions={
+              <div className="text-sm text-slate-500">
+                {leads.length
+                  ? t("customers.counts.showing", {
+                    visible: Math.min(visibleCount, filteredLeads.length),
+                    total: leads.length,
+                  })
+                  : t("customers.counts.empty")}
+              </div>
+            }
+          />
+        </div>
 
         {/* Advanced Filters - Removed, now using popover-based filters */}
         {false && (
@@ -992,108 +1063,90 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
             <CardContent id="customer-filter-panel" className="space-y-6 p-6">
               {filtersCollapsed ? (
                 activeFilters.length > 0 ? (
-                <div className="rounded-lg border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
-                  <p className="flex items-center gap-2 font-semibold text-slate-700">
-                    <Filter className="h-4 w-4 text-primary-600" />
-                    Active filters still applied
-                  </p>
-                  {renderFilterBadges({
-                    containerClassName: "mt-3",
-                    buttonVariant: "outline",
-                    buttonClassName:
-                      "border border-primary-200 text-primary-700 hover:bg-primary-50",
-                  })}
-                </div>
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
+                    <p className="flex items-center gap-2 font-semibold text-slate-700">
+                      <Filter className="h-4 w-4 text-primary-600" />
+                      {t("customers.advanced.activeFiltersHeading")}
+                    </p>
+                    {renderFilterBadges({
+                      containerClassName: "mt-3",
+                      buttonVariant: "outline",
+                      buttonClassName:
+                        "border border-primary-200 text-primary-700 hover:bg-primary-50",
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+                    {t("customers.advanced.filtersHidden")}
+                  </div>
+                )
               ) : (
-                <div className="rounded-lg border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-                  Filters are hidden. Select <span className="font-semibold text-primary-700">Show Filters</span> to refine your customer list.
-                </div>
-              )
-            ) : (
-              <>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">
-                      Lead Status
-                    </Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="border-slate-200">
-                        <SelectValue placeholder="All statuses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem value="Not Initiated">Not Initiated</SelectItem>
-                        <SelectItem value="Contacted">Contacted</SelectItem>
-                        <SelectItem value="Proposal">Proposal</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">
+                        {t("customers.filters.leadSource")}
+                      </Label>
+                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                        <SelectTrigger className="border-slate-200">
+                          <SelectValue placeholder={t("customers.filters.allSources")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("customers.filters.allSources")}</SelectItem>
+                          {leadSources.map((source) => (
+                            <SelectItem key={source.value} value={source.value}>
+                              {source.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">
+                        {t("customers.filters.relationship")}
+                      </Label>
+                      <Select
+                        value={relationshipFilter}
+                        onValueChange={setRelationshipFilter}
+                      >
+                        <SelectTrigger className="border-slate-200">
+                          <SelectValue placeholder={t("customers.filters.allRelationships")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">{t("customers.filters.allRelationships")}</SelectItem>
+                          <SelectItem value="leads">{t("customers.filters.leadsOnly")}</SelectItem>
+                          <SelectItem value="clients">{t("customers.filters.clientsOnly")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {/* Created date filters removed per QA */}
+                    <div className="space-y-2 md:col-span-2 xl:col-span-3">
+                      <Label className="text-xs font-semibold uppercase text-slate-500">
+                        {t("customers.filters.lastContacted")}
+                      </Label>
+                      <Select
+                        value={lastContactedFilter}
+                        onValueChange={setLastContactedFilter}
+                      >
+                        <SelectTrigger className="border-slate-200">
+                          <SelectValue placeholder={t("customers.filters.anyTime")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {lastContactedOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">
-                      Lead Source
-                    </Label>
-                    <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                      <SelectTrigger className="border-slate-200">
-                        <SelectValue placeholder="All sources" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All sources</SelectItem>
-                        {leadSources.map((source) => (
-                          <SelectItem key={source} value={source}>
-                            {source}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">
-                      Relationship
-                    </Label>
-                    <Select
-                      value={relationshipFilter}
-                      onValueChange={setRelationshipFilter}
-                    >
-                      <SelectTrigger className="border-slate-200">
-                        <SelectValue placeholder="All relationships" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All relationships</SelectItem>
-                        <SelectItem value="leads">Leads only</SelectItem>
-                        <SelectItem value="clients">Customers only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* Created date filters removed per QA */}
-                  <div className="space-y-2 md:col-span-2 xl:col-span-3">
-                    <Label className="text-xs font-semibold uppercase text-slate-500">
-                      Last Contacted
-                    </Label>
-                    <Select
-                      value={lastContactedFilter}
-                      onValueChange={setLastContactedFilter}
-                    >
-                      <SelectTrigger className="border-slate-200">
-                        <SelectValue placeholder="Any time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {lastContactedOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                {renderFilterBadges()}
-                <div className="text-xs text-slate-500">
-                  <span className="font-semibold text-primary-600">Customer</span>{" "}
-                  badge highlights converted customers; status badge reflects the current
-                  proposal stage.
-                </div>
-              </>
+                  {renderFilterBadges()}
+                  <div className="text-xs text-slate-500">
+                    {t("customers.advanced.customerBadgeNote")}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -1115,162 +1168,170 @@ useMiraPopupListener(MIRA_POPUP_TARGETS.NEW_LEAD_FORM, ({ correlationId }) => {
             <Card className="shadow-lg">
               <CardContent className="p-12 text-center">
                 <Building2 className="mx-auto mb-4 h-16 w-16 text-slate-300" />
-                  <h3 className="mb-2 text-lg font-semibold text-slate-900">
-                    No leads found
-                  </h3>
-                  <p className="text-slate-500">
-                    Try adjusting your filters or start by adding your first lead.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              displayedLeads.map((lead) => {
-                const createdAtRaw =
-                  lead.created_at ?? lead.updated_at ?? lead.updated_date;
-                const createdAtDisplay = createdAtRaw
-                  ? format(new Date(createdAtRaw), "MMM d, yyyy")
-                  : "—";
-                const lastContactedDisplay = lead.last_contacted
-                  ? format(new Date(lead.last_contacted), "MMM d, yyyy")
-                  : "Not yet contacted";
-                const nextAppointment = upcomingAppointments.get(lead.id);
-                const nextAppointmentDisplay = nextAppointment?.date
-                  ? format(
-                      new Date(
-                        `${nextAppointment.date}T${nextAppointment.time ?? "00:00"}`,
-                      ),
-                      "MMM d, yyyy h:mm a",
-                    )
-                  : null;
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">
+                  {t("customers.empty.title")}
+                </h3>
+                <p className="text-slate-500">
+                  {t("customers.empty.description")}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            displayedLeads.map((lead) => {
+              const createdAtRaw =
+                lead.created_at ?? lead.updated_at ?? lead.updated_date;
+              const createdAtDisplay = createdAtRaw
+                ? format(new Date(createdAtRaw), "MMM d, yyyy")
+                : t("customers.list.notAvailable");
+              const lastContactedDisplay = lead.last_contacted
+                ? format(new Date(lead.last_contacted), "MMM d, yyyy")
+                : t("customers.list.notContacted");
+              const nextAppointment = upcomingAppointments.get(lead.id);
+              const customerType = lead.customer_type || "Individual";
+              const customerTypeLabel =
+                customerTypeLabels[customerType] ?? customerType;
+              const relationshipLabel = lead.is_client
+                ? t("customers.list.relationship.existing")
+                : t("customers.list.relationship.new");
+              const nextAppointmentDisplay = nextAppointment?.date
+                ? format(
+                  new Date(
+                    `${nextAppointment.date}T${nextAppointment.time ?? "00:00"}`,
+                  ),
+                  "MMM d, yyyy h:mm a",
+                )
+                : null;
 
-                return (
-                  <Card
-                    key={lead.id}
-                    className="group cursor-pointer border-slate-200 shadow-lg transition-all hover:shadow-xl"
-                    onClick={() =>
-                      navigate(createPageUrl(`CustomerDetail?id=${lead.id}`))
-                    }
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="mb-3 flex flex-wrap items-center gap-3">
-                            <h3 className="text-xl font-bold text-slate-900 transition-colors group-hover:text-primary-600">
-                              {highlightText(lead.name)}
-                            </h3>
-                            <Badge className={getStatusColor(lead.status)}>
-                              {lead.status}
-                            </Badge>
-                            {!lead.is_client && (
-                              <TemperatureBadge
-                                temperature={calculateCustomerTemperature(lead)}
-                              />
-                            )}
-                            {lead.is_client && (
-                              <Badge className="bg-green-100 text-green-700">
-                                Customer
-                              </Badge>
-                            )}
-                          </div>
+              return (
+                <Card
+                  key={lead.id}
+                  className="group cursor-pointer border-slate-200 shadow-lg transition-all hover:shadow-xl"
+                  onClick={() =>
+                    navigate(createPageUrl(`CustomerDetail?id=${lead.id}`))
+                  }
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="mb-3 flex flex-wrap items-center gap-3">
+                          <h3 className="text-xl font-bold text-slate-900 transition-colors group-hover:text-primary-600">
+                            {highlightText(lead.name)}
+                          </h3>
 
-                          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
-                            <div className="flex items-center gap-2 text-slate-600">
-                              <Phone className="h-4 w-4" />
-                              <span>{highlightText(lead.contact_number)}</span>
-                            </div>
-                            {lead.email && (
-                              <div className="flex items-center gap-2 text-slate-600">
-                                <Mail className="h-4 w-4" />
-                                <span>{highlightText(lead.email)}</span>
-                              </div>
-                            )}
-                            {lead.lead_source && (
-                              <div className="flex items-center gap-2 text-slate-600">
-                                <Building2 className="h-4 w-4" />
-                                <span>{highlightText(lead.lead_source)}</span>
-                              </div>
-                            )}
-                            {lead.national_id && (
-                              <div className="flex items-center gap-2 text-slate-600">
-                                <FileText className="h-4 w-4" />
-                                <span>{highlightText(lead.national_id)}</span>
-                              </div>
-                            )}
-                          </div>
+                          {/* Customer Type */}
+                          <Badge className="bg-slate-100 text-slate-700">
+                            {customerTypeLabel}
+                          </Badge>
 
-                          <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4">
-                            <div>
-                              <p className="text-xs text-slate-500">
-                                Last Contacted
-                              </p>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {lastContactedDisplay}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-slate-500">Created</p>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {createdAtDisplay}
-                              </p>
-                            </div>
-                            {!lead.is_client && (
-                              <div>
-                                <p className="text-xs text-slate-500">Proposal Stage</p>
-                                <p className="text-sm font-semibold text-slate-900">
-                                  {lead.status}
-                                </p>
-                              </div>
-                            )}
-                            {nextAppointmentDisplay && (
-                              <div>
-                                <p className="text-xs text-slate-500">Next Appointment</p>
-                                <p className="text-sm font-semibold text-slate-900">
-                                  {nextAppointmentDisplay}
-                                </p>
-                              </div>
-                            )}
-                            {lead.is_client && (
-                              <>
-                                <div>
-                                  <p className="text-xs text-slate-500">
-                                    Active Policies
-                                  </p>
-                                  <p className="text-sm font-semibold text-slate-900">
-                                    {lead.active_policies_count || 0}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-slate-500">
-                                    Total Premium
-                                  </p>
-                                  <p className="text-sm font-semibold text-foreground-success">
-                                    {formatCurrency(lead.total_premium || 0, prefs)}
-                                  </p>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                          {/* Relationship Type */}
+                          <Badge className={lead.is_client ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}>
+                            {relationshipLabel}
+                          </Badge>
+
+                          {/* Customer Temperature */}
+                          <TemperatureBadge
+                            {...calculateCustomerTemperature({
+                              lastInteractionAt: lead.last_contacted,
+                              activeProposals: lead.active_proposals ?? 0,
+                              openServiceRequests: lead.open_service_requests ?? 0,
+                            })}
+                          />
                         </div>
 
+                        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
+                          <div className="flex items-center gap-2 text-slate-600">
+                            <Phone className="h-4 w-4" />
+                            <span>{highlightText(lead.contact_number)}</span>
+                          </div>
+                          {lead.email && (
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <Mail className="h-4 w-4" />
+                              <span>{highlightText(lead.email)}</span>
+                            </div>
+                          )}
+                          {lead.lead_source && (
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <Building2 className="h-4 w-4" />
+                              <span>{highlightText(lead.lead_source)}</span>
+                            </div>
+                          )}
+                          {lead.national_id && (
+                            <div className="flex items-center gap-2 text-slate-600">
+                              <FileText className="h-4 w-4" />
+                              <span>{highlightText(lead.national_id)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4">
+                          <div>
+                            <p className="text-xs text-slate-500">
+                              {t("customers.list.lastContacted")}
+                            </p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {lastContactedDisplay}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500">
+                              {t("customers.list.created")}
+                            </p>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {createdAtDisplay}
+                            </p>
+                          </div>
+                          {nextAppointmentDisplay && (
+                            <div>
+                              <p className="text-xs text-slate-500">
+                                {t("customers.list.nextAppointment")}
+                              </p>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {nextAppointmentDisplay}
+                              </p>
+                            </div>
+                          )}
+                          {lead.is_client && (
+                            <>
+                              <div>
+                                <p className="text-xs text-slate-500">
+                                  {t("customers.list.activePolicies")}
+                                </p>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {lead.active_policies_count || 0}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-slate-500">
+                                  {t("customers.list.totalPremium")}
+                                </p>
+                                <p className="text-sm font-semibold text-foreground-success">
+                                  {formatCurrency(lead.total_premium || 0, prefs)}
+                                </p>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
+
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
 
         {displayedLeads.length < filteredLeads.length && (
           <div className="mt-6 flex justify-center">
             <Button
-              variant="outline"
-              className="px-6"
-              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-            >
-              Load more
-            </Button>
-          </div>
-        )}
+            variant="outline"
+            className="px-6"
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          >
+            {t("customers.list.loadMore")}
+          </Button>
+        </div>
+      )}
       </div>
 
       <NewLeadDialog

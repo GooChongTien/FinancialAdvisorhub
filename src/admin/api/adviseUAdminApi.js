@@ -1,5 +1,6 @@
 // AdviseU Admin portal composite client that wraps Supabase queries.
 import supabase from "./supabaseClient.js";
+import { calculateCustomerTemperature } from "@/lib/customer-temperature";
 import { miraChatApi } from "./miraChatApi.js";
 
 const DEFAULT_PROFILE_ID = "advisor-001";
@@ -131,6 +132,52 @@ function parseNumeric(value, fallback = 0) {
   }
   const parsed = Number(value);
   return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+async function recordLeadActivity(leadId, activityType = "activity", context = {}) {
+  if (!leadId) return null;
+  try {
+    const now = new Date().toISOString();
+    const temperature = calculateCustomerTemperature({
+      lastInteractionAt: now,
+      activeProposals: context.activeProposals ?? 0,
+      openServiceRequests: context.openServiceRequests ?? 0,
+    }).bucket;
+    const { data, error } = await supabase
+      .from("leads")
+      .update({
+        last_contacted: now,
+        last_activity_type: activityType,
+        temperature_bucket: temperature,
+        temperature,
+      })
+      .eq("id", leadId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (e) {
+    console.warn("[LeadActivity] Unable to record activity", e?.message || e);
+    return null;
+  }
+}
+
+function mapBroadcast(row) {
+  if (!row) return row;
+  const published =
+    row.published_date ||
+    row.published_at ||
+    row.created_at ||
+    row.updated_at ||
+    null;
+  const pinned = row.pinned ?? row.is_pinned ?? false;
+  return {
+    ...row,
+    published_date: published,
+    is_pinned: Boolean(pinned),
+    pinned: Boolean(pinned),
+    category: row.category ?? row.type ?? "Announcement",
+  };
 }
 
 async function fetchLeadMetrics(leadIds) {
@@ -539,7 +586,11 @@ const TaskEntity = {
       .insert([{ ...cleanedPayload, advisor_id: await currentUserId() }])
       .select()
       .single();
-    return readSingle({ data, error }, "create task");
+    const created = readSingle({ data, error }, "create task");
+    if (created?.linked_lead_id) {
+      recordLeadActivity(created.linked_lead_id, "task", { activeProposals: 0, openServiceRequests: 0 });
+    }
+    return created;
   },
   async update(id, updates) {
     // Convert empty string to null for UUID fields (PostgreSQL compatibility)
@@ -571,13 +622,13 @@ const BroadcastEntity = {
       query = query.limit(size);
     }
     const { data, error } = await query;
-    return readData({ data, error }, "load broadcasts");
+    return readData({ data, error }, "load broadcasts").map(mapBroadcast);
   },
   async filter(criteria) {
     let query = supabase.from("broadcasts").select("*");
     query = applyFilters(query, criteria);
     const { data, error } = await query;
-    return readData({ data, error }, "filter broadcasts");
+    return readData({ data, error }, "filter broadcasts").map(mapBroadcast);
   },
   async create(payload) {
     const advisorId = await currentUserId();
@@ -586,14 +637,30 @@ const BroadcastEntity = {
       title: payload.title ?? "Untitled broadcast",
       content: payload.content ?? payload.message ?? "",
       audience: payload.audience ?? "All Advisors",
-      category: payload.category ?? "Announcement",
-      is_pinned: Boolean(payload.is_pinned),
+      category: payload.category ?? payload.type ?? "Announcement",
+      is_pinned: Boolean(payload.is_pinned ?? payload.pinned),
+      pinned: Boolean(payload.pinned ?? payload.is_pinned),
       status: payload.status ?? "draft",
       published_date: payload.published_date ?? now,
       advisor_id: advisorId,
     };
     const { data, error } = await supabase.from("broadcasts").insert([record]).select().single();
-    return readSingle({ data, error }, "create broadcast");
+    return mapBroadcast(readSingle({ data, error }, "create broadcast"));
+  },
+  async update(id, updates) {
+    const payload = {
+      ...updates,
+      is_pinned: updates?.is_pinned ?? updates?.pinned,
+      pinned: updates?.pinned ?? updates?.is_pinned,
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase
+      .from("broadcasts")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    return mapBroadcast(readSingle({ data, error }, "update broadcast"));
   },
 };
 
@@ -698,17 +765,37 @@ const ServiceRequestEntity = {
     return readSingle({ data, error }, "get service request");
   },
   async create(payload) {
+    const now = new Date().toISOString();
+    const historyEntry = { status: payload?.status ?? "pending", changed_at: now };
     const { data, error } = await supabase
       .from("service_requests")
-      .insert([{ ...payload, advisor_id: await currentUserId() }])
+      .insert([{
+        ...payload,
+        payload: { ...(payload?.payload ?? {}), status_history: [historyEntry] },
+        advisor_id: await currentUserId(),
+      }])
       .select()
       .single();
-    return readSingle({ data, error }, "create service request");
+    const created = readSingle({ data, error }, "create service request");
+    if (created?.lead_id) {
+      recordLeadActivity(created.lead_id, "service_request", { openServiceRequests: 1 });
+    }
+    return created;
   },
   async update(id, updates) {
+    const prevPayload = updates?.payload ?? {};
+    const history = Array.isArray(prevPayload.status_history) ? prevPayload.status_history : [];
+    if (updates?.status) {
+      history.push({ status: updates.status, changed_at: new Date().toISOString() });
+    }
     const { data, error } = await supabase
       .from("service_requests")
-      .update({ ...updates, updated_at: new Date().toISOString(), advisor_id: await currentUserId() })
+      .update({
+        ...updates,
+        payload: { ...prevPayload, status_history: history },
+        updated_at: new Date().toISOString(),
+        advisor_id: await currentUserId(),
+      })
       .eq("id", id)
       .select()
       .single();
@@ -726,43 +813,41 @@ const ServiceRequestEntity = {
 };
 
 const EntityCustomerEntity = {
-  async list(criteria) {
-    let query = supabase.from("entity_customers").select("*");
-    query = applyFilters(query, criteria);
-    query = query.order("created_at", { ascending: false });
-    const { data, error } = await query;
-    return readData({ data, error }, "load entity customers");
+  async list(criteria = {}) {
+    const rows = await loadLeads({
+      orderBy: "-updated_at",
+      limit: undefined,
+      criteria: { ...criteria, customer_type: "Entity" },
+    });
+    return rows;
   },
   async getById(id) {
-    const { data, error} = await supabase
-      .from("entity_customers")
-      .select("*")
-      .eq("id", id)
-      .single();
-    return readSingle({ data, error }, "get entity customer");
+    const rows = await loadLeads({
+      orderBy: undefined,
+      limit: undefined,
+      criteria: { id, customer_type: "Entity" },
+    });
+    return rows[0] ?? null;
   },
   async create(payload) {
-    const { data, error } = await supabase
-      .from("entity_customers")
-      .insert([{ ...payload, advisor_id: await currentUserId() }])
-      .select()
-      .single();
-    return readSingle({ data, error }, "create entity customer");
+    const defaults = {
+      customer_type: "Entity",
+      is_client: payload?.is_client ?? true,
+    };
+    return LeadEntity.create({ ...payload, ...defaults });
   },
   async update(id, updates) {
-    const { data, error } = await supabase
-      .from("entity_customers")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select()
-      .single();
-    return readSingle({ data, error }, "update entity customer");
+    return LeadEntity.update(id, {
+      ...updates,
+      customer_type: "Entity",
+    });
   },
   async delete(id) {
     const { data, error } = await supabase
-      .from("entity_customers")
+      .from("leads")
       .delete()
       .eq("id", id)
+      .eq("customer_type", "Entity")
       .select()
       .single();
     return readSingle({ data, error }, "delete entity customer");

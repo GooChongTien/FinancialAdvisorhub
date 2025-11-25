@@ -11,9 +11,12 @@ type PageName =
   | "Product"
   | "PolicyDetail"
   | "Analytics"
+  | "SmartPlan"
   | "ToDo"
   | "Broadcast"
   | "BroadcastDetail"
+  | "News"
+  | "NewsDetail"
   | "MiraOps";
 
 const PAGE_NAME_TO_MODULE: Record<PageName, MiraModule> = {
@@ -27,9 +30,12 @@ const PAGE_NAME_TO_MODULE: Record<PageName, MiraModule> = {
   PolicyDetail: "product",
   Analytics: "analytics",
   MiraOps: "analytics",
+  SmartPlan: "todo",
   ToDo: "todo",
-  Broadcast: "broadcast",
-  BroadcastDetail: "broadcast",
+  Broadcast: "news",
+  BroadcastDetail: "news",
+  News: "news",
+  NewsDetail: "news",
 };
 
 export const DEFAULT_MIRA_MODULE: MiraModule = "customer";

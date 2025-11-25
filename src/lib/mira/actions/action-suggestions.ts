@@ -263,12 +263,12 @@ export class ActionSuggestionEngine {
       });
     }
 
-    // Broadcast module
-    if (module === "broadcast") {
+    // News module (legacy: broadcast)
+    if (module === "broadcast" || module === "news") {
       suggestions.push({
         action: createActionFromTemplate("create_broadcast")!,
         confidence: 0.8,
-        reason: "Primary action for broadcast page",
+        reason: "Primary action for news page",
         trigger: "immediate",
         relevanceScore: 0.85,
       });

@@ -62,7 +62,7 @@ export class ProposalCreationDetector implements PatternDetector {
     if (customerVisit) {
       confidence += 0.3;
       triggers.push({
-        type: "customer_page_visit",
+        type: "customer_page_visited",
         timestamp: new Date(customerVisit.timestamp),
         data: { page: customerVisit.toPage },
       });
@@ -76,7 +76,7 @@ export class ProposalCreationDetector implements PatternDetector {
     if (proposalNav) {
       confidence += 0.3;
       triggers.push({
-        type: "proposal_page_visit",
+        type: "proposal_page_visited",
         timestamp: new Date(proposalNav.timestamp),
         data: { page: proposalNav.toPage },
       });
@@ -111,6 +111,16 @@ export class ProposalCreationDetector implements PatternDetector {
         type: "proposal_form_interaction",
         timestamp: new Date(),
         data: { actionCount: proposalFormActions.length },
+      });
+    }
+
+    // Boost when fact finding is already completed
+    if (context.pageData && (context.pageData as any).factFindingComplete) {
+      confidence += 0.1;
+      triggers.push({
+        type: "fact_finding_completed",
+        timestamp: new Date(),
+        data: { completed: true },
       });
     }
 
@@ -195,7 +205,7 @@ export class FormStruggleDetector implements PatternDetector {
     // 1. Extended time on form without submission
     const hasSubmission = formActions.some((a) => a.actionType === "form_submit");
 
-    if (timeOnPage > this.STRUGGLE_TIME_THRESHOLD && !hasSubmission) {
+    if (timeOnPage >= this.STRUGGLE_TIME_THRESHOLD && !hasSubmission) {
       confidence += 0.35;
       triggers.push({
         type: "extended_time_no_submission",
@@ -205,7 +215,7 @@ export class FormStruggleDetector implements PatternDetector {
     }
 
     // 2. High number of form interactions
-    if (formActions.length > this.HIGH_INTERACTION_THRESHOLD) {
+    if (formActions.length >= this.HIGH_INTERACTION_THRESHOLD) {
       confidence += 0.25;
       triggers.push({
         type: "high_interaction_count",
@@ -218,7 +228,7 @@ export class FormStruggleDetector implements PatternDetector {
     const fieldRevisits = this.detectFieldRevisits(formActions);
 
     if (fieldRevisits.length > 0) {
-      confidence += 0.20;
+      confidence += 0.35;
       triggers.push({
         type: "field_revisits",
         timestamp: new Date(),
@@ -304,8 +314,17 @@ export class AnalyticsExplorationDetector implements PatternDetector {
       nav.toPage.includes("analytics")
     );
 
-    if (analyticsVisits.length >= this.MIN_VISITS) {
+    if (analyticsVisits.length > 0) {
       confidence += 0.35;
+      triggers.push({
+        type: "analytics_page_visited",
+        timestamp: new Date(),
+        data: { visitCount: analyticsVisits.length },
+      });
+    }
+
+    if (analyticsVisits.length >= this.MIN_VISITS) {
+      confidence += 0.1;
       triggers.push({
         type: "repeated_analytics_visits",
         timestamp: new Date(),
@@ -322,18 +341,24 @@ export class AnalyticsExplorationDetector implements PatternDetector {
     if (totalTimeOnAnalytics > this.MIN_TIME_THRESHOLD) {
       confidence += 0.30;
       triggers.push({
-        type: "extended_analytics_session",
+        type: "sufficient_time_spent",
         timestamp: new Date(),
         data: { totalTimeMs: totalTimeOnAnalytics },
       });
     }
 
     // 3. Filter/search actions on analytics page
-    const analyticsActions = recentActions?.filter(
-      (action) =>
-        (action.actionType === "click" || action.actionType === "search") &&
-        action.context?.page?.includes("analytics")
-    );
+    const analyticsActions = recentActions?.filter((action) => {
+      const isAnalyticsContext =
+        action.context?.page?.includes("analytics") ||
+        context.currentPage?.includes("analytics") ||
+        context.currentModule === "analytics";
+
+      return (
+        isAnalyticsContext &&
+        (action.actionType === "click" || action.actionType === "search")
+      );
+    });
 
     if (analyticsActions && analyticsActions.length > 3) {
       confidence += 0.20;
@@ -341,6 +366,21 @@ export class AnalyticsExplorationDetector implements PatternDetector {
         type: "analytics_interaction",
         timestamp: new Date(),
         data: { actionCount: analyticsActions.length },
+      });
+    }
+
+    const filterActions = analyticsActions?.filter(
+      (action) =>
+        (action.elementId && action.elementId.includes("filter")) ||
+        (action.elementLabel && action.elementLabel.toLowerCase().includes("filter"))
+    );
+
+    if (filterActions && filterActions.length > 0) {
+      confidence += 0.15;
+      triggers.push({
+        type: "filters_applied",
+        timestamp: new Date(),
+        data: { count: filterActions.length },
       });
     }
 
@@ -394,6 +434,7 @@ export class SearchBehaviorDetector implements PatternDetector {
 
   private readonly MIN_SEARCHES = 3;
   private readonly SEARCH_TIME_WINDOW = 180000; // 3 minutes
+  private readonly RAPID_SEARCH_THRESHOLD = 30000; // 30 seconds between searches
 
   detect(context: BehavioralContext): PatternDetectionResult | null {
     const { recentActions } = context;
@@ -498,12 +539,14 @@ export class SearchBehaviorDetector implements PatternDetector {
     const terms = new Set<string>();
 
     actions.forEach((action) => {
-      // We don't actually store search values for privacy
-      // This would extract them if we did
-      if (action.value && typeof action.value === "object") {
+      if (typeof action.value === "string") {
+        const term = action.value.trim();
+        if (term) {
+          terms.add(term.toLowerCase());
+        }
+      } else if (action.value && typeof action.value === "object") {
         const val = action.value as Record<string, unknown>;
         if (val.hasValue) {
-          // Placeholder - we just count unique searches
           terms.add(`search_${action.timestamp}`);
         }
       }
@@ -520,8 +563,8 @@ export class SearchBehaviorDetector implements PatternDetector {
         new Date(actions[i].timestamp).getTime() -
         new Date(actions[i - 1].timestamp).getTime();
 
-      if (timeDiff < 5000) {
-        // Less than 5 seconds between searches
+      if (timeDiff < this.RAPID_SEARCH_THRESHOLD) {
+        // Less than threshold between searches indicates rapid retries
         return true;
       }
     }
@@ -549,17 +592,35 @@ export class TaskCompletionDetector implements PatternDetector {
     const triggers: PatternTrigger[] = [];
     let confidence = 0;
 
-    // 1. Form submission detected
-    const formSubmissions = recentActions.filter(
-      (a) => a.actionType === "form_submit"
+    const visitedTodoPage = navigationHistory.some(
+      (nav) => nav.module === "todo" || nav.toPage.includes("/smart-plan")
     );
 
-    if (formSubmissions.length > 0) {
+    if (visitedTodoPage) {
+      confidence += 0.30;
+      triggers.push({
+        type: "todo_page_visited",
+        timestamp: new Date(),
+        data: { visitCount: navigationHistory.length },
+      });
+    }
+
+    // 1. Form submission detected
+    const completionActions = recentActions.filter(
+      (a) =>
+        a.actionType === "form_submit" ||
+        (a.actionType === "click" &&
+          (a.elementId?.includes("save") ||
+            a.elementId?.includes("complete") ||
+            a.elementId?.includes("submit")))
+    );
+
+    if (completionActions.length > 0) {
       confidence += 0.40;
       triggers.push({
         type: "form_submitted",
         timestamp: new Date(),
-        data: { count: formSubmissions.length },
+        data: { count: completionActions.length },
       });
     }
 
@@ -578,7 +639,7 @@ export class TaskCompletionDetector implements PatternDetector {
     // 3. Reasonable time spent (not rushed, not stuck)
     const avgTimePerPage = this.calculateAverageTimePerPage(navigationHistory);
 
-    if (avgTimePerPage > 10000 && avgTimePerPage < 120000) {
+    if (avgTimePerPage > 10000 && avgTimePerPage <= 120000) {
       // 10s to 2min
       confidence += 0.20;
       triggers.push({
@@ -610,7 +671,7 @@ export class TaskCompletionDetector implements PatternDetector {
         },
         triggers,
         metadata: {
-          formsSubmitted: formSubmissions.length,
+          formsSubmitted: completionActions.length,
           avgTimePerPage,
           backNavigations: backNavCount,
         },

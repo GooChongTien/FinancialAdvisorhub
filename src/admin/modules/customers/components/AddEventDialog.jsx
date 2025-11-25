@@ -280,7 +280,7 @@ export default function AddEventDialog({
 
           {formData.linked_lead_name && (
             <div className="space-y-2">
-              <Label>Linked Client</Label>
+              <Label>Linked Customer</Label>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                 <p className="text-sm font-medium text-slate-900">
                   {formData.linked_lead_name}

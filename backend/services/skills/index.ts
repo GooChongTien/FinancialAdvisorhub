@@ -6,14 +6,14 @@ export {
 } from "../../../supabase/functions/_shared/services/agents/agent-runner.ts";
 export type { AgentExecutionInput } from "../../../supabase/functions/_shared/services/agents/agent-runner.ts";
 // A2C starter-kit skill implementations (kept intact; we wrap them here)
-import type { Context as A2CContext, Envelope as A2CEnvelope } from "../../../docs/mira-agent-starter-kit-a2c/src/sdk/types.ts";
-import { system_help } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/system_help.ts";
-import { capture_update_data } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/capture_update_data.ts";
-import { case_overview } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/case_overview.ts";
-import { risk_nudge } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/risk_nudge.ts";
-import { prepare_meeting } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/prepare_meeting.ts";
-import { post_meeting_wrap } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/post_meeting_wrap.ts";
-import { sales_help_explicit } from "../../../docs/mira-agent-starter-kit-a2c/src/skills/sales_help_explicit.ts";
+import type { Context as A2CContext, Envelope as A2CEnvelope } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/sdk/types.ts";
+import { system_help } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/system_help.ts";
+import { capture_update_data } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/capture_update_data.ts";
+import { case_overview } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/case_overview.ts";
+import { risk_nudge } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/risk_nudge.ts";
+import { prepare_meeting } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/prepare_meeting.ts";
+import { post_meeting_wrap } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/post_meeting_wrap.ts";
+import { sales_help_explicit } from "../../../docs/archived/starter-kit-references/mira-agent-starter-kit-a2c/src/skills/sales_help_explicit.ts";
 
 export interface SkillContext {
   request: AgentChatRequest;

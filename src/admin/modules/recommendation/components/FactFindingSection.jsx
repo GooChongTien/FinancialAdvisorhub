@@ -822,7 +822,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
             stage="fact-finding"
             icon={GraduationCap}
             title="Customer Knowledge & Experience (CKA)"
-            description="Capture the client's qualifications and market exposure to support the CKA assessment."
+            description="Capture the customer's qualifications and market exposure to support the CKA assessment."
             badge={
               <Badge
                 variant={
@@ -886,7 +886,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
               <div>
                 <Label className="text-base font-semibold">Investment Experience</Label>
                 <p className="mb-2 text-sm text-slate-500">
-                  Select all investment products the client has previously engaged with.
+                  Select all investment products the customer has previously engaged with.
                 </p>
                 <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
                   {["Unit Trusts", "Bonds", "Equities", "Options/Derivatives", "N.A."].map((w) => {
@@ -945,7 +945,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
             stage="fact-finding"
             icon={TrendingUp}
             title="Risk Profiling Questionnaire (RPQ)"
-            description="Determine the client's investment profile to align product recommendations."
+            description="Determine the customer's investment profile to align product recommendations."
             badge={
               <Badge variant={formData.rpq.risk_band ? "success" : "secondary"}>
                 {formData.rpq.risk_band || "Pending"}
@@ -956,7 +956,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
               <div>
                 <Label className="text-base font-semibold">Investment Experience</Label>
                 <p className="mb-3 text-sm text-slate-500">
-                  How many years of investment experience does the client have?
+                  How many years of investment experience does the customer have?
                 </p>
                 <RadioGroup
                   value={formData.rpq.investment_years}
@@ -1014,7 +1014,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
               <div>
                 <Label className="text-base font-semibold">Investment Horizon</Label>
                 <p className="mb-3 text-sm text-slate-500">
-                  How long can the client hold their investments before needing the funds?
+                  How long can the customer hold their investments before needing the funds?
                 </p>
                 <RadioGroup
                   value={formData.rpq.hold_duration}
@@ -1043,7 +1043,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
               <div>
                 <Label className="text-base font-semibold">Financial Capacity</Label>
                 <p className="mb-3 text-sm text-slate-500">
-                  How long can the client finance the investment before needing funds back?
+                  How long can the customer finance the investment before needing funds back?
                 </p>
                 <RadioGroup
                   value={formData.rpq.finance_duration}
@@ -1072,7 +1072,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
               <div>
                 <Label className="text-base font-semibold">Asset Preference</Label>
                 <p className="mb-3 text-sm text-slate-500">
-                  What is the riskiest asset the client is comfortable holding?
+                  What is the riskiest asset the customer is comfortable holding?
                 </p>
                 <RadioGroup
                   value={formData.rpq.riskiest_assets}
@@ -1101,7 +1101,7 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
               <div>
                 <Label className="text-base font-semibold">Retirement Timeline</Label>
                 <p className="mb-3 text-sm text-slate-500">
-                  How many years does the client have until retirement?
+                  How many years does the customer have until retirement?
                 </p>
                 <RadioGroup
                   value={formData.rpq.retirement_years}

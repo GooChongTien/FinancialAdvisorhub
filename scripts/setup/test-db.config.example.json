@@ -1,0 +1,4 @@
+{
+  "connectionString": "postgresql://postgres:postgres@localhost:5432/advisorhub_test",
+  "ssl": false
+}

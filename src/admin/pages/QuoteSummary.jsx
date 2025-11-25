@@ -265,7 +265,7 @@ export default function QuoteSummary() {
                   Save Quote
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleShareQuote}>
-                  Share with Client
+                  Share with Customer
                 </Button>
                 <Button variant="ghost" className="w-full" onClick={handleNewQuote}>
                   New Quick Quote

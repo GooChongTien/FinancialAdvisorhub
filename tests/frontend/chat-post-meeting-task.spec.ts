@@ -48,9 +48,8 @@ test('Post meeting wrap creates a follow-up task after confirmation', async ({ p
   await expect(cardTitle).toHaveCount(0);
 
   // Navigate to ToDo list and look for the standard follow-up task
-  await page.goto(`${baseURL}/todo`);
+  await page.goto(`${baseURL}/smart-plan`);
   // The default title from the skill
   const title = 'Follow up with client (from last meeting)';
   await expect(page.getByText(title, { exact: false })).toBeVisible({ timeout: 15000 });
 });
-

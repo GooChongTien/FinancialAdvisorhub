@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@/admin/components/ui/alert";
+import { Button } from "@/admin/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/admin/components/ui/dialog";
 import { Input } from "@/admin/components/ui/input";
 import { Label } from "@/admin/components/ui/label";
-import { Button } from "@/admin/components/ui/button";
+import PageHeader from "@/admin/components/ui/page-header.jsx";
 import {
   Select,
   SelectContent,
@@ -12,16 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/admin/components/ui/select";
+import { CurrencySelector } from "@/admin/components/ui/CurrencySelector.jsx";
 import { Separator } from "@/admin/components/ui/separator";
 import { Switch } from "@/admin/components/ui/switch";
-import { Alert, AlertDescription } from "@/admin/components/ui/alert";
-import { User, Shield, Settings as SettingsIcon, Check, ArrowLeft } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/admin/components/ui/dialog";
-import PageHeader from "@/admin/components/ui/page-header.jsx";
-import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
 import { useToast } from "@/admin/components/ui/toast";
-import { useNavigate } from "react-router-dom";
+import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
 import { createPageUrl } from "@/admin/utils";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Check, Settings as SettingsIcon, Shield, User } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
@@ -46,6 +47,18 @@ export default function ProfileSettings() {
     currency: prefs.currency,
     two_fa_enabled: prefs.two_fa_enabled,
   });
+
+  const languageOptions = useMemo(
+    () => [
+      { code: "en", label: "English" },
+      { code: "zh", label: "Chinese (中文)" },
+      { code: "ms", label: "Malay (Bahasa Melayu)" },
+      { code: "ta", label: "Tamil" },
+      { code: "hi", label: "Hindi" },
+      { code: "es", label: "Spanish (Español)" },
+    ],
+    [],
+  );
 
   useEffect(() => {
     setPreferences({
@@ -140,7 +153,7 @@ export default function ProfileSettings() {
         if (me?.email) {
           showToast({ type: "info", title: "Email Notice", description: `A confirmation email will be sent to ${me.email}.` });
         }
-      } catch {}
+      } catch { }
       showToast({ type: "success", title: "Password Updated", description: "You will be signed out for security." });
       setShowPwdDialog(false);
       await adviseUAdminApi.auth.logout();
@@ -173,11 +186,15 @@ export default function ProfileSettings() {
       </Button>
 
       <div className="max-w-4xl mx-auto space-y-6">
-        <PageHeader
-          title="Profile Settings"
-          subtitle="Manage your account information and preferences"
-          icon={SettingsIcon}
-        />
+        {/* Sticky Header Section */}
+        <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200">
+          <PageHeader
+            title="Profile Settings"
+            subtitle="Manage your account information and preferences"
+            icon={SettingsIcon}
+            className="mb-0"
+          />
+        </div>
 
         {showSuccess && (
           <Alert className="bg-green-50 border-green-200">
@@ -268,9 +285,9 @@ export default function ProfileSettings() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const defaults = { ...preferences, language: "English", currency: "SGD" };
+                  const defaults = { ...preferences, language: "en", currency: "SGD" };
                   setPreferences(defaults);
-                  updatePrefs({ language: "English", currency: "SGD" });
+                  updatePrefs({ language: "en", currency: "SGD" });
                 }}
               >
                 Restore Defaults
@@ -337,32 +354,24 @@ export default function ProfileSettings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Chinese">Chinese</SelectItem>
-                    <SelectItem value="Malay">Malay</SelectItem>
-                    <SelectItem value="Tamil">Tamil</SelectItem>
+                    {languageOptions.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Currency</Label>
-                <Select
+                <CurrencySelector
                   value={preferences.currency}
-                  onValueChange={(value) => {
+                  onChange={(value) => {
                     const next = { ...preferences, currency: value };
                     setPreferences(next);
                     updatePrefs({ currency: value });
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SGD">SGD - Singapore Dollar</SelectItem>
-                    <SelectItem value="MYR">MYR - Malaysian Ringgit</SelectItem>
-                    <SelectItem value="USD">USD - US Dollar</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
             </div>
           </CardContent>

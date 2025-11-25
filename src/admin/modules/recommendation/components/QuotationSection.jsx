@@ -362,7 +362,7 @@ export default function QuotationSection({ proposal, onSave, isSaving }) {
     }
   };
   const emailIllustration = () => {
-    showToast({ type: "success", title: "Email queued", description: "Illustration will be emailed to the client." });
+    showToast({ type: "success", title: "Email queued", description: "Illustration will be emailed to the customer." });
   };
 
   const handleSave = () => {
@@ -1075,7 +1075,7 @@ export default function QuotationSection({ proposal, onSave, isSaving }) {
                     <Button variant="outline" onClick={downloadIllustration}>
                       <Download className="w-4 h-4 mr-2" /> Download PDF
                     </Button>
-                    <Button onClick={emailIllustration}>Email to Client</Button>
+                    <Button onClick={emailIllustration}>Email to Customer</Button>
                   </div>
                 </DialogContent>
               </Dialog>

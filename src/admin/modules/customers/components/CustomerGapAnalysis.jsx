@@ -30,6 +30,8 @@ import {
 } from "@/admin/components/ui/dialog";
 import { Badge } from "@/admin/components/ui/badge";
 import { Progress } from "@/admin/components/ui/progress";
+import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
+import { formatCurrency as formatCurrencyShared } from "@/lib/utils";
 
 // Icon mapping for restoring after localStorage
 const iconMap = {
@@ -80,7 +82,7 @@ export default function CustomerGapAnalysis({ lead }) {
     }
   }, [lead?.id]);
 
-  // Generate gap analysis based on client's FNA and existing coverage
+  // Generate gap analysis based on the customer's FNA and existing coverage
   const generateGapAnalysis = () => {
     setIsGenerating(true);
 
@@ -113,10 +115,12 @@ export default function CustomerGapAnalysis({ lead }) {
 
   // Calculate gap analysis
   const calculateGapAnalysis = () => {
-    // Get client data from localStorage
-    const clientData = JSON.parse(
-      localStorage.getItem(`client_${lead?.id}`) || "{}"
-    );
+    // Get customer data from localStorage (supports legacy client_* key for compatibility)
+    const customerRaw =
+      localStorage.getItem(`customer_${lead?.id}`) ||
+      localStorage.getItem(`client_${lead?.id}`) ||
+      "{}";
+    const customerData = JSON.parse(customerRaw);
     const fnaData = JSON.parse(
       localStorage.getItem(`fna_${lead?.id}`) || "{}"
     );
@@ -126,7 +130,7 @@ export default function CustomerGapAnalysis({ lead }) {
 
     const income = parseFloat(fnaData.monthly_income) || 50000;
     const dependents = parseInt(fnaData.number_of_dependents) || 2;
-    const age = calculateAge(clientData.date_of_birth) || 35;
+    const age = calculateAge(customerData.date_of_birth) || 35;
     const outstandingDebt =
       parseFloat(fnaData.total_outstanding_debt) || 200000;
 
@@ -236,7 +240,7 @@ export default function CustomerGapAnalysis({ lead }) {
     return {
       analysis_date: new Date().toISOString().split("T")[0],
       last_updated: new Date().toLocaleString(),
-      client_profile: {
+      customer_profile: {
         age,
         monthly_income: income,
         dependents,
@@ -429,15 +433,13 @@ export default function CustomerGapAnalysis({ lead }) {
     };
   };
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-SG", {
-      style: "currency",
-      currency: "SGD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const { prefs } = usePreferences?.() ?? { prefs: { currency: "SGD", language: "en" } };
+  // Format currency using advisor preference
+  const formatCurrency = (amount) =>
+    formatCurrencyShared(amount, {
+      currency: prefs?.currency || "SGD",
+      language: prefs?.language || "en",
+    });
 
   // Get status details
   const getStatusDetails = (status) => {
@@ -505,7 +507,7 @@ export default function CustomerGapAnalysis({ lead }) {
       );
     } else if (deliveryMethod === "email") {
       // Simulate email sending
-      alert(`Gap Analysis Report emailed to ${lead?.email || "client"}`);
+      alert(`Gap Analysis Report emailed to ${lead?.email || "customer"}`);
     }
     setShowReportDialog(false);
   };
@@ -528,7 +530,7 @@ export default function CustomerGapAnalysis({ lead }) {
               </h3>
               <p className="text-slate-600 mb-6">
                 Generate a comprehensive gap analysis to identify coverage
-                opportunities for {lead?.name || "this client"}
+                opportunities for {lead?.name || "this customer"}
               </p>
               <Button
                 onClick={generateGapAnalysis}
@@ -561,7 +563,7 @@ export default function CustomerGapAnalysis({ lead }) {
                 <Users className="w-5 h-5 text-primary-600 mt-0.5" />
                 <div>
                   <p className="font-medium text-slate-700">
-                    Client Information
+                    Customer Information
                   </p>
                   <p className="text-sm text-slate-600">
                     Age, income, dependents, and financial obligations
@@ -920,7 +922,7 @@ export default function CustomerGapAnalysis({ lead }) {
             >
               <div className="flex items-center gap-3">
                 <Share2 className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold">Share with Client</span>
+                <span className="font-semibold">Share with Customer</span>
               </div>
             </Button>
           </div>

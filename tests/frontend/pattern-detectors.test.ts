@@ -72,8 +72,8 @@ describe("Pattern Detectors", () => {
       expect(result?.pattern.patternType).toBe("proposal_creation");
       expect(result?.pattern.confidence).toBeGreaterThanOrEqual(0.85);
       const triggerTypes = result?.triggers.map(t => t.type) || [];
-      expect(triggerTypes).toContain("customer_page_visit");
-      expect(triggerTypes).toContain("proposal_page_visit");
+      expect(triggerTypes).toContain("customer_page_visited");
+      expect(triggerTypes).toContain("proposal_page_visited");
     });
 
     it("should not detect without customer page visit", () => {
@@ -407,14 +407,14 @@ describe("Pattern Detectors", () => {
 
     it("should detect task completion workflow", () => {
       const context: BehavioralContext = {
-        currentPage: "/todo",
+        currentPage: "/smart-plan",
         currentModule: "todo",
         pageData: {},
         navigationHistory: [
           {
             timestamp: new Date(Date.now() - 120000),
             fromPage: "/dashboard",
-            toPage: "/todo",
+            toPage: "/smart-plan",
             module: "todo",
             trigger: "click",
             timeSpent: 120000,

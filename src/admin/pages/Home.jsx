@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function resolveIntentFromPrompt(prompt, leadName) {
   if (detectComplianceIntentFromPrompt(prompt)) {
@@ -64,6 +65,7 @@ function resolveIntentFromPrompt(prompt, leadName) {
 export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { leads: leadDirectory } = useLeadDirectory();
   const { insights: globalInsights } = useMiraInsights();
@@ -287,26 +289,22 @@ export default function Home() {
   // Starter Conversation Buttons
   const starterPrompts = [
     {
-      title: "Customer Analysis",
-      description: "Show me my top customers by premium value",
+      key: "customerAnalysis",
       icon: Users,
       color: "bg-blue-50 text-blue-600",
     },
     {
-      title: "Sales Performance",
-      description: "What are my sales trends for this quarter?",
+      key: "salesPerformance",
       icon: TrendingUp,
       color: "bg-purple-50 text-purple-600",
     },
     {
-      title: "Pending Tasks",
-      description: "Show me my pending tasks and upcoming appointments",
+      key: "pendingTasks",
       icon: CheckSquare,
       color: "bg-green-50 text-green-600",
     },
     {
-      title: "Recommendations",
-      description: "Give me product recommendations for my customer base",
+      key: "recommendations",
       icon: Sparkles,
       color: "bg-orange-50 text-orange-600",
     },
@@ -321,10 +319,10 @@ export default function Home() {
             <Sparkles className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 md:text-4xl">
-            Chat with Mira
+            {t("home.title")}
           </h1>
           <p className="mx-auto max-w-lg text-lg text-slate-600">
-            Your AI insurance assistant is here to help with customers, analytics, tasks, and more.
+            {t("home.subtitle")}
           </p>
         </div>
 
@@ -332,18 +330,18 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {starterPrompts.map((item) => (
             <button
-              key={item.title}
-              onClick={() => handleCommandRun(item.description)}
+              key={item.key}
+              onClick={() => handleCommandRun(t(`home.prompts.${item.key}.prompt`))}
               className="group flex flex-col items-start rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
             >
               <div className={`mb-3 rounded-lg p-2 ${item.color}`}>
                 <item.icon className="h-5 w-5" />
               </div>
               <h3 className="font-semibold text-slate-900 group-hover:text-blue-600">
-                {item.title}
+                {t(`home.prompts.${item.key}.title`)}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                {item.description}
+                {t(`home.prompts.${item.key}.description`)}
               </p>
             </button>
           ))}
@@ -352,14 +350,14 @@ export default function Home() {
         {/* Chat Input */}
         <div className="mx-auto w-full max-w-2xl pt-4">
           <p className="mb-4 text-sm text-slate-500">
-            Try asking questions in natural language. I can help you navigate, analyze data, and complete tasks.
+            {t("home.hint")}
           </p>
           <MiraCommandPanel
             onSubmit={handleCommandRun}
             isRunning={isRunningCommand}
             isStreaming={isStreaming}
             onStopStreaming={stopStreaming}
-            placeholder="Ask Mira anything..."
+            placeholder={t("home.placeholder")}
             className="shadow-lg"
           />
         </div>

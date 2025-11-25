@@ -1,13 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
 import { supabase } from "@/admin/api/supabaseClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
-import { Button } from "@/admin/components/ui/button";
-import { Input } from "@/admin/components/ui/input";
-import { Label } from "@/admin/components/ui/label";
-import { Textarea } from "@/admin/components/ui/textarea";
 import { Badge } from "@/admin/components/ui/badge";
+import { Button } from "@/admin/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/admin/components/ui/dialog";
+import { Label } from "@/admin/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,105 +17,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/admin/components/ui/select";
+import { serviceRequestTypes } from "@/admin/modules/customers/constants/serviceRequestTypes.js";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/admin/components/ui/dialog";
-import {
-  FileText,
-  RefreshCw,
-  Shield,
-  DollarSign,
-  TrendingUp,
-  Upload,
-  Clock,
-  CheckCircle2,
   AlertCircle,
-  XCircle,
-  Send,
+  CheckCircle2,
+  Clock,
   Eye,
+  FileText,
   MessageSquare,
-  Plus,
+  Send,
+  XCircle
 } from "lucide-react";
-
-const serviceRequestTypes = [
-  {
-    id: "claim",
-    name: "Submit Claim",
-    icon: FileText,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-    description: "File a new insurance claim",
-    fields: ["claim_type", "incident_date", "claim_amount", "description", "documents"],
-  },
-  {
-    id: "renewal",
-    name: "Renew Policy",
-    icon: RefreshCw,
-    color: "text-green-600",
-    bgColor: "bg-green-50",
-    description: "Request policy renewal",
-    fields: ["policy_number", "renewal_date", "notes"],
-  },
-  {
-    id: "reinstate",
-    name: "Reinstate Policy",
-    icon: Shield,
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
-    description: "Reinstate lapsed policy",
-    fields: ["policy_number", "lapse_date", "reason", "payment_info"],
-  },
-  {
-    id: "fund_switch",
-    name: "Fund Switching",
-    icon: TrendingUp,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-    description: "Switch investment funds",
-    fields: ["policy_number", "from_fund", "to_fund", "switch_percentage"],
-  },
-  {
-    id: "premium_payment",
-    name: "Premium Payment",
-    icon: DollarSign,
-    color: "text-primary-600",
-    bgColor: "bg-primary-50",
-    description: "Make premium payment",
-    fields: ["policy_number", "payment_amount", "payment_method"],
-  },
-  {
-    id: "address_change",
-    name: "Address Change",
-    icon: FileText,
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
-    description: "Update contact address",
-    fields: ["new_address", "effective_date"],
-  },
-  {
-    id: "beneficiary_change",
-    name: "Beneficiary Change",
-    icon: FileText,
-    color: "text-pink-600",
-    bgColor: "bg-pink-50",
-    description: "Update policy beneficiaries",
-    fields: ["policy_number", "beneficiary_details", "reason"],
-  },
-  {
-    id: "other",
-    name: "Other Service Request",
-    icon: MessageSquare,
-    color: "text-slate-600",
-    bgColor: "bg-slate-50",
-    description: "General service request",
-    fields: ["subject", "description"],
-  },
-];
+import { useEffect, useMemo, useState } from "react";
 
 export default function CustomerServicing({ lead }) {
+  const filteredServiceTypes = useMemo(() => {
+    if (lead?.customer_type === "Entity") {
+      return serviceRequestTypes.filter(t => t.target === "entity" || ["other", "address_change", "premium_payment"].includes(t.id));
+    }
+    return serviceRequestTypes.filter(t => t.target !== "entity");
+  }, [lead?.customer_type]);
+
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
@@ -137,7 +62,7 @@ export default function CustomerServicing({ lead }) {
         () => queryClient.invalidateQueries(["service-requests", lead.id])
       )
       .subscribe();
-    return () => { try { supabase.removeChannel(channel); } catch {} };
+    return () => { try { supabase.removeChannel(channel); } catch { } };
   }, [lead?.id, queryClient]);
 
   const [requestForm, setRequestForm] = useState({
@@ -161,6 +86,8 @@ export default function CustomerServicing({ lead }) {
     lapse_date: "",
     payment_info: "",
     notes: "",
+    member_details: "",
+    rider_details: "",
   });
 
   const handleServiceClick = (service) => {
@@ -186,6 +113,8 @@ export default function CustomerServicing({ lead }) {
       lapse_date: "",
       payment_info: "",
       notes: "",
+      member_details: "",
+      rider_details: "",
     });
     setShowRequestDialog(true);
   };
@@ -196,7 +125,7 @@ export default function CustomerServicing({ lead }) {
     for (const key of required) {
       const val = requestForm[key];
       if (val === undefined || val === null || String(val).trim() === "") {
-        setFormError(`Please fill in: ${key.replaceAll("_"," ")}`);
+        setFormError(`Please fill in: ${key.replaceAll("_", " ")}`);
         return false;
       }
     }
@@ -214,7 +143,7 @@ export default function CustomerServicing({ lead }) {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!validateForm()) throw new Error("Validation failed");
-      const refNo = `SR-${new Date().toISOString().replace(/[-:TZ\\.]/g, "").slice(0,14)}`;
+      const refNo = `SR-${new Date().toISOString().replace(/[-:TZ\\.]/g, "").slice(0, 14)}`;
       const payload = {
         lead_id: lead.id,
         type: selectedService.id,
@@ -234,22 +163,29 @@ export default function CustomerServicing({ lead }) {
         const prof = await adviseUAdminApi.auth.me();
         const advisorEmail = prof?.email;
         if (advisorEmail) {
-          const body = `A new service request was submitted.\n\nClient: ${lead?.name || lead?.full_name || lead?.id}\nType: ${created?.type || selectedService?.id}\nRef: ${created?.payload?.ref_no || ''}\nPolicy: ${created?.policy_number || ''}\nSubmitted: ${new Date().toLocaleString()}`;
+          const body = `A new service request was submitted.\n\nCustomer: ${lead?.name || lead?.full_name || lead?.id}\nType: ${created?.type || selectedService?.id}\nRef: ${created?.payload?.ref_no || ''}\nPolicy: ${created?.policy_number || ''}\nSubmitted: ${new Date().toLocaleString()}`;
           await supabase.from("email_outbox").insert([{ to_email: advisorEmail, subject: `Service Request Submitted (${created?.payload?.ref_no || ''})`, body, template: "service_request_submitted", status: "queued" }]);
         }
       } catch (e) { }
-      // Attempt client email via Edge Function (uses service role within function)
+      // Attempt customer email via Edge Function (uses service role within function)
       try {
-        const clientEmail = lead?.email;
-        if (clientEmail) {
-          const clientBody = `Dear Client,\n\nYour service request has been submitted.\n\nType: ${created?.type || selectedService?.id}\nReference: ${created?.payload?.ref_no || ''}\nPolicy: ${created?.policy_number || ''}\nSubmitted: ${new Date().toLocaleString()}\n\nWe will contact you shortly.`;
-          await supabase.functions.invoke('email-sender', { body: { to_email: clientEmail, subject: `Your Service Request (${created?.payload?.ref_no || ''})`, body: clientBody, template: 'service_request_client' } });
+        const customerEmail = lead?.email;
+        if (customerEmail) {
+          const customerBody = `Dear Customer,\n\nYour service request has been submitted.\n\nType: ${created?.type || selectedService?.id}\nReference: ${created?.payload?.ref_no || ''}\nPolicy: ${created?.policy_number || ''}\nSubmitted: ${new Date().toLocaleString()}\n\nWe will contact you shortly.`;
+          await supabase.functions.invoke('email-sender', { body: { to_email: customerEmail, subject: `Your Service Request (${created?.payload?.ref_no || ''})`, body: customerBody, template: 'service_request_client' } });
         }
       } catch (e) { }
     },
   });
   const updateStatus = useMutation({
-    mutationFn: ({ id, status }) => adviseUAdminApi.entities.ServiceRequest.update(id, { status }),
+    mutationFn: ({ id, status, request }) => {
+      const history = Array.isArray(request?.payload?.status_history) ? request.payload.status_history : [];
+      const nextHistory = [...history, { status, changed_at: new Date().toISOString() }];
+      return adviseUAdminApi.entities.ServiceRequest.update(id, {
+        status,
+        payload: { ...(request?.payload ?? {}), status_history: nextHistory },
+      });
+    },
     onSuccess: () => queryClient.invalidateQueries(["service-requests", lead?.id]),
   });
 
@@ -293,8 +229,8 @@ export default function CustomerServicing({ lead }) {
     return req.status === filterStatus;
   });
 
-  // Get client's active policies
-  const clientPolicies = lead?.policies || [
+  // Get customer's active policies
+  const customerPolicies = lead?.policies || [
     { policy_number: "POL-12345", product_name: "LifeShield Plus" },
     { policy_number: "POL-67890", product_name: "InvestGrow Fund" },
   ];
@@ -311,7 +247,7 @@ export default function CustomerServicing({ lead }) {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {serviceRequestTypes.map((service) => (
+            {filteredServiceTypes.map((service) => (
               <button
                 key={service.id}
                 onClick={() => handleServiceClick(service)}
@@ -447,298 +383,13 @@ export default function CustomerServicing({ lead }) {
                     <SelectValue placeholder="Select policy" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clientPolicies.map((policy) => (
+                    {customerPolicies.map((policy) => (
                       <SelectItem key={policy.policy_number} value={policy.policy_number}>
                         {policy.policy_number} - {policy.product_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            )}
-
-            {selectedService?.fields.includes("claim_type") && (
-              <div className="space-y-2">
-                <Label>Claim Type *</Label>
-                <Select
-                  value={requestForm.claim_type}
-                  onValueChange={(val) =>
-                    setRequestForm({ ...requestForm, claim_type: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select claim type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hospitalization">Hospitalization</SelectItem>
-                    <SelectItem value="death">Death Claim</SelectItem>
-                    <SelectItem value="critical_illness">Critical Illness</SelectItem>
-                    <SelectItem value="disability">Disability</SelectItem>
-                    <SelectItem value="accident">Accident</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {selectedService?.fields.includes("incident_date") && (
-              <div className="space-y-2">
-                <Label>Incident Date *</Label>
-                <Input
-                  type="date"
-                  value={requestForm.incident_date}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, incident_date: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("claim_amount") && (
-              <div className="space-y-2">
-                <Label>Claim Amount *</Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={requestForm.claim_amount}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, claim_amount: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("from_fund") && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>From Fund *</Label>
-                  <Select
-                    value={requestForm.from_fund}
-                    onValueChange={(val) =>
-                      setRequestForm({ ...requestForm, from_fund: val })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fund" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="conservative">Conservative Fund</SelectItem>
-                      <SelectItem value="balanced">Balanced Fund</SelectItem>
-                      <SelectItem value="growth">Growth Fund</SelectItem>
-                      <SelectItem value="aggressive">Aggressive Fund</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>To Fund *</Label>
-                  <Select
-                    value={requestForm.to_fund}
-                    onValueChange={(val) =>
-                      setRequestForm({ ...requestForm, to_fund: val })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fund" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="conservative">Conservative Fund</SelectItem>
-                      <SelectItem value="balanced">Balanced Fund</SelectItem>
-                      <SelectItem value="growth">Growth Fund</SelectItem>
-                      <SelectItem value="aggressive">Aggressive Fund</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {selectedService?.fields.includes("switch_percentage") && (
-              <div className="space-y-2">
-                <Label>Switch Percentage</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={requestForm.switch_percentage}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, switch_percentage: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("payment_amount") && (
-              <div className="space-y-2">
-                <Label>Payment Amount *</Label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={requestForm.payment_amount}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, payment_amount: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("payment_method") && (
-              <div className="space-y-2">
-                <Label>Payment Method *</Label>
-                <Select
-                  value={requestForm.payment_method}
-                  onValueChange={(val) =>
-                    setRequestForm({ ...requestForm, payment_method: val })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {selectedService?.fields.includes("new_address") && (
-              <div className="space-y-2">
-                <Label>New Address *</Label>
-                <Textarea
-                  rows={3}
-                  value={requestForm.new_address}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, new_address: e.target.value })
-                  }
-                  placeholder="Enter your new address"
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("effective_date") && (
-              <div className="space-y-2">
-                <Label>Effective Date</Label>
-                <Input
-                  type="date"
-                  value={requestForm.effective_date}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, effective_date: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("beneficiary_details") && (
-              <div className="space-y-2">
-                <Label>Beneficiary Details *</Label>
-                <Textarea
-                  rows={4}
-                  value={requestForm.beneficiary_details}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, beneficiary_details: e.target.value })
-                  }
-                  placeholder="Provide details of new beneficiaries (Name, NRIC, Relationship, Percentage)"
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("renewal_date") && (
-              <div className="space-y-2">
-                <Label>Preferred Renewal Date</Label>
-                <Input
-                  type="date"
-                  value={requestForm.renewal_date}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, renewal_date: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("lapse_date") && (
-              <div className="space-y-2">
-                <Label>Lapse Date</Label>
-                <Input
-                  type="date"
-                  value={requestForm.lapse_date}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, lapse_date: e.target.value })
-                  }
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("payment_info") && (
-              <div className="space-y-2">
-                <Label>Payment Information</Label>
-                <Textarea
-                  rows={2}
-                  value={requestForm.payment_info}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, payment_info: e.target.value })
-                  }
-                  placeholder="Provide payment details for reinstatement"
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("subject") && (
-              <div className="space-y-2">
-                <Label>Subject *</Label>
-                <Input
-                  value={requestForm.subject}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, subject: e.target.value })
-                  }
-                  placeholder="Brief subject of your request"
-                />
-              </div>
-            )}
-
-            {(selectedService?.fields.includes("description") ||
-              selectedService?.fields.includes("reason") ||
-              selectedService?.fields.includes("notes")) && (
-              <div className="space-y-2">
-                <Label>
-                  {selectedService?.fields.includes("description")
-                    ? "Description"
-                    : selectedService?.fields.includes("reason")
-                    ? "Reason"
-                    : "Notes"}{" "}
-                  *
-                </Label>
-                <Textarea
-                  rows={5}
-                  value={
-                    requestForm.description ||
-                    requestForm.reason ||
-                    requestForm.notes
-                  }
-                  onChange={(e) => {
-                    if (selectedService?.fields.includes("description")) {
-                      setRequestForm({ ...requestForm, description: e.target.value });
-                    } else if (selectedService?.fields.includes("reason")) {
-                      setRequestForm({ ...requestForm, reason: e.target.value });
-                    } else {
-                      setRequestForm({ ...requestForm, notes: e.target.value });
-                    }
-                  }}
-                  placeholder="Provide detailed information..."
-                />
-              </div>
-            )}
-
-            {selectedService?.fields.includes("documents") && (
-              <div className="space-y-2">
-                <Label>Supporting Documents</Label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-                  <Upload className="w-8 h-8 mx-auto text-slate-400 mb-2" />
-                  <Input type="file" multiple className="max-w-xs mx-auto" />
-                  <p className="text-xs text-slate-500 mt-2">
-                    Upload relevant documents (medical reports, receipts, etc.)
-                  </p>
-                </div>
               </div>
             )}
 
@@ -774,7 +425,7 @@ export default function CustomerServicing({ lead }) {
                 <div>
                   <p className="text-sm text-slate-600">Request ID</p>
                   <p className="font-mono font-semibold">{selectedRequest.id}</p>
-                {selectedRequest.payload?.ref_no && (<p className="text-xs text-slate-500">Ref: {selectedRequest.payload.ref_no}</p>)}
+                  {selectedRequest.payload?.ref_no && (<p className="text-xs text-slate-500">Ref: {selectedRequest.payload.ref_no}</p>)}
                 </div>
                 <Badge
                   variant="outline"
@@ -788,7 +439,7 @@ export default function CustomerServicing({ lead }) {
               <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
                 <div>
                   <p className="text-xs text-slate-600">Request Type</p>
-                  <p className="font-semibold">{selectedrequest.type}</p>
+                  <p className="font-semibold">{selectedRequest.type}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-600">Created Date</p>
@@ -838,8 +489,35 @@ export default function CustomerServicing({ lead }) {
                 </div>
               )}
 
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-2">
+                  Status History
+                </p>
+                <div className="space-y-2">
+                  {(selectedRequest?.payload?.status_history || []).map((entry, idx) => (
+                    <div key={idx} className="flex items-center justify-between rounded border border-slate-200 px-3 py-2 text-sm">
+                      <span className="font-medium">{String(entry.status || "").replace("_", " ").toUpperCase()}</span>
+                      <span className="text-xs text-slate-500">
+                        {entry.changed_at ? new Date(entry.changed_at).toLocaleString() : "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex justify-end pt-4">
-                <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
+                <div className="flex gap-2">
+                  {["pending", "in_progress", "completed", "rejected"].map((status) => (
+                    <Button
+                      key={status}
+                      variant={selectedRequest.status === status ? "default" : "outline"}
+                      onClick={() => updateStatus.mutate({ id: selectedRequest.id, status, request: selectedRequest })}
+                    >
+                      {status.replace("_", " ").toUpperCase()}
+                    </Button>
+                  ))}
+                  <Button onClick={() => setShowDetailDialog(false)}>Close</Button>
+                </div>
               </div>
             </div>
           )}

@@ -1,21 +1,25 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/admin/components/ui/select";
+import { Badge } from "@/admin/components/ui/badge";
 import { Button } from "@/admin/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
-import { Badge } from "@/admin/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/admin/components/ui/select";
+import { createPageUrl } from "@/admin/utils";
 import {
-  Shield,
-  Heart,
   Activity,
-  Umbrella,
-  PiggyBank,
-  Sparkles,
-  Plane,
+  Building2,
   Check,
+  Heart,
+  PiggyBank,
+  Plane,
+  Shield,
+  Smile,
+  Sparkles,
+  Stethoscope,
+  Umbrella,
+  Users,
   X,
 } from "lucide-react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 const coverageTypes = [
   { type: "Hospitalisation", icon: Heart, color: "text-red-500" },
   { type: "Death", icon: Shield, color: "text-slate-700" },
@@ -27,21 +31,30 @@ const coverageTypes = [
   { type: "Lifestyle", icon: Sparkles, color: "text-pink-500" },
   { type: "Travel", icon: Plane, color: "text-primary-500" },
 ];
+
+const entityCoverageTypes = [
+  { type: "Term Life", icon: Users, color: "text-slate-700" },
+  { type: "Hospitalization", icon: Building2, color: "text-blue-600" },
+  { type: "Medical", icon: Stethoscope, color: "text-red-500" },
+  { type: "Outpatient Dental", icon: Smile, color: "text-cyan-500" },
+  { type: "Outpatient Clinical", icon: Activity, color: "text-green-500" },
+];
 export default function CustomerPortfolio({ lead, policies }) {
   const navigate = useNavigate();
+  const activeCoverageTypes = lead?.customer_type === "Entity" ? entityCoverageTypes : coverageTypes;
   const coveredTypes = new Set(policies.map((p) => p.coverage_type));
   const [sortBy, setSortBy] = React.useState("policyDate");
   const [sortDir, setSortDir] = React.useState("desc");
   const totals = React.useMemo(() => {
     const annualPremium = policies.reduce((sum, p) => {
-      const mult = ({ Monthly:12, Quarterly:4, 'Semi-Annual':2, Annual:1 }[p.premium_frequency] || 1);
-      return sum + ((Number(p.premium_amount)||0) * mult);
+      const mult = ({ Monthly: 12, Quarterly: 4, 'Semi-Annual': 2, Annual: 1 }[p.premium_frequency] || 1);
+      return sum + ((Number(p.premium_amount) || 0) * mult);
     }, 0);
-    const totalSumAssured = policies.reduce((sum, p) => sum + (Number(p.sum_assured)||0), 0);
+    const totalSumAssured = policies.reduce((sum, p) => sum + (Number(p.sum_assured) || 0), 0);
     const coveredCount = coveredTypes.size;
-    const uncoveredCount = Math.max(0, coverageTypes.length - coveredCount);
+    const uncoveredCount = Math.max(0, activeCoverageTypes.length - coveredCount);
     return { annualPremium, totalSumAssured, coveredCount, uncoveredCount };
-  }, [policies]);
+  }, [policies, activeCoverageTypes]);
 
   const sortedPolicies = React.useMemo(() => {
     const arr = [...policies];
@@ -97,11 +110,11 @@ export default function CustomerPortfolio({ lead, policies }) {
         <CardContent className="pt-6">
           {" "}
           <div className="mb-4 text-xs text-slate-600">
-            Covered: <span className="font-medium text-slate-900">{totals.coveredCount}</span> / {coverageTypes.length} types · Total Coverage: <span className="font-medium text-slate-900">${totals.totalSumAssured.toLocaleString()}</span>
+            Covered: <span className="font-medium text-slate-900">{totals.coveredCount}</span> / {activeCoverageTypes.length} types · Total Coverage: <span className="font-medium text-slate-900">${totals.totalSumAssured.toLocaleString()}</span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {" "}
-            {coverageTypes.map(({ type, icon: Icon, color }) => {
+            {activeCoverageTypes.map(({ type, icon: Icon, color }) => {
               const isCovered = coveredTypes.has(type);
               return (
                 <div
