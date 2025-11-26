@@ -31,8 +31,19 @@ function normalizeCurrency(value) {
   return upper;
 }
 
+function getStoredLanguage() {
+  try {
+    const stored = localStorage.getItem("preferred_language") || localStorage.getItem("i18nextLng");
+    const normalized = normalizeLanguage(stored);
+    return LANGUAGE_CODES.has(normalized) ? normalized : null;
+  } catch {
+    return null;
+  }
+}
+
 export function PreferencesProvider({ children }) {
   const queryClient = useQueryClient();
+  const appliedStoredLang = React.useRef(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["current-user"],
@@ -54,9 +65,19 @@ export function PreferencesProvider({ children }) {
     two_fa_enabled: Boolean(user?.two_fa_enabled),
   }), [user?.language, user?.currency, user?.two_fa_enabled]);
 
+  // Prefer any locally stored language (from the language switcher) before falling back to server prefs
+  useEffect(() => {
+    const storedLanguage = getStoredLanguage();
+    if (storedLanguage && storedLanguage !== i18n.language) {
+      appliedStoredLang.current = true;
+      i18n.changeLanguage(storedLanguage);
+    }
+  }, []);
+
   useEffect(() => {
     const desiredLanguage = prefs.language;
     if (!desiredLanguage) return;
+    if (appliedStoredLang.current) return;
     if (i18n.language !== desiredLanguage) {
       i18n.changeLanguage(desiredLanguage);
     }

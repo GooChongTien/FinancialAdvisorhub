@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/
 import { Skeleton } from "@/admin/components/ui/skeleton";
 import { Box, CheckCircle, Clock, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Bar,
     BarChart,
@@ -23,6 +24,7 @@ const COLORS = ["#3b82f6", "#f59e0b", "#a855f7", "#10b981"];
 
 export default function Servicing() {
     const { policies, loading } = useAnalyticsData();
+    const { t } = useTranslation();
 
     const kpis = useMemo(() => {
         // Mocking Servicing Data
@@ -81,7 +83,7 @@ export default function Servicing() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Total Requests</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.servicing.total")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.totalRequests}</p>
                                     <span className="text-xs font-medium text-green-600">+8%</span>
@@ -97,7 +99,7 @@ export default function Servicing() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Pending</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.servicing.pending")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.pendingRequests}</p>
                                     <span className="text-xs font-medium text-green-600">-12%</span>
@@ -113,7 +115,7 @@ export default function Servicing() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Avg. Resolution Time</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.servicing.avgResolution")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.avgResolutionTime} days</p>
                                     <span className="text-xs font-medium text-green-600">-15%</span>
@@ -129,7 +131,7 @@ export default function Servicing() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Satisfaction Rate</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.servicing.satisfaction")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.satisfactionRate}%</p>
                                     <span className="text-xs font-medium text-green-600">+3%</span>
@@ -148,8 +150,10 @@ export default function Servicing() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Service Request Trend</CardTitle>
-                            <p className="text-sm text-slate-500">Request volume over time</p>
+                            <CardTitle>{t("analytics.servicing.trendTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.servicing.trendSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -161,9 +165,9 @@ export default function Servicing() {
                                     <YAxis />
                                     <Tooltip />
                                     <Legend />
-                                    <Line type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} name="Created" />
-                                    <Line type="monotone" dataKey="pending" stroke="#f59e0b" strokeWidth={2} name="Pending" />
-                                    <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} name="Resolved" />
+                                    <Line type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} name={t("analytics.servicing.created")} />
+                                    <Line type="monotone" dataKey="pending" stroke="#f59e0b" strokeWidth={2} name={t("analytics.servicing.pending")} />
+                                    <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} name={t("analytics.servicing.resolved")} />
                                 </LineChart>
                             </ResponsiveContainer>
                         </div>
@@ -173,8 +177,10 @@ export default function Servicing() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Request Type Distribution</CardTitle>
-                            <p className="text-sm text-slate-500">Common service request types</p>
+                            <CardTitle>{t("analytics.servicing.typeTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.servicing.typeSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -208,8 +214,10 @@ export default function Servicing() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Request Status Overview</CardTitle>
-                            <p className="text-sm text-slate-500">Current status of all requests</p>
+                            <CardTitle>{t("analytics.servicing.statusTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.servicing.statusSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -220,7 +228,7 @@ export default function Servicing() {
                                     <XAxis dataKey="status" />
                                     <YAxis />
                                     <Tooltip />
-                                    <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Requests" />
+                                    <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} name={t("analytics.servicing.requests")} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -230,8 +238,10 @@ export default function Servicing() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Resolution Time Distribution</CardTitle>
-                            <p className="text-sm text-slate-500">How quickly requests are resolved</p>
+                            <CardTitle>{t("analytics.servicing.resolutionTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.servicing.resolutionSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -242,7 +252,7 @@ export default function Servicing() {
                                     <XAxis dataKey="range" />
                                     <YAxis />
                                     <Tooltip />
-                                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} name="Requests" />
+                                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} name={t("analytics.servicing.requests")} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

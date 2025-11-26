@@ -1,4 +1,5 @@
 import ChatPanelOverlay from "@/admin/components/mira/ChatPanelOverlay.jsx";
+import { SplitViewWrapper } from "@/admin/components/mira/SplitViewWrapper.jsx";
 import AdminPortalLayout from "@/admin/layout/AdminPortalLayout.jsx";
 import AdvisorPortalLayout from "@/admin/layout/AdvisorPortalLayout.jsx";
 import AllChats from "@/admin/pages/AllChats.jsx";
@@ -62,8 +63,12 @@ export default function App() {
               <Route path="advisors" element={<AdvisorManagement />} />
             </Route>
 
-            {/* Advisor Portal Routes */}
-            <Route path="/advisor" element={<AdvisorPortalLayout />}>
+            {/* Advisor Portal Routes - Wrapped with SplitViewWrapper for Cmd+K shortcut */}
+            <Route path="/advisor" element={
+              <SplitViewWrapper>
+                <AdvisorPortalLayout />
+              </SplitViewWrapper>
+            }>
               <Route index element={<Navigate to="/advisor/home" replace />} />
               <Route path="home" element={<Home />} />
               <Route path="customers" element={<Customer />} />

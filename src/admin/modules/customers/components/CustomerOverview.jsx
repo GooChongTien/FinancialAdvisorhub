@@ -112,19 +112,7 @@ export default function CustomerOverview({ lead }) {
     return [upcoming.sort(sortFn).slice(0, 5), past.sort(sortFn).slice(0, 5)];
   }, [leadAppointments]);
 
-  // Lead Status Logic - System Determined:
-  // 1. "Not Initiated" - No past appointments and no proposals
-  // 2. "Contacted" - Past appointments exist, but no active proposal
-  // 3. "Proposal" - Active proposal found
-  const systemDeterminedStatus = useMemo(() => {
-    if (inProgressProposal) {
-      return { status: "Proposal", reason: "Active proposal in progress" };
-    }
-    if (leadAppointments && leadAppointments.length > 0) {
-      return { status: "Contacted", reason: "Has scheduled appointments" };
-    }
-    return { status: "Not Initiated", reason: "No appointments or proposals yet" };
-  }, [inProgressProposal, leadAppointments]);
+
 
   const handleStartProposal = () => {
     navigate(createPageUrl(`NewBusiness?action=new&leadId=${lead.id}`));
@@ -139,41 +127,7 @@ export default function CustomerOverview({ lead }) {
   return (
     <div className="space-y-6">
       {" "}
-      {/* Lead Status (for non-customers) */}
-      {!lead.is_client && (
-        <Card className="shadow-lg border-slate-200">
-          <CardHeader className="border-b border-slate-100">
-            <CardTitle>Lead Status</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="rounded-lg bg-slate-50 border border-slate-200 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500 mb-1">Current Status</p>
-                  <p className="text-2xl font-bold text-slate-900">{systemDeterminedStatus.status}</p>
-                </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${systemDeterminedStatus.status === "Proposal" ? "bg-yellow-100 text-yellow-700" :
-                  systemDeterminedStatus.status === "Contacted" ? "bg-blue-100 text-blue-700" :
-                    "bg-slate-100 text-slate-700"
-                  }`}>
-                  {systemDeterminedStatus.status}
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 mt-3">
-                {systemDeterminedStatus.reason}
-              </p>
-            </div>
-            <div className="text-xs text-slate-500 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-              <p className="font-semibold text-blue-900 mb-1">Status is automatically determined:</p>
-              <ul className="space-y-1 ml-4 list-disc">
-                <li><strong>Not Initiated:</strong> No past appointments or proposals</li>
-                <li><strong>Contacted:</strong> Has appointments but no active proposal</li>
-                <li><strong>Proposal:</strong> Active proposal in progress</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {lead.customer_type === "Entity" ? (
         <CompanyDetailsCard

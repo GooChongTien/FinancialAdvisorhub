@@ -49,19 +49,14 @@ import {
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const READ_EVENT = "advisorhub:broadcast-read";
 const READ_STORAGE_PREFIX = "advisorhub:news-read";
 const LEGACY_READ_PREFIX = "advisorhub:broadcast-read";
 
-const categories = [
-  { id: "all", label: "All", icon: Radio },
-  { id: "Announcement", label: "Announcements", icon: Megaphone },
-  { id: "Training", label: "Training", icon: GraduationCap },
-  { id: "Campaign", label: "Campaigns", icon: TrendingUp },
-];
-
 export default function News() {
+  const { t } = useTranslation();
   const categoryStorageKey = "advisorhub:news-category";
   const [selectedCategory, setSelectedCategory] = useState(() => {
     if (typeof window === "undefined") return "all";
@@ -85,19 +80,32 @@ export default function News() {
   const regularBroadcasts = broadcasts.filter((b) => !(b.pinned || b.is_pinned));
   const { showToast } = useToast();
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
-  const [composeForm, setComposeForm] = useState({
-    title: "",
-    audience: "All Advisors",
-    category: "Announcement",
-    message: "",
-  });
+  const categories = useMemo(
+    () => [
+      { id: "all", label: t("news.categories.all"), icon: Radio },
+      { id: "Announcement", label: t("news.categories.announcement"), icon: Megaphone },
+      { id: "Training", label: t("news.categories.training"), icon: GraduationCap },
+      { id: "Campaign", label: t("news.categories.campaign"), icon: TrendingUp },
+    ],
+    [t],
+  );
+  const defaultComposeState = useCallback(
+    () => ({
+      title: "",
+      audience: t("news.composeForm.fields.audiencePlaceholder"),
+      category: "Announcement",
+      message: "",
+    }),
+    [t],
+  );
+  const [composeForm, setComposeForm] = useState(defaultComposeState);
   const composeMutation = useMutation({
     mutationFn: async (draft) => adviseUAdminApi.entities.Broadcast.create(draft),
     onSuccess: () => {
       showToast({
         type: "success",
-        title: "Draft saved",
-        description: "Your news draft is ready for review.",
+        title: t("news.toast.draftSavedTitle"),
+        description: t("news.toast.draftSavedDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["news"] }).catch(() => {});
       setComposeDialogOpen(false);
@@ -106,8 +114,8 @@ export default function News() {
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to save news item",
-        description: error instanceof Error ? error.message : "Please try again.",
+        title: t("news.toast.draftErrorTitle"),
+        description: error instanceof Error ? error.message : t("news.toast.genericError"),
       });
     },
   });
@@ -126,18 +134,13 @@ export default function News() {
   });
 
   const resetComposeForm = useCallback(() => {
-    setComposeForm({
-      title: "",
-      audience: "All Advisors",
-      category: "Announcement",
-      message: "",
-    });
-  }, []);
+    setComposeForm(defaultComposeState());
+  }, [defaultComposeState]);
 
   const submitComposeForm = () => {
     const draft = {
-      title: composeForm.title.trim() || "Untitled news",
-      audience: composeForm.audience || "All Advisors",
+      title: composeForm.title.trim() || t("news.composeForm.untitled"),
+      audience: composeForm.audience || t("news.composeForm.fields.audiencePlaceholder"),
       category: composeForm.category || "Announcement",
       content: composeForm.message.trim(),
       status: "draft",
@@ -259,18 +262,18 @@ export default function News() {
     onSuccess: (_, variables) => {
       showToast({
         type: "success",
-        title: variables.nextPinned ? "Pinned" : "Unpinned",
+        title: variables.nextPinned ? t("news.toast.pinnedTitle") : t("news.toast.unpinnedTitle"),
         description: variables.nextPinned
-          ? "News item pinned to the top."
-          : "News item moved to recent updates.",
+          ? t("news.toast.pinnedDesc")
+          : t("news.toast.unpinnedDesc"),
       });
       queryClient.invalidateQueries({ queryKey: ["news"] }).catch(() => {});
     },
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to update pin state",
-        description: error instanceof Error ? error.message : "Please try again.",
+        title: t("news.toast.pinErrorTitle"),
+        description: error instanceof Error ? error.message : t("news.toast.genericError"),
       });
     },
   });
@@ -307,15 +310,18 @@ export default function News() {
               <div className="mb-2 flex items-center gap-2">
                 {isPinned && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700 border border-primary-200">
-                    <Pin className="h-3 w-3" /> Pinned
+                    <Pin className="h-3 w-3" /> {t("news.pinned")}
                   </span>
                 )}
                 {!isRead(broadcast.id) && (
-                  <span title="Unread" className="inline-block h-2 w-2 rounded-full bg-primary-500" />
+                  <span
+                    title={t("news.actions.unread")}
+                    className="inline-block h-2 w-2 rounded-full bg-primary-500"
+                  />
                 )}
                 <Badge className={getCategoryColor(broadcast.category)}>
                   <CategoryIcon className="mr-1 h-3 w-3" />
-                  {broadcast.category}
+                  {categories.find((c) => c.id === broadcast.category)?.label || broadcast.category}
                 </Badge>
               </div>
               <CardTitle className="text-xl text-foreground-primary group-hover:text-primary-600 transition-colors">
@@ -326,7 +332,7 @@ export default function News() {
                 <span>
                   {broadcast.published_date
                     ? format(new Date(broadcast.published_date), "MMM d, yyyy h:mm a")
-                    : "Draft"}
+                    : t("news.status.draft")}
                 </span>
               </div>
             </div>
@@ -339,12 +345,12 @@ export default function News() {
                   pinMutation.mutate({ id: broadcast.id, nextPinned: !broadcast.pinned });
                 }}
                 disabled={pinMutation.isPending}
-                title={broadcast.pinned ? "Unpin" : "Pin to top"}
+                title={broadcast.pinned ? t("news.actions.unpin") : t("news.actions.pin")}
               >
                 {broadcast.pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
               </Button>
               <span className="hidden sm:inline-flex items-center text-primary-600 font-medium">
-                Read more
+                {t("news.actions.readMore")}
               </span>
             </div>
           </div>
@@ -363,13 +369,13 @@ export default function News() {
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200 space-y-6">
           <PageHeader
-            title="Newsroom"
-            subtitle="Stay updated with the latest news, trainings, and campaigns"
+            title={t("news.feedTitle")}
+            subtitle={t("news.feedSubtitle")}
             icon={Newspaper}
             className="mb-0"
             actions={
               <Button variant="ghost" size="sm" onClick={markAllVisibleAsRead}>
-                Mark visible as read
+                {t("news.actions.markVisible")}
               </Button>
             }
           />
@@ -377,7 +383,7 @@ export default function News() {
           <SearchFilterBar
             searchValue={search}
             onSearchChange={setSearch}
-            placeholder="Search news..."
+            placeholder={t("news.searchPlaceholder")}
             filterButton={
               <Popover>
                 <PopoverTrigger asChild>
@@ -385,7 +391,7 @@ export default function News() {
                     variant={selectedCategory !== "all" ? "default" : "outline"}
                     size="icon"
                     className={selectedCategory !== "all" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                    title="Filter"
+                    title={t("news.filters.button")}
                   >
                     <FilterIcon className="h-4 w-4" />
                   </Button>
@@ -393,7 +399,9 @@ export default function News() {
                 <PopoverContent className="w-64">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Category</h4>
+                      <h4 className="font-semibold text-sm text-slate-900 mb-3">
+                        {t("news.filters.title")}
+                      </h4>
                       <div className="space-y-2">
                         {categories.map((category) => {
                           const Icon = category.icon;
@@ -427,35 +435,35 @@ export default function News() {
                     variant={sortBy !== "date-desc" ? "default" : "outline"}
                     size="icon"
                     className={sortBy !== "date-desc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                    title="Sort"
+                    title={t("news.sort.button")}
                   >
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56">
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
+                    <h4 className="font-semibold text-sm text-slate-900 mb-3">{t("news.sort.title")}</h4>
                     <div className="space-y-2">
                       <Button
                         variant={sortBy === "date-desc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("date-desc")}
                       >
-                        Newest First
+                        {t("news.sort.newest")}
                       </Button>
                       <Button
                         variant={sortBy === "date-asc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("date-asc")}
                       >
-                        Oldest First
+                        {t("news.sort.oldest")}
                       </Button>
                       <Button
                         variant={sortBy === "title-asc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("title-asc")}
                       >
-                        Title (A-Z)
+                        {t("news.sort.titleAsc")}
                       </Button>
                     </div>
                   </div>
@@ -468,7 +476,7 @@ export default function News() {
                 onClick={() => setComposeDialogOpen(true)}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Compose
+                {t("news.actions.compose")}
               </Button>
             }
           />
@@ -490,7 +498,7 @@ export default function News() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary-600" />
-                  <h2 className="text-lg font-semibold text-slate-900">Pinned News</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">{t("news.sections.pinned")}</h2>
                 </div>
                 {visiblePinned.map((broadcast) => (
                   <BroadcastCard key={broadcast.id} broadcast={broadcast} isPinned />
@@ -501,7 +509,9 @@ export default function News() {
             {filteredBroadcasts.length > 0 && (
               <div className="space-y-4">
                 {visiblePinned.length > 0 && (
-                  <h2 className="mt-8 text-lg font-semibold text-slate-900">Recent Updates</h2>
+                  <h2 className="mt-8 text-lg font-semibold text-slate-900">
+                    {t("news.sections.recent")}
+                  </h2>
                 )}
                 {filteredBroadcasts.map((broadcast) => (
                   <BroadcastCard key={broadcast.id} broadcast={broadcast} />
@@ -513,8 +523,8 @@ export default function News() {
               <Card className="shadow-lg">
                 <CardContent className="p-12 text-center">
                   <Newspaper className="mx-auto mb-4 h-16 w-16 text-slate-300" />
-                  <h3 className="mb-2 text-lg font-semibold text-slate-900">No news yet</h3>
-                  <p className="text-slate-500">Check back later for updates</p>
+                  <h3 className="mb-2 text-lg font-semibold text-slate-900">{t("news.empty.title")}</h3>
+                  <p className="text-slate-500">{t("news.empty.body")}</p>
                 </CardContent>
               </Card>
             )}
@@ -530,56 +540,56 @@ export default function News() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Create News</DialogTitle>
+              <DialogTitle>{t("news.composeForm.title")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700" htmlFor="news-title">
-                  Title
+                  {t("news.composeForm.fields.title")}
                 </label>
                 <Input
                   id="news-title"
                   value={composeForm.title}
                   onChange={(e) => setComposeForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Enter news title"
+                  placeholder={t("news.composeForm.fields.titlePlaceholder")}
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700" htmlFor="news-audience">
-                  Audience
+                  {t("news.composeForm.fields.audience")}
                 </label>
                 <Input
                   id="news-audience"
                   value={composeForm.audience}
                   onChange={(e) => setComposeForm((prev) => ({ ...prev, audience: e.target.value }))}
-                  placeholder="All Advisors"
+                  placeholder={t("news.composeForm.fields.audiencePlaceholder")}
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Category</label>
+                <label className="text-sm font-medium text-slate-700">{t("news.composeForm.fields.category")}</label>
                 <Select
                   value={composeForm.category}
                   onValueChange={(value) => setComposeForm((prev) => ({ ...prev, category: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t("news.composeForm.fields.categoryPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Announcement">Announcement</SelectItem>
-                    <SelectItem value="Training">Training</SelectItem>
-                    <SelectItem value="Campaign">Campaign</SelectItem>
+                    <SelectItem value="Announcement">{t("news.announcement")}</SelectItem>
+                    <SelectItem value="Training">{t("news.training")}</SelectItem>
+                    <SelectItem value="Campaign">{t("news.campaign")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700" htmlFor="news-message">
-                  Message
+                  {t("news.composeForm.fields.message")}
                 </label>
                 <Textarea
                   id="news-message"
                   value={composeForm.message}
                   onChange={(e) => setComposeForm((prev) => ({ ...prev, message: e.target.value }))}
-                  placeholder="Write your news update..."
+                  placeholder={t("news.composeForm.fields.messagePlaceholder")}
                   rows={6}
                 />
               </div>
@@ -592,14 +602,14 @@ export default function News() {
                   resetComposeForm();
                 }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 className="bg-primary-600 text-white hover:bg-primary-700"
                 onClick={submitComposeForm}
                 disabled={isSavingDraft}
               >
-                {isSavingDraft ? "Saving..." : "Save Draft"}
+                {isSavingDraft ? t("news.composeForm.saving") : t("news.composeForm.save")}
               </Button>
             </DialogFooter>
           </DialogContent>

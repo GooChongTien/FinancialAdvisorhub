@@ -26,6 +26,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, isToday, parseISO, startOfDay, startOfMonth, startOfWeek, subMonths } from "date-fns";
 import { ArrowUpDown, Cake, Calendar, CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Clock, Download, Filter, List, Plus, Undo2, User } from "lucide-react";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 const VIEW_MODE_STORAGE_KEY = "advisorhub:smart-plan-view-mode";
@@ -43,6 +44,7 @@ export default function SmartPlan() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   // Main view mode: "list" or "calendar"
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window === "undefined") return "list";
@@ -263,12 +265,12 @@ export default function SmartPlan() {
           const dateStr = format(dt, 'yyyy-MM-dd');
           items.push({
             id: `birthday:${lead.id}:${dateStr}`,
-            title: `Birthday: ${lead.name}`,
+            title: t("smartPlan.main.synthetic.birthday", { name: lead.name }),
             type: 'Task',
             date: dateStr,
             linked_lead_id: lead.id,
             linked_lead_name: lead.name,
-            notes: 'Wish customer happy birthday',
+            notes: t("smartPlan.main.synthetic.wish"),
             synthetic: 'birthday',
           });
         }
@@ -304,11 +306,11 @@ export default function SmartPlan() {
       queryClient.invalidateQueries(['tasks']);
       setShowAddEventDialog(false);
       setIsCreatingEvent(false);
-      showToast({ type: 'success', title: 'Event Created', description: 'Your event has been added successfully.' });
+      showToast({ type: 'success', title: t("smartPlan.main.toasts.eventCreated"), description: t("smartPlan.main.toasts.eventCreatedDesc") });
     },
     onError: (error) => {
       setIsCreatingEvent(false);
-      showToast({ type: 'error', title: 'Failed to create event', description: error?.message || 'Please try again.' });
+      showToast({ type: 'error', title: t("smartPlan.main.toasts.createFailed"), description: error?.message || t("smartPlan.main.toasts.tryAgain") });
     },
   });
 
@@ -318,10 +320,10 @@ export default function SmartPlan() {
       queryClient.invalidateQueries(['tasks']);
       setShowEditDialog(false);
       setSelectedEvent(null);
-      showToast({ type: 'success', title: 'Event Updated', description: 'Your changes have been saved.' });
+      showToast({ type: 'success', title: t("smartPlan.main.toasts.eventUpdated"), description: t("smartPlan.main.toasts.eventUpdatedDesc") });
     },
     onError: (error) => {
-      showToast({ type: 'error', title: 'Failed to update event', description: error?.message || 'Please try again.' });
+      showToast({ type: 'error', title: t("smartPlan.main.toasts.updateFailed"), description: error?.message || t("smartPlan.main.toasts.tryAgain") });
     },
   });
 
@@ -333,10 +335,10 @@ export default function SmartPlan() {
       setEventToDelete(null);
       setShowDetailDrawer(false);
       setDetailTask(null);
-      showToast({ type: 'success', title: 'Event Deleted', description: 'The event has been removed.' });
+      showToast({ type: 'success', title: t("smartPlan.main.toasts.eventDeleted"), description: t("smartPlan.main.toasts.eventDeletedDesc") });
     },
     onError: (error) => {
-      showToast({ type: 'error', title: 'Failed to delete event', description: error?.message || 'Please try again.' });
+      showToast({ type: 'error', title: t("smartPlan.main.toasts.deleteFailed"), description: error?.message || t("smartPlan.main.toasts.tryAgain") });
     },
   });
 
@@ -476,8 +478,8 @@ export default function SmartPlan() {
     setCalendarConnections((prev) => ({ ...prev, [provider]: true }));
     showToast({
       type: 'success',
-      title: `${provider === 'google' ? 'Google' : provider === 'outlook' ? 'Outlook' : 'Apple'} connected`,
-      description: `Sync mode: ${connectForm.syncMode === "two-way" ? "Two-way" : "One-way (pull)"}. (Simulated)`,
+      title: t("smartPlan.main.toasts.connected", { provider: provider === 'google' ? 'Google' : provider === 'outlook' ? 'Outlook' : 'Apple' }),
+      description: t("smartPlan.main.toasts.syncModeDesc", { mode: connectForm.syncMode === "two-way" ? "Two-way" : "One-way (pull)" }),
     });
     setShowConnectDialog(false);
   };
@@ -587,16 +589,16 @@ export default function SmartPlan() {
       queryClient.invalidateQueries(["proposals"]);
       showToast({
         type: "success",
-        title: "Draft proposal created",
-        description: "We detected intent and started a proposal draft.",
+        title: t("smartPlan.main.toasts.proposalCreated"),
+        description: t("smartPlan.main.toasts.proposalCreatedDesc"),
       });
       navigate(createPageUrl(`ProposalDetail?id=${proposal.id}`));
     },
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Proposal creation failed",
-        description: error?.message || "Unable to create proposal from task intent.",
+        title: t("smartPlan.main.toasts.proposalFailed"),
+        description: error?.message || t("smartPlan.main.toasts.proposalFailedDesc"),
       });
     },
   });
@@ -619,8 +621,8 @@ export default function SmartPlan() {
     if (existing) {
       showToast({
         type: "info",
-        title: "Existing draft found",
-        description: "Opening the current in-progress proposal.",
+        title: t("smartPlan.main.toasts.existingDraft"),
+        description: t("smartPlan.main.toasts.existingDraftDesc"),
       });
       navigate(createPageUrl(`ProposalDetail?id=${existing.id}`));
       return;
@@ -726,7 +728,8 @@ export default function SmartPlan() {
     URL.revokeObjectURL(link.href);
 
     setShowExportDialog(false);
-    showToast({ type: 'success', title: 'Calendar Exported', description: 'ICS file downloaded successfully.' });
+    setShowExportDialog(false);
+    showToast({ type: 'success', title: t("smartPlan.main.toasts.calendarExported"), description: t("smartPlan.main.toasts.icsDownloaded") });
   };
 
   const escapeICS = (str) => {
@@ -880,7 +883,7 @@ export default function SmartPlan() {
             onClick={() => setCurrentMonth(new Date())}
             className="hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 font-medium"
           >
-            Today
+            {t("smartPlan.main.calendar.today")}
           </Button>
           <Button
             variant="outline"
@@ -926,7 +929,7 @@ export default function SmartPlan() {
           {/* All-day events */}
           {allDayEvents.length > 0 && (
             <div className="border-b border-slate-200 p-3 bg-slate-50">
-              <p className="text-xs font-semibold text-slate-600 mb-2">ALL DAY</p>
+              <p className="text-xs font-semibold text-slate-600 mb-2">{t("smartPlan.main.calendar.allDay")}</p>
               <div className="space-y-1">
                 {allDayEvents.map(task => (
                   <div
@@ -999,7 +1002,15 @@ export default function SmartPlan() {
       day = addDays(day, 1);
     }
 
-    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const weekDays = [
+      t("smartPlan.main.calendar.days.sunday"),
+      t("smartPlan.main.calendar.days.monday"),
+      t("smartPlan.main.calendar.days.tuesday"),
+      t("smartPlan.main.calendar.days.wednesday"),
+      t("smartPlan.main.calendar.days.thursday"),
+      t("smartPlan.main.calendar.days.friday"),
+      t("smartPlan.main.calendar.days.saturday")
+    ];
 
     return (
       <Card className="border-slate-200 shadow-lg">
@@ -1087,7 +1098,7 @@ export default function SmartPlan() {
                     })}
                     {dayTasks.length > 3 && (
                       <div className="text-xs text-slate-500 text-center pt-1 font-medium">
-                        +{dayTasks.length - 3} more
+                        {t("smartPlan.main.calendar.more", { count: dayTasks.length - 3 })}
                       </div>
                     )}
                   </div>
@@ -1128,7 +1139,7 @@ export default function SmartPlan() {
       <Card className="border-slate-200 shadow-lg">
         <CardHeader className="border-b border-slate-100 bg-slate-50">
           <CardTitle className="text-lg font-semibold">
-            Week of {format(weekStart, 'MMMM d')} - {format(addDays(weekStart, 6), 'MMMM d, yyyy')}
+            {t("smartPlan.main.calendar.weekHeader", { start: format(weekStart, 'MMMM d'), end: format(addDays(weekStart, 6), 'MMMM d, yyyy') })}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -1136,7 +1147,7 @@ export default function SmartPlan() {
           <div className="border-b border-slate-200 bg-slate-50">
             <div className="flex">
               <div className="w-20 flex-shrink-0 p-2 text-right border-r border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">ALL DAY</span>
+                <span className="text-xs text-slate-500 font-medium">{t("smartPlan.main.calendar.allDay")}</span>
               </div>
               <div className="flex-1 grid grid-cols-7">
                 {days.map((day, index) => {
@@ -1242,14 +1253,14 @@ export default function SmartPlan() {
         {/* Sticky Header Section */}
         <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200 space-y-6">
           <PageHeader
-            title="Smart Plan"
-            subtitle="Plan every follow-up with AI-powered tasks & appointments"
+            title={t("smartPlan.main.title")}
+            subtitle={t("smartPlan.main.subtitle")}
             icon={Calendar}
             className="mb-0"
             actions={(
               <Button onClick={() => setShowAddEventDialog(true)} className="!bg-primary-600 !text-white hover:!bg-primary-700">
                 <Plus className="w-4 h-4 mr-2" />
-                New Event
+                {t("smartPlan.main.newEvent")}
               </Button>
             )}
           />
@@ -1265,7 +1276,7 @@ export default function SmartPlan() {
                     variant={filters.eventType !== "all" || filters.linkedClient !== "all" || activeFilter !== "all" || showBirthdays || !showCompleted ? "default" : "outline"}
                     size="icon"
                     className={filters.eventType !== "all" || filters.linkedClient !== "all" || activeFilter !== "all" || showBirthdays || !showCompleted ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                    title="Filter"
+                    title={t("smartPlan.main.filters.title")}
                   >
                     <Filter className="h-4 w-4" />
                   </Button>
@@ -1273,7 +1284,7 @@ export default function SmartPlan() {
                 <PopoverContent className="w-80">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-sm text-slate-900">Filters</h4>
+                      <h4 className="font-semibold text-sm text-slate-900">{t("smartPlan.main.filters.title")}</h4>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1284,50 +1295,50 @@ export default function SmartPlan() {
                           setShowCompleted(true);
                         }}
                       >
-                        Clear All
+                        {t("smartPlan.main.filters.clearAll")}
                       </Button>
                     </div>
 
                     {/* Time Range */}
                     <div>
-                      <Label className="text-xs font-semibold text-slate-700 mb-2">Time Range</Label>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">{t("smartPlan.main.filters.timeRange")}</Label>
                       <Select value={activeFilter} onValueChange={setActiveFilter}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="today">Today</SelectItem>
-                          <SelectItem value="week">This Week</SelectItem>
-                          <SelectItem value="month">This Month</SelectItem>
-                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="today">{t("smartPlan.main.filters.options.today")}</SelectItem>
+                          <SelectItem value="week">{t("smartPlan.main.filters.options.week")}</SelectItem>
+                          <SelectItem value="month">{t("smartPlan.main.filters.options.month")}</SelectItem>
+                          <SelectItem value="all">{t("smartPlan.main.filters.options.all")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {/* Event Type */}
                     <div>
-                      <Label className="text-xs font-semibold text-slate-700 mb-2">Event Type</Label>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">{t("smartPlan.main.filters.eventType")}</Label>
                       <Select value={filters.eventType} onValueChange={(val) => setFilters({ ...filters, eventType: val })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="Appointment">Appointment</SelectItem>
-                          <SelectItem value="Task">Task</SelectItem>
+                          <SelectItem value="all">{t("smartPlan.main.filters.options.allTypes")}</SelectItem>
+                          <SelectItem value="Appointment">{t("smartPlan.main.filters.options.appointment")}</SelectItem>
+                          <SelectItem value="Task">{t("smartPlan.main.filters.options.task")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {/* Linked Customer */}
                     <div>
-                      <Label className="text-xs font-semibold text-slate-700 mb-2">Customer</Label>
+                      <Label className="text-xs font-semibold text-slate-700 mb-2">{t("smartPlan.main.filters.customer")}</Label>
                       <Select value={filters.linkedClient} onValueChange={(val) => setFilters({ ...filters, linkedClient: val })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Customers</SelectItem>
+                          <SelectItem value="all">{t("smartPlan.main.filters.options.allCustomers")}</SelectItem>
                           {Array.from(new Set((leads || []).map((l) => l.name).filter(Boolean)))
                             .sort((a, b) => a.localeCompare(b))
                             .map((name) => (
@@ -1342,14 +1353,14 @@ export default function SmartPlan() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Cake className="w-4 h-4 text-pink-600" />
-                          <Label className="text-sm text-slate-700">Show Birthdays</Label>
+                          <Label className="text-sm text-slate-700">{t("smartPlan.main.filters.showBirthdays")}</Label>
                         </div>
                         <Switch checked={showBirthdays} onCheckedChange={setShowBirthdays} />
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-green-600" />
-                          <Label className="text-sm text-slate-700">Show Completed</Label>
+                          <Label className="text-sm text-slate-700">{t("smartPlan.main.filters.showCompleted")}</Label>
                         </div>
                         <Switch checked={showCompleted} onCheckedChange={setShowCompleted} />
                       </div>
@@ -1365,42 +1376,42 @@ export default function SmartPlan() {
                     variant={sortBy !== "date-asc" ? "default" : "outline"}
                     size="icon"
                     className={sortBy !== "date-asc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                    title="Sort"
+                    title={t("smartPlan.main.sort.title")}
                   >
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56">
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
+                    <h4 className="font-semibold text-sm text-slate-900 mb-3">{t("smartPlan.main.sort.title")}</h4>
                     <div className="space-y-2">
                       <Button
                         variant={sortBy === "date-asc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("date-asc")}
                       >
-                        Date (Earliest First)
+                        {t("smartPlan.main.sort.dateAsc")}
                       </Button>
                       <Button
                         variant={sortBy === "date-desc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("date-desc")}
                       >
-                        Date (Latest First)
+                        {t("smartPlan.main.sort.dateDesc")}
                       </Button>
                       <Button
                         variant={sortBy === "title-asc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("title-asc")}
                       >
-                        Title (A-Z)
+                        {t("smartPlan.main.sort.titleAsc")}
                       </Button>
                       <Button
                         variant={sortBy === "type" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("type")}
                       >
-                        By Type
+                        {t("smartPlan.main.sort.type")}
                       </Button>
                     </div>
                   </div>
@@ -1417,7 +1428,7 @@ export default function SmartPlan() {
                     onClick={() => setViewMode('list')}
                     className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
                   >
-                    <List className="w-4 h-4" /> List
+                    <List className="w-4 h-4" /> {t("smartPlan.main.viewMode.list")}
                   </button>
                   <button
                     type="button"
@@ -1425,7 +1436,7 @@ export default function SmartPlan() {
                     onClick={() => setViewMode('calendar')}
                     className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${viewMode === 'calendar' ? 'bg-primary-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
                   >
-                    <CalendarIcon className="w-4 h-4" /> Calendar
+                    <CalendarIcon className="w-4 h-4" /> {t("smartPlan.main.viewMode.calendar")}
                   </button>
                 </div>
 
@@ -1434,7 +1445,7 @@ export default function SmartPlan() {
                   variant="outline"
                   onClick={() => setShowConnectDialog(true)}
                 >
-                  Connect Your Calendar
+                  {t("smartPlan.main.connectCalendar.button")}
                 </Button>
               </div>
             )}
@@ -1448,14 +1459,14 @@ export default function SmartPlan() {
         {showUndoToast && lastMove && (
           <Alert className="bg-slate-900 text-white border-0 fixed bottom-8 right-8 w-auto max-w-md shadow-2xl z-50 rounded-2xl">
             <AlertDescription className="flex items-center gap-4 p-2">
-              <span className="font-medium">Event moved to {format(parseISO(lastMove.newDate), 'MMM d, yyyy')}</span>
+              <span className="font-medium">{t("smartPlan.main.toasts.eventMoved", { date: format(parseISO(lastMove.newDate), 'MMM d, yyyy') })}</span>
               <Button
                 size="sm"
                 onClick={handleUndo}
                 className="bg-white text-slate-900 hover:bg-slate-100 font-semibold rounded-lg"
               >
                 <Undo2 className="w-4 h-4 mr-2" />
-                Undo
+                {t("smartPlan.main.toasts.undo")}
               </Button>
             </AlertDescription>
           </Alert>
@@ -1481,9 +1492,9 @@ export default function SmartPlan() {
                       <CalendarIcon className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-blue-900 mb-1">Pro Tips</h4>
+                      <h4 className="font-semibold text-blue-900 mb-1">{t("smartPlan.main.proTips.title")}</h4>
                       <p className="text-sm text-blue-800">
-                        <strong>Drag & drop</strong> events to reschedule • <strong>Click</strong> any event to view details • <strong>Check the box</strong> to mark tasks complete
+                        {t("smartPlan.main.proTips.content")}
                       </p>
                     </div>
                   </div>
@@ -1497,7 +1508,7 @@ export default function SmartPlan() {
             {isLoading ? (
               <Card className="border-slate-200 shadow-lg">
                 <CardContent className="py-12 text-center">
-                  <p className="text-slate-600">Loading...</p>
+                  <p className="text-slate-600">{t("smartPlan.main.loading")}</p>
                 </CardContent>
               </Card>
             ) : displayedTasks.length === 0 ? (
@@ -1505,7 +1516,7 @@ export default function SmartPlan() {
                 <CardContent className="py-12 text-center">
                   <Calendar className="mx-auto mb-3 h-12 w-12 text-slate-400" />
                   <p className="text-slate-600">
-                    {searchQuery ? "No tasks match your search" : "No tasks found"}
+                    {searchQuery ? t("smartPlan.main.emptySearch") : t("smartPlan.main.empty")}
                   </p>
                 </CardContent>
               </Card>
@@ -1534,12 +1545,12 @@ export default function SmartPlan() {
       <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Connect Your Calendar</DialogTitle>
+            <DialogTitle>{t("smartPlan.main.connectCalendar.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm">Provider</Label>
+                <Label className="text-sm">{t("smartPlan.main.connectCalendar.provider")}</Label>
                 <Select
                   value={connectForm.provider}
                   onValueChange={(provider) => setConnectForm((prev) => ({ ...prev, provider }))}
@@ -1548,14 +1559,14 @@ export default function SmartPlan() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="google">Google Calendar</SelectItem>
-                    <SelectItem value="outlook">Outlook</SelectItem>
-                    <SelectItem value="apple">Apple Calendar</SelectItem>
+                    <SelectItem value="google">{t("smartPlan.main.connectCalendar.providers.google")}</SelectItem>
+                    <SelectItem value="outlook">{t("smartPlan.main.connectCalendar.providers.outlook")}</SelectItem>
+                    <SelectItem value="apple">{t("smartPlan.main.connectCalendar.providers.apple")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-sm">Sync mode</Label>
+                <Label className="text-sm">{t("smartPlan.main.connectCalendar.syncMode")}</Label>
                 <Select
                   value={connectForm.syncMode}
                   onValueChange={(syncMode) => setConnectForm((prev) => ({ ...prev, syncMode }))}
@@ -1564,14 +1575,14 @@ export default function SmartPlan() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="two-way">Two-way sync</SelectItem>
-                    <SelectItem value="pull">One-way (pull events)</SelectItem>
+                    <SelectItem value="two-way">{t("smartPlan.main.connectCalendar.modes.twoWay")}</SelectItem>
+                    <SelectItem value="pull">{t("smartPlan.main.connectCalendar.modes.oneWay")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <Label className="text-sm">Account email</Label>
+              <Label className="text-sm">{t("smartPlan.main.connectCalendar.accountEmail")}</Label>
               <Input
                 type="email"
                 placeholder="you@example.com"
@@ -1580,7 +1591,7 @@ export default function SmartPlan() {
               />
             </div>
             <div>
-              <Label className="text-sm">Sync past events</Label>
+              <Label className="text-sm">{t("smartPlan.main.connectCalendar.syncPast")}</Label>
               <Select
                 value={connectForm.includePast}
                 onValueChange={(includePast) => setConnectForm((prev) => ({ ...prev, includePast }))}
@@ -1589,21 +1600,21 @@ export default function SmartPlan() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
+                  <SelectItem value="7">{t("smartPlan.main.connectCalendar.ranges.7d")}</SelectItem>
+                  <SelectItem value="30">{t("smartPlan.main.connectCalendar.ranges.30d")}</SelectItem>
+                  <SelectItem value="90">{t("smartPlan.main.connectCalendar.ranges.90d")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Alert className="bg-slate-50 border-slate-200 text-slate-700">
               <AlertDescription>
-                This is a simulated connection. OAuth and real sync will be added later.
+                {t("smartPlan.main.connectCalendar.simulated")}
               </AlertDescription>
             </Alert>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConnectDialog(false)}>Cancel</Button>
-            <Button onClick={handleConnectCalendar}>Save connection</Button>
+            <Button variant="outline" onClick={() => setShowConnectDialog(false)}>{t("smartPlan.main.connectCalendar.cancel")}</Button>
+            <Button onClick={handleConnectCalendar}>{t("smartPlan.main.connectCalendar.save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1633,23 +1644,23 @@ export default function SmartPlan() {
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Event</DialogTitle>
+            <DialogTitle>{t("smartPlan.main.delete.title")}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <p className="text-slate-600">
-              Are you sure you want to delete "{eventToDelete?.title}"? This action cannot be undone.
+              {t("smartPlan.main.delete.confirm", { title: eventToDelete?.title })}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-              Cancel
+              {t("smartPlan.main.connectCalendar.cancel")}
             </Button>
             <Button
               className="bg-red-600 hover:bg-red-700"
               onClick={confirmDelete}
               disabled={deleteTaskMutation.isLoading}
             >
-              {deleteTaskMutation.isLoading ? "Deleting..." : "Delete"}
+              {deleteTaskMutation.isLoading ? t("smartPlan.main.delete.deleting") : t("smartPlan.main.delete.button")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1658,13 +1669,13 @@ export default function SmartPlan() {
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Export Calendar</DialogTitle>
+            <DialogTitle>{t("smartPlan.main.export.title")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">
-                Date Range
+                {t("smartPlan.main.export.dateRange")}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
@@ -1672,28 +1683,28 @@ export default function SmartPlan() {
                   onClick={() => setExportDateRange("all")}
                   className={exportDateRange === "all" ? "bg-primary-600 hover:bg-primary-700" : ""}
                 >
-                  All Events
+                  {t("smartPlan.main.export.allEvents")}
                 </Button>
                 <Button
                   variant={exportDateRange === "week" ? "default" : "outline"}
                   onClick={() => setExportDateRange("week")}
                   className={exportDateRange === "week" ? "bg-primary-600 hover:bg-primary-700" : ""}
                 >
-                  This Week
+                  {t("smartPlan.main.export.thisWeek")}
                 </Button>
                 <Button
                   variant={exportDateRange === "month" ? "default" : "outline"}
                   onClick={() => setExportDateRange("month")}
                   className={exportDateRange === "month" ? "bg-primary-600 hover:bg-primary-700" : ""}
                 >
-                  This Month
+                  {t("smartPlan.main.export.thisMonth")}
                 </Button>
                 <Button
                   variant={exportDateRange === "custom" ? "default" : "outline"}
                   onClick={() => setExportDateRange("custom")}
                   className={exportDateRange === "custom" ? "bg-primary-600 hover:bg-primary-700" : ""}
                 >
-                  Custom
+                  {t("smartPlan.main.export.custom")}
                 </Button>
               </div>
             </div>
@@ -1702,7 +1713,7 @@ export default function SmartPlan() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1 block">
-                    Start Date
+                    {t("smartPlan.main.export.startDate")}
                   </label>
                   <input
                     type="date"
@@ -1713,7 +1724,7 @@ export default function SmartPlan() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700 mb-1 block">
-                    End Date
+                    {t("smartPlan.main.export.endDate")}
                   </label>
                   <input
                     type="date"
@@ -1728,27 +1739,27 @@ export default function SmartPlan() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
                 <Download className="w-4 h-4" />
-                Export Format: .ICS Calendar File
+                {t("smartPlan.main.export.formatHeader")}
               </h4>
               <p className="text-sm text-blue-700 mb-3">
-                The exported file can be imported into:
+                {t("smartPlan.main.export.importInto")}
               </p>
               <ul className="space-y-1 text-sm text-blue-700">
-                <li>• Google Calendar</li>
-                <li>• Microsoft Outlook</li>
-                <li>• Apple Calendar</li>
-                <li>• Other calendar applications</li>
+                <li>• {t("smartPlan.main.connectCalendar.providers.google")}</li>
+                <li>• {t("smartPlan.main.connectCalendar.providers.outlook")}</li>
+                <li>• {t("smartPlan.main.connectCalendar.providers.apple")}</li>
+                <li>• {t("smartPlan.main.export.instructions.other")}</li>
               </ul>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
               <h4 className="font-medium text-slate-900 mb-2">
-                How to Import:
+                {t("smartPlan.main.export.howToImport")}
               </h4>
               <ol className="space-y-2 text-sm text-slate-600">
-                <li><strong>Google Calendar:</strong> Settings → Import & Export → Select file</li>
-                <li><strong>Outlook:</strong> File → Open & Export → Import/Export → iCalendar</li>
-                <li><strong>Apple Calendar:</strong> File → Import → Select .ics file</li>
+                <li><strong>{t("smartPlan.main.connectCalendar.providers.google")}:</strong> {t("smartPlan.main.export.instructions.google")}</li>
+                <li><strong>{t("smartPlan.main.connectCalendar.providers.outlook")}:</strong> {t("smartPlan.main.export.instructions.outlook")}</li>
+                <li><strong>{t("smartPlan.main.connectCalendar.providers.apple")}:</strong> {t("smartPlan.main.export.instructions.apple")}</li>
               </ol>
             </div>
           </div>
@@ -1758,14 +1769,14 @@ export default function SmartPlan() {
               variant="outline"
               onClick={() => setShowExportDialog(false)}
             >
-              Cancel
+              {t("smartPlan.main.connectCalendar.cancel")}
             </Button>
             <Button
               onClick={generateICS}
               className="bg-primary-600 hover:bg-primary-700"
             >
               <Download className="w-4 h-4 mr-2" />
-              Download .ICS File
+              {t("smartPlan.main.export.download")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -8,6 +8,7 @@ import WealthProjectionChart from "@/admin/modules/visualizers/components/Wealth
 import { useQuery } from "@tanstack/react-query";
 import { Search, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // Default assumptions for customers without financial data
 const DEFAULT_ASSUMPTIONS = {
@@ -23,7 +24,7 @@ const DEFAULT_ASSUMPTIONS = {
 };
 
 // Helper: Map customer data to financial data with smart defaults
-const mapCustomerToFinancialData = (customerData) => {
+const mapCustomerToFinancialData = (customerData, t) => {
     // Check if customer has complete financial data
     const hasCompleteData =
         customerData?.annual_income &&
@@ -48,11 +49,12 @@ const mapCustomerToFinancialData = (customerData) => {
     return {
         ...DEFAULT_ASSUMPTIONS,
         isAssumed: true,
-        assumedReason: "Customer financial data not available"
+        assumedReason: t("visualizer.scenario.assumedReason")
     };
 };
 
 export default function ScenarioVisualizer() {
+    const { t } = useTranslation();
     const [selectedCustomerId, setSelectedCustomerId] = useState(null);
     const [activeTab, setActiveTab] = useState("projection");
 
@@ -105,7 +107,7 @@ export default function ScenarioVisualizer() {
             if (!hasRetirementGoal) {
                 const retirementGoal = {
                     id: 'retirement',
-                    label: 'Retirement',
+                    label: t("visualizer.scenario.retirementGoal"),
                     goalYear: retirementYear,
                     goalAmount: 0, // Retirement is an ongoing expense, handled by Annuity
                     isSystem: true
@@ -136,7 +138,7 @@ export default function ScenarioVisualizer() {
                 }
             }));
         }
-    }, [config.financialData.currentAge, config.financialData.retirementAge, config.financialData.monthlyExpenses, config.financialData.inflationRate]);
+    }, [config.financialData.currentAge, config.financialData.retirementAge, config.financialData.monthlyExpenses, config.financialData.inflationRate, t]);
 
     // Fetch customers for selector
     const { data: customers = [], isLoading: loadingCustomers } = useQuery({
@@ -194,7 +196,7 @@ export default function ScenarioVisualizer() {
 
         // Get customer data and map to financial data
         const customer = validCustomers.find(c => c.id === customerId);
-        const financialData = mapCustomerToFinancialData(customer);
+        const financialData = mapCustomerToFinancialData(customer, t);
 
         // Update configuration with mapped data
         setConfig(prev => ({
@@ -214,10 +216,10 @@ export default function ScenarioVisualizer() {
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                             <TrendingUp className="w-7 h-7 text-blue-600" />
-                            Scenario Visualizer
+                            {t("visualizer.scenario.title")}
                         </h1>
                         <p className="text-sm text-gray-600 mt-1">
-                            Visualize wealth projections during good times and bad times
+                            {t("visualizer.scenario.subtitle")}
                         </p>
                     </div>
                 </div>
@@ -226,23 +228,23 @@ export default function ScenarioVisualizer() {
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                         <Search className="w-4 h-4" />
-                        Select Customer:
+                        {t("visualizer.scenario.selectLabel")}
                     </div>
                     <Select
                         value={selectedCustomerId || ""}
                         onValueChange={handleCustomerSelect}
                     >
                         <SelectTrigger className="w-full max-w-md">
-                            <SelectValue placeholder="Choose a customer to visualize..." />
+                            <SelectValue placeholder={t("visualizer.scenario.selectPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
                             {loadingCustomers ? (
                                 <SelectItem value="loading" disabled>
-                                    Loading customers...
+                                    {t("visualizer.scenario.loadingOption")}
                                 </SelectItem>
                             ) : validCustomers.length === 0 ? (
                                 <SelectItem value="empty" disabled>
-                                    No customers found
+                                    {t("visualizer.scenario.emptyOption")}
                                 </SelectItem>
                             ) : (
                                 validCustomers.map((customer) => (
@@ -268,13 +270,13 @@ export default function ScenarioVisualizer() {
                             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                                 <TabsList className="grid w-full grid-cols-3 mb-6">
                                     <TabsTrigger value="projection">
-                                        📊 Wealth Projection
+                                        {t("visualizer.scenario.tabs.projection")}
                                     </TabsTrigger>
                                     <TabsTrigger value="cashflow">
-                                        💰 Cash Flow
+                                        {t("visualizer.scenario.tabs.cashflow")}
                                     </TabsTrigger>
                                     <TabsTrigger value="insights">
-                                        💡 Insights
+                                        {t("visualizer.scenario.tabs.insights")}
                                     </TabsTrigger>
                                 </TabsList>
 
@@ -295,9 +297,11 @@ export default function ScenarioVisualizer() {
                                 <TabsContent value="insights" className="mt-0">
                                     <Card>
                                         <CardContent className="p-8">
-                                            <h3 className="text-lg font-semibold mb-4">💡 Mira's Insights</h3>
+                                            <h3 className="text-lg font-semibold mb-4">
+                                                {t("visualizer.scenario.insightsTitle")}
+                                            </h3>
                                             <p className="text-gray-600">
-                                                Insights will be generated based on selected events and projections.
+                                                {t("visualizer.scenario.insightsBody")}
                                             </p>
                                         </CardContent>
                                     </Card>
@@ -311,11 +315,10 @@ export default function ScenarioVisualizer() {
                                 <CardContent className="flex flex-col items-center justify-center py-16 px-8">
                                     <TrendingUp className="w-16 h-16 text-gray-300 mb-4" />
                                     <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                                        No Customer Selected
+                                        {t("visualizer.scenario.emptyTitle")}
                                     </h3>
                                     <p className="text-gray-500 text-center">
-                                        Select a customer above to view their wealth projection,
-                                        trigger destiny events, and compare scenarios.
+                                        {t("visualizer.scenario.emptyBody")}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -335,3 +338,7 @@ export default function ScenarioVisualizer() {
         </div>
     );
 }
+
+
+
+

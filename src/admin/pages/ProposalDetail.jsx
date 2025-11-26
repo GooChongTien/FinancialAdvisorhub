@@ -1,29 +1,28 @@
-import React, { useState, useEffect, useRef } from "react";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import {
-  ArrowLeft,
-  FileText,
-  TrendingUp,
-  Target,
-  Calculator,
-  Send,
-} from "lucide-react";
 import { Button } from "@/admin/components/ui/button";
 import { Skeleton } from "@/admin/components/ui/skeleton";
-import { Card } from "@/admin/components/ui/card";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
+import { createPageUrl } from "@/admin/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  Calculator,
+  FileText,
+  Send,
+  Target,
+  TrendingUp,
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Import section components
+import ApplicationSection from "@/admin/modules/recommendation/components/ApplicationSection.jsx";
 import FactFindingSection from "@/admin/modules/recommendation/components/FactFindingSection.jsx";
 import FNASection from "@/admin/modules/recommendation/components/FNASection.jsx";
-import RecommendationSection from "@/admin/modules/recommendation/components/RecommendationSection.jsx";
 import QuotationSection from "@/admin/modules/recommendation/components/QuotationSection.jsx";
-import ApplicationSection from "@/admin/modules/recommendation/components/ApplicationSection.jsx";
+import RecommendationSection from "@/admin/modules/recommendation/components/RecommendationSection.jsx";
 
-const stages = [
+const ALL_STAGES = [
   { id: "fact-finding", name: "Fact Finding", icon: FileText },
   { id: "fna", name: "Financial Planning", icon: TrendingUp },
   { id: "recommendation", name: "Recommendation", icon: Target },
@@ -31,13 +30,11 @@ const stages = [
   { id: "application", name: "Application", icon: Send },
 ];
 
-const STAGE_ORDER = [
-  "Fact Finding",
-  "Financial Planning",
-  "Recommendation",
-  "Quotation",
-  "Application",
-];
+const JOURNEY_CONFIG = {
+  FULL: ["fact-finding", "fna", "recommendation", "quotation", "application"],
+  GROUP: ["fact-finding", "recommendation", "quotation", "application"],
+  QA: ["quotation", "application"],
+};
 
 const SECTION_TO_STAGE_LABEL = {
   fact_finding: "Fact Finding",
@@ -53,7 +50,7 @@ export default function ProposalDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const proposalId = urlParams.get("id");
 
-  const [activeSection, setActiveSection] = useState("fact-finding");
+  const [activeSection, setActiveSection] = useState(null); // Will be set after proposal load
   // If no proposal id is provided, send the user back to New Business
   useEffect(() => {
     if (!proposalId) {
@@ -79,6 +76,18 @@ export default function ProposalDetail() {
     },
     enabled: !!proposalId,
   });
+
+  // Determine current journey stages
+  const journeyType = proposal?.journey_type || "FULL";
+  const currentStageIds = JOURNEY_CONFIG[journeyType] || JOURNEY_CONFIG.FULL;
+  const currentStages = currentStageIds.map(id => ALL_STAGES.find(s => s.id === id));
+
+  // Set initial active section if not set
+  useEffect(() => {
+    if (proposal && !activeSection) {
+      setActiveSection(currentStageIds[0]);
+    }
+  }, [proposal, activeSection, currentStageIds]);
 
   const updateProposalMutation = useMutation({
     mutationFn: ({ id, data }) => adviseUAdminApi.entities.Proposal.update(id, data),
@@ -153,19 +162,19 @@ export default function ProposalDetail() {
           const personalRequired = newLeadMode
             ? ["name", "phone_number"]
             : [
-                "title",
-                "name",
-                "gender",
-                "nric",
-                "date_of_birth",
-                "nationality",
-                "smoker_status",
-                "marital_status",
-                "occupation",
-                "phone_number",
-                "email",
-                "address",
-              ];
+              "title",
+              "name",
+              "gender",
+              "nric",
+              "date_of_birth",
+              "nationality",
+              "smoker_status",
+              "marital_status",
+              "occupation",
+              "phone_number",
+              "email",
+              "address",
+            ];
           const pdCompleteCount = personalRequired.filter(
             (f) => pd[f] !== undefined && pd[f] !== null && String(pd[f]).length > 0,
           ).length;
@@ -275,25 +284,22 @@ export default function ProposalDetail() {
   };
 
   // Map stages to statuses following New Business card standard
+  // Map stages to statuses following New Business card standard
   const getHeaderStageStatuses = () => {
-    const ordered = [
-      { id: "fact-finding", label: "Fact Finding" },
-      { id: "fna", label: "Financial Planning" },
-      { id: "recommendation", label: "Recommendation" },
-      { id: "quotation", label: "Quotation" },
-      { id: "application", label: "Application" },
-    ];
     const currentLabel = proposal?.stage || "Fact Finding";
-    let currentIndex = ordered.findIndex((s) => s.label === currentLabel);
+
+    // Find index in the CURRENT journey
+    let currentIndex = currentStages.findIndex((s) => s.name === currentLabel);
+
     if (currentIndex === -1) {
-      // Fallback to progress-derived position: highest stage with any progress > 0
-      const progresses = ordered.map((s) => getStageProgress(s.id));
-      const anyIndex = progresses.reduce((acc, v, i) => (v > 0 ? i : acc), 0);
-      currentIndex = anyIndex;
+      // Fallback: try to map via SECTION_TO_STAGE_LABEL if stage name doesn't match exactly
+      // or just default to 0
+      currentIndex = 0;
     }
-    return ordered.map((s, i) => ({
+
+    return currentStages.map((s, i) => ({
       id: s.id,
-      name: s.label,
+      name: s.name,
       status: i < currentIndex ? "completed" : i === currentIndex ? "current" : "pending",
     }));
   };
@@ -306,8 +312,13 @@ export default function ProposalDetail() {
 
     // Keep proposal.stage in sync with furthest stage being worked on
     const currentLabel = proposal?.stage || "Fact Finding";
-    const currentIdx = Math.max(0, STAGE_ORDER.indexOf(currentLabel));
+
+    // Get stage names for current journey
+    const stageNames = currentStages.map(s => s.name);
+    const currentIdx = Math.max(0, stageNames.indexOf(currentLabel));
+
     let targetLabel = SECTION_TO_STAGE_LABEL[sectionName] || currentLabel;
+
     // Upgrade to Application if submitted flag present
     if (
       sectionName === "application" &&
@@ -315,7 +326,10 @@ export default function ProposalDetail() {
     ) {
       targetLabel = "Application";
     }
-    const targetIdx = Math.max(0, STAGE_ORDER.indexOf(targetLabel));
+
+    const targetIdx = Math.max(0, stageNames.indexOf(targetLabel));
+
+    // Only advance stage, never regress automatically (unless manual override, but here we just auto-advance)
     if (targetIdx > currentIdx) {
       updatedData.stage = targetLabel;
     }
@@ -327,7 +341,24 @@ export default function ProposalDetail() {
   const canAccessApplication = () => {
     const search = typeof window !== "undefined" ? window.location.search : "";
     if (search.includes("e2e=1")) return true;
+
+    if (journeyType === "QA") {
+      // For QA, just need quotation data
+      return !!proposal?.quotation_data;
+    }
+
     const recOk = proposal?.recommendation_data?.advice_confirmed === true;
+
+    if (journeyType === "GROUP") {
+      // Group skips FNA
+      return (
+        proposal?.fact_finding_data &&
+        recOk &&
+        proposal?.quotation_data
+      );
+    }
+
+    // FULL
     return (
       proposal?.fact_finding_data &&
       proposal?.fna_data &&
@@ -381,7 +412,7 @@ export default function ProposalDetail() {
           {/* Progress Bar Navigation (New Business standard) with pie ring for 1–99% */}
           <div className="flex items-center justify-between pb-2">
             {getHeaderStageStatuses().map((item, index, arr) => {
-              const stageMeta = stages.find((s) => s.id === item.id) || stages[0];
+              const stageMeta = ALL_STAGES.find((s) => s.id === item.id) || ALL_STAGES[0];
               const Icon = stageMeta.icon;
               const disabled = item.id === "application" && !canAccessApplication();
               const progress = Math.max(0, Math.min(100, getStageProgress(item.id)));
@@ -397,37 +428,34 @@ export default function ProposalDetail() {
                       <button
                         onClick={() => scrollToSection(item.id)}
                         disabled={disabled}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center focus:outline-none ${
-                          showPie
+                        className={`w-12 h-12 rounded-full flex items-center justify-center focus:outline-none ${showPie
                             ? (item.status === "current"
-                                ? "bg-blue-500 text-white ring-4 ring-primary-100"
-                                : "bg-blue-500 text-white")
+                              ? "bg-blue-500 text-white ring-4 ring-primary-100"
+                              : "bg-blue-500 text-white")
                             : item.status === "completed"
                               ? "bg-green-500 text-white"
                               : item.status === "current"
                                 ? "bg-primary-500 text-white ring-4 ring-primary-100"
                                 : "bg-slate-200 text-slate-400"
-                        } ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.03] focus:scale-[1.03]"}`}
+                          } ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.03] focus:scale-[1.03]"}`}
                         title={stageMeta.name}
                       >
                         <Icon className="w-6 h-6" />
                       </button>
                     </div>
                     <span
-                      className={`text-xs font-medium text-center ${
-                        item.status === "completed" || item.status === "current"
+                      className={`text-xs font-medium text-center ${item.status === "completed" || item.status === "current"
                           ? "text-slate-900"
                           : "text-slate-400"
-                      }`}
+                        }`}
                     >
                       {stageMeta.name}
                     </span>
                   </div>
                   {index < arr.length - 1 && (
                     <div
-                      className={`relative -top-2 flex-1 h-1 mx-2 rounded transition-all ${
-                        item.status === "completed" ? "bg-green-500" : "bg-slate-200"
-                      }`}
+                      className={`relative -top-2 flex-1 h-1 mx-2 rounded transition-all ${item.status === "completed" ? "bg-green-500" : "bg-slate-200"
+                        }`}
                     />
                   )}
                 </React.Fragment>
@@ -439,49 +467,59 @@ export default function ProposalDetail() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-8 py-8 space-y-6">
-        <div ref={sectionRefs["fact-finding"]}>
-          <FactFindingSection
-            proposal={proposal}
-            onSave={(data) => handleSaveSection("fact_finding", data)}
-            isSaving={updateProposalMutation.isPending}
-            onNext={() => scrollToSection("fna")}
-            readOnly={Boolean(linkedLead?.is_client)}
-            newLeadMode={Boolean((linkedLead && !linkedLead.is_client) || !linkedLead)}
-          />
-        </div>
+        {currentStageIds.includes("fact-finding") && (
+          <div ref={sectionRefs["fact-finding"]}>
+            <FactFindingSection
+              proposal={proposal}
+              onSave={(data) => handleSaveSection("fact_finding", data)}
+              isSaving={updateProposalMutation.isPending}
+              onNext={() => scrollToSection(currentStageIds.includes("fna") ? "fna" : "recommendation")}
+              readOnly={Boolean(linkedLead?.is_client)}
+              newLeadMode={Boolean((linkedLead && !linkedLead.is_client) || !linkedLead)}
+            />
+          </div>
+        )}
 
-        <div ref={sectionRefs["fna"]}>
-          <FNASection
-            proposal={proposal}
-            onSave={(data) => handleSaveSection("fna", data)}
-            isSaving={updateProposalMutation.isPending}
-          />
-        </div>
+        {currentStageIds.includes("fna") && (
+          <div ref={sectionRefs["fna"]}>
+            <FNASection
+              proposal={proposal}
+              onSave={(data) => handleSaveSection("fna", data)}
+              isSaving={updateProposalMutation.isPending}
+            />
+          </div>
+        )}
 
-        <div ref={sectionRefs["recommendation"]}>
-          <RecommendationSection
-            proposal={proposal}
-            onSave={(data) => handleSaveSection("recommendation", data)}
-            isSaving={updateProposalMutation.isPending}
-          />
-        </div>
+        {currentStageIds.includes("recommendation") && (
+          <div ref={sectionRefs["recommendation"]}>
+            <RecommendationSection
+              proposal={proposal}
+              onSave={(data) => handleSaveSection("recommendation", data)}
+              isSaving={updateProposalMutation.isPending}
+            />
+          </div>
+        )}
 
-        <div ref={sectionRefs["quotation"]}>
-          <QuotationSection
-            proposal={proposal}
-            onSave={(data) => handleSaveSection("quotation", data)}
-            isSaving={updateProposalMutation.isPending}
-          />
-        </div>
+        {currentStageIds.includes("quotation") && (
+          <div ref={sectionRefs["quotation"]}>
+            <QuotationSection
+              proposal={proposal}
+              onSave={(data) => handleSaveSection("quotation", data)}
+              isSaving={updateProposalMutation.isPending}
+            />
+          </div>
+        )}
 
-        <div ref={sectionRefs["application"]}>
-          <ApplicationSection
-            proposal={proposal}
-            onSave={(data) => handleSaveSection("application", data)}
-            isSaving={updateProposalMutation.isPending}
-            isLocked={!canAccessApplication()}
-          />
-        </div>
+        {currentStageIds.includes("application") && (
+          <div ref={sectionRefs["application"]}>
+            <ApplicationSection
+              proposal={proposal}
+              onSave={(data) => handleSaveSection("application", data)}
+              isSaving={updateProposalMutation.isPending}
+              isLocked={!canAccessApplication()}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

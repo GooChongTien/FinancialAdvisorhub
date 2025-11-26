@@ -16,6 +16,7 @@ import { createPageUrl } from "@/admin/utils";
 import clsx from "clsx";
 import { FileText, Sparkles, TrendingUp, Users } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Lazy load Copilot and Insight components for better initial load performance
@@ -48,6 +49,7 @@ function robustDecode(value) {
 export default function ChatMira() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const {
     messages,
     isStreaming,
@@ -200,13 +202,13 @@ export default function ChatMira() {
     <div className="flex flex-col h-full bg-white">
       {/* Minimal Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
-        <h1 className="text-xl font-semibold text-neutral-900 tracking-tight">Mira Chat</h1>
+        <h1 className="text-xl font-semibold text-neutral-900 tracking-tight">{t("chat.chatMira.title")}</h1>
         <button
           type="button"
           className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
           onClick={goBack}
         >
-          Back to Dashboard
+          {t("chat.chatMira.backToDashboard")}
         </button>
       </div>
 
@@ -238,8 +240,8 @@ export default function ChatMira() {
               {pendingAction && (
                 <div className="px-4 mb-4 max-w-3xl mx-auto w-full">
                   <InlineConfirmationCard
-                    title={pendingAction.message || "Allow Mira to perform this action?"}
-                    description={pendingAction.tool ? `Requested: ${pendingAction.tool}` : undefined}
+                    title={pendingAction.message || t("chat.chatMira.allowAction")}
+                    description={pendingAction.tool ? t("chat.chatMira.requested", { tool: pendingAction.tool }) : undefined}
                     onAllowOnce={confirmPending}
                     onDontAllow={rejectPending}
                     onAlwaysAllow={() => trustSkillInSession(pendingAction.tool)}
@@ -326,22 +328,23 @@ export default function ChatMira() {
 }
 
 function PlannedActionsBanner({ state, onUndo }) {
+  const { t } = useTranslation();
   if (!state) return null;
   const actions = Array.isArray(state.actions) ? state.actions : [];
-  let statusLabel = "Running auto-actions…";
-  if (state.status === "executed") statusLabel = "Actions completed automatically";
-  if (state.status === "error") statusLabel = `Failed: ${state.error || "Unknown error"}`;
+  let statusLabel = t("chat.chatMira.plannedActions.running");
+  if (state.status === "executed") statusLabel = t("chat.chatMira.plannedActions.completed");
+  if (state.status === "error") statusLabel = t("chat.chatMira.plannedActions.failed", { error: state.error || t("chat.chatMira.plannedActions.unknownError") });
 
   return (
     <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-3 text-xs text-slate-700">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold text-slate-800">Planned actions</span>
+        <span className="font-semibold text-slate-800">{t("chat.chatMira.plannedActions.title")}</span>
         <button
           type="button"
           onClick={onUndo}
           className="text-slate-500 underline-offset-2 hover:underline"
         >
-          Undo
+          {t("chat.chatMira.plannedActions.undo")}
         </button>
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -350,7 +353,7 @@ function PlannedActionsBanner({ state, onUndo }) {
             key={`${state.id}-${index}`}
             className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-800"
           >
-            {String(action.action || "action").replace(/_/g, " ")}
+            {String(action.action || t("chat.chatMira.plannedActions.defaultAction")).replace(/_/g, " ")}
           </span>
         ))}
       </div>
@@ -385,29 +388,30 @@ function useViewportCategory() {
 }
 
 function ChatEmptyState({ onPromptSelect }) {
+  const { t } = useTranslation();
   const starterPrompts = [
     {
       icon: Users,
-      title: "Customer Analysis",
-      prompt: "Show me my top customers by premium value",
+      title: t("chat.chatMira.emptyState.prompts.customerAnalysis.title"),
+      prompt: t("chat.chatMira.emptyState.prompts.customerAnalysis.prompt"),
       color: "from-blue-500 to-cyan-500",
     },
     {
       icon: TrendingUp,
-      title: "Sales Performance",
-      prompt: "What are my sales trends for this quarter?",
+      title: t("chat.chatMira.emptyState.prompts.salesPerformance.title"),
+      prompt: t("chat.chatMira.emptyState.prompts.salesPerformance.prompt"),
       color: "from-purple-500 to-pink-500",
     },
     {
       icon: FileText,
-      title: "Pending Tasks",
-      prompt: "Show me my pending tasks and upcoming appointments",
+      title: t("chat.chatMira.emptyState.prompts.pendingTasks.title"),
+      prompt: t("chat.chatMira.emptyState.prompts.pendingTasks.prompt"),
       color: "from-green-500 to-emerald-500",
     },
     {
       icon: Sparkles,
-      title: "Recommendations",
-      prompt: "Give me product recommendations for my customer base",
+      title: t("chat.chatMira.emptyState.prompts.recommendations.title"),
+      prompt: t("chat.chatMira.emptyState.prompts.recommendations.prompt"),
       color: "from-orange-500 to-amber-500",
     },
   ];
@@ -420,9 +424,9 @@ function ChatEmptyState({ onPromptSelect }) {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 shadow-lg">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-neutral-900">Chat with Mira</h2>
+          <h2 className="text-2xl font-bold text-neutral-900">{t("chat.chatMira.emptyState.title")}</h2>
           <p className="text-neutral-600 text-base max-w-md mx-auto">
-            Your AI insurance assistant is here to help with customers, analytics, tasks, and more.
+            {t("chat.chatMira.emptyState.subtitle")}
           </p>
         </div>
 
@@ -457,7 +461,7 @@ function ChatEmptyState({ onPromptSelect }) {
         {/* Tips */}
         <div className="text-center">
           <p className="text-xs text-neutral-500">
-            Try asking questions in natural language. I can help you navigate, analyze data, and complete tasks.
+            {t("chat.chatMira.emptyState.tips")}
           </p>
         </div>
       </div>

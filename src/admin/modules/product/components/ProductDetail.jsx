@@ -16,18 +16,20 @@ import {
     Users
 } from "lucide-react";
 
-export default function ProductDetail({ product, onBack, onGetQuote }) {
+export default function ProductDetail({ product, onBack, onGetQuote, isModal = false }) {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header with Back Button */}
             <div className="mb-6">
-                <Button
-                    variant="ghost"
-                    onClick={onBack}
-                    className="mb-4 pl-0 hover:pl-2 transition-all text-slate-500 hover:text-slate-800 hover:bg-transparent"
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
-                </Button>
+                {!isModal && (
+                    <Button
+                        variant="ghost"
+                        onClick={onBack}
+                        className="mb-4 pl-0 hover:pl-2 transition-all text-slate-500 hover:text-slate-800 hover:bg-transparent"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                    </Button>
+                )}
 
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div>

@@ -2,8 +2,10 @@ import { Button } from "@/admin/components/ui/button.jsx";
 import { ChatInput } from "@/admin/components/ui/chat-input.jsx";
 import { ChatMessage as ChatBubble } from "@/admin/components/ui/chat-message.jsx";
 import InlineConfirmationCard from "@/admin/components/ui/inline-confirmation-card.jsx";
-import { Skeleton } from "@/admin/components/ui/skeleton.jsx";
+import { TypingIndicatorMessage } from "@/admin/components/ui/typing-indicator.jsx";
+import { ContextualFirstPrompt } from "@/admin/components/mira/ContextualFirstPrompt.tsx";
 import { useAgentChatStore } from "@/admin/state/providers/AgentChatProvider.jsx";
+import { useAutoNavigation } from "@/admin/hooks/useAutoNavigation.ts";
 import { createPageUrl } from "@/admin/utils";
 import { AlertCircle, Maximize2, RefreshCw } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -25,6 +27,10 @@ export default function InlineChatPanel({ showHeader = true }) {
     const from = encodeURIComponent(location.pathname + location.search);
     navigate(`${createPageUrl("ChatMira")}?from=${from}`);
   };
+
+  // Enable auto-navigation based on ui_actions
+  useAutoNavigation({ messages });
+
   return (
     <div
       className="flex h-full flex-col bg-white"
@@ -66,13 +72,7 @@ export default function InlineChatPanel({ showHeader = true }) {
         aria-label="Chat conversation"
       >
         {messages.length === 0 && !isStreaming && (
-          <div className="flex flex-col items-center justify-center h-full p-6 text-center" role="status">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg mb-3">
-              <span className="text-white text-lg font-bold">M</span>
-            </div>
-            <p className="text-sm font-semibold text-neutral-900 mb-1">Ask Mira anything</p>
-            <p className="text-xs text-neutral-500">Get help with customers, analytics, tasks, and more</p>
-          </div>
+          <ContextualFirstPrompt onSelectPrompt={(text) => sendMessage(text)} />
         )}
         <div className="py-2">
           {messages.slice(-8).map((m) => (
@@ -80,12 +80,7 @@ export default function InlineChatPanel({ showHeader = true }) {
           ))}
         </div>
         {isStreaming && messages.length > 0 && !messages[messages.length - 1]?.streaming && (
-          <div className="px-4 pb-4 space-y-2" role="status" aria-label="Mira is typing">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <span className="sr-only">Mira is typing a response</span>
-          </div>
+          <TypingIndicatorMessage />
         )}
         {pendingAction && (
           <div className="px-4 pb-4">

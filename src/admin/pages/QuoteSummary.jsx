@@ -1,23 +1,23 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/admin/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
-import { Button } from "@/admin/components/ui/button";
 import { Badge } from "@/admin/components/ui/badge";
+import { Button } from "@/admin/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
 import { Separator } from "@/admin/components/ui/separator";
 import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
+import { createPageUrl } from "@/admin/utils";
 import { formatCurrency } from "@/lib/utils";
 import {
-  Shield,
-  Heart,
-  PiggyBank,
-  Sparkles,
-  Umbrella,
   Calculator,
   Calendar,
-  DollarSign,
   CheckCircle2,
+  DollarSign,
+  Heart,
+  PiggyBank,
+  Shield,
+  Sparkles,
+  Umbrella,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const coverageIcons = {
   Protection: Shield,
@@ -38,6 +38,7 @@ const coverageColors = {
 export default function QuoteSummary() {
   const navigate = useNavigate();
   const { prefs } = usePreferences();
+  const { t } = useTranslation();
   const urlParams = new URLSearchParams(window.location.search);
 
   const quoteData = {
@@ -58,12 +59,12 @@ export default function QuoteSummary() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="text-slate-500">No quote data found</p>
+          <p className="text-slate-500">{t("quoteSummary.notFound")}</p>
           <Button
             onClick={() => navigate(createPageUrl("Product"))}
             className="mt-4"
           >
-            Back to Products
+            {t("quoteSummary.backToProducts")}
           </Button>
         </div>
       </div>
@@ -79,11 +80,11 @@ export default function QuoteSummary() {
   };
 
   const handleSaveQuote = () => {
-    alert("Quote saved! (Feature to be implemented)");
+    alert(t("quoteSummary.alerts.quoteSaved"));
   };
 
   const handleShareQuote = () => {
-    alert("Share quote (Feature to be implemented)");
+    alert(t("quoteSummary.alerts.shareQuote"));
   };
 
   const handleStartFullProposal = async () => {
@@ -114,10 +115,10 @@ export default function QuoteSummary() {
       if (created?.id) {
         navigate(createPageUrl(`ProposalDetail?id=${created.id}`));
       } else {
-        throw new Error("Failed to create proposal");
+        throw new Error(t("quoteSummary.alerts.proposalCreationFailed"));
       }
     } catch (e) {
-      alert(e?.message || "Unable to start full proposal");
+      alert(e?.message || t("quoteSummary.alerts.proposalError"));
     }
   };
 
@@ -131,10 +132,10 @@ export default function QuoteSummary() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">
-                Quote Generated Successfully!
+                {t("quoteSummary.title")}
               </h1>
               <p className="text-primary-100 mt-1">
-                Review your premium details below
+                {t("quoteSummary.subtitle")}
               </p>
             </div>
           </div>
@@ -169,19 +170,19 @@ export default function QuoteSummary() {
               <CardHeader className="border-b border-primary-100">
                 <CardTitle className="flex items-center gap-2 text-primary-900">
                   <DollarSign className="w-6 h-6 text-primary-600" />
-                  Premium Summary
+                  {t("quoteSummary.sections.premiumSummary")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="text-center p-8 bg-white rounded-xl shadow-md mb-6">
                   <p className="text-sm text-slate-500 mb-2">
-                    Recommended Monthly Premium
+                    {t("quoteSummary.labels.recommendedMonthly")}
                   </p>
                   <p className="text-5xl font-bold text-primary-600 mb-4">
                     {formatCurrency(Number(quoteData.monthly), prefs)}
                   </p>
                   <p className="text-xs text-slate-500">
-                    Affordable monthly payment for your coverage
+                    {t("quoteSummary.labels.affordablePayment")}
                   </p>
                 </div>
 
@@ -189,12 +190,12 @@ export default function QuoteSummary() {
 
                 <div className="space-y-4">
                   <h3 className="font-semibold text-slate-900 mb-4">
-                    Premium Breakdown
+                    {t("quoteSummary.sections.premiumBreakdown")}
                   </h3>
                   <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-slate-600" />
-                      <span className="text-slate-700">Annual Premium</span>
+                      <span className="text-slate-700">{t("quoteSummary.labels.annualPremium")}</span>
                     </div>
                     <span className="text-xl font-bold text-slate-900">
                       {formatCurrency(Number(quoteData.annual), prefs)}
@@ -204,7 +205,7 @@ export default function QuoteSummary() {
                     <div className="flex items-center gap-2">
                       <Calculator className="w-4 h-4 text-slate-600" />
                       <span className="text-slate-700">
-                        Total Premium ({quoteData.policyTerm} years)
+                        {t("quoteSummary.labels.totalPremium", { years: quoteData.policyTerm })}
                       </span>
                     </div>
                     <span className="text-xl font-bold text-slate-900">
@@ -215,7 +216,7 @@ export default function QuoteSummary() {
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-blue-600" />
                       <span className="text-blue-900 font-medium">
-                        Sum Assured
+                        {t("quoteSummary.labels.sumAssured")}
                       </span>
                     </div>
                     <span className="text-xl font-bold text-blue-700">
@@ -230,23 +231,20 @@ export default function QuoteSummary() {
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
                     <h4 className="font-semibold text-green-900">
-                      Excellent Value
+                      {t("quoteSummary.labels.excellentValue")}
                     </h4>
                   </div>
                   <p className="text-sm text-green-800">
-                    For just <strong>{formatCurrency(Number(quoteData.monthly), prefs)}/month</strong>, you
-                    get{" "}
-                    <strong>
-                      {formatCurrency(Number(quoteData.sumAssured), prefs)}
-                    </strong>{" "}
-                    in coverage - that's{" "}
-                    {(
-                      parseInt(quoteData.sumAssured) /
-                      (parseFloat(quoteData.monthly) *
-                        12 *
-                        parseInt(quoteData.policyTerm))
-                    ).toFixed(1)}
-                    x your total premium paid!
+                    {t("quoteSummary.labels.valueMessage", {
+                      monthly: formatCurrency(Number(quoteData.monthly), prefs),
+                      sumAssured: formatCurrency(Number(quoteData.sumAssured), prefs),
+                      ratio: (
+                        parseInt(quoteData.sumAssured) /
+                        (parseFloat(quoteData.monthly) *
+                          12 *
+                          parseInt(quoteData.policyTerm))
+                      ).toFixed(1)
+                    })}
                   </p>
                 </div>
               </CardContent>
@@ -255,20 +253,20 @@ export default function QuoteSummary() {
           <div className="space-y-4">
             <Card className="shadow-lg border-slate-200">
               <CardHeader className="border-b border-slate-100">
-                <CardTitle className="text-sm">Next Steps</CardTitle>
+                <CardTitle className="text-sm">{t("quoteSummary.sections.nextSteps")}</CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-3">
                 <Button className="w-full bg-primary-600 hover:bg-primary-700" onClick={handleStartFullProposal}>
-                  Start Full Proposal
+                  {t("quoteSummary.buttons.startFullProposal")}
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleSaveQuote}>
-                  Save Quote
+                  {t("quoteSummary.buttons.saveQuote")}
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleShareQuote}>
-                  Share with Customer
+                  {t("quoteSummary.buttons.shareWithCustomer")}
                 </Button>
                 <Button variant="ghost" className="w-full" onClick={handleNewQuote}>
-                  New Quick Quote
+                  {t("quoteSummary.buttons.newQuickQuote")}
                 </Button>
               </CardContent>
             </Card>

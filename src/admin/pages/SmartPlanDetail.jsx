@@ -1,26 +1,28 @@
-import React, { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
 import supabase from "@/admin/api/supabaseClient.js";
-import { createPageUrl } from "@/admin/utils";
-import PageHeader from "@/admin/components/ui/page-header.jsx";
-import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
-import { Button } from "@/admin/components/ui/button";
 import { Badge } from "@/admin/components/ui/badge";
+import { Button } from "@/admin/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
 import { Input } from "@/admin/components/ui/input";
-import { Textarea } from "@/admin/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/admin/components/ui/tabs";
 import { Label } from "@/admin/components/ui/label";
+import PageHeader from "@/admin/components/ui/page-header.jsx";
 import { Separator } from "@/admin/components/ui/separator";
-import { ClipboardList, ArrowLeft, Calendar, CheckCircle2, User, Upload, Mic, MicOff, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/admin/components/ui/tabs";
+import { Textarea } from "@/admin/components/ui/textarea";
 import { useToast } from "@/admin/components/ui/toast";
+import { createPageUrl } from "@/admin/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Calendar, CheckCircle2, ClipboardList, FileText, Mic, MicOff, Upload, User } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function SmartPlanDetail() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const taskId = useMemo(() => new URLSearchParams(location.search).get("id"), [location.search]);
 
   const { data: task, isLoading } = useQuery({
@@ -62,7 +64,7 @@ export default function SmartPlanDetail() {
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => adviseUAdminApi.entities.Task.update(id, data),
     onSuccess: () => queryClient.invalidateQueries(["task-detail", taskId]),
-    onError: (error) => showToast({ type: "error", title: "Failed to save", description: error?.message || "Try again." }),
+    onError: (error) => showToast({ type: "error", title: t("smartPlan.detail.toasts.saveFailed"), description: error?.message || t("smartPlan.detail.toasts.tryAgain") }),
   });
 
   const createProposalMutation = useMutation({
@@ -72,19 +74,19 @@ export default function SmartPlanDetail() {
       return adviseUAdminApi.entities.Proposal.create({
         proposal_number: proposalNumber,
         lead_id: leadId,
-        proposer_name: lead?.name || "Unknown",
-        stage: "Fact Finding",
-        status: "In Progress",
+        proposer_name: lead?.name || t("smartPlan.detail.defaults.unknown"),
+        stage: t("smartPlan.detail.defaults.factFinding"),
+        status: t("smartPlan.detail.defaults.inProgress"),
         completion_percentage: 0,
         last_updated: new Date().toISOString(),
       });
     },
     onSuccess: (proposal) => {
       queryClient.invalidateQueries(["proposals"]);
-      showToast({ type: "success", title: "Draft proposal created", description: "Opening proposal detail." });
+      showToast({ type: "success", title: t("smartPlan.detail.toasts.proposalCreated"), description: t("smartPlan.detail.toasts.openingProposal") });
       navigate(createPageUrl(`ProposalDetail?id=${proposal.id}`));
     },
-    onError: (error) => showToast({ type: "error", title: "Proposal creation failed", description: error?.message || "Try again." }),
+    onError: (error) => showToast({ type: "error", title: t("smartPlan.detail.toasts.proposalFailed"), description: error?.message || t("smartPlan.detail.toasts.tryAgain") }),
   });
 
   const detectIntent = (text) => {
@@ -99,9 +101,9 @@ export default function SmartPlanDetail() {
     if (!task?.linked_lead_id) return;
     const intent = detectIntent(text);
     if (intent !== "proposal") return;
-    const existing = proposals.find((p) => p.lead_id === task.linked_lead_id && p.status === "In Progress");
+    const existing = proposals.find((p) => p.lead_id === task.linked_lead_id && p.status === t("smartPlan.detail.defaults.inProgress"));
     if (existing) {
-      showToast({ type: "info", title: "Existing proposal found", description: "Opening current draft." });
+      showToast({ type: "info", title: t("smartPlan.detail.toasts.existingProposal"), description: t("smartPlan.detail.toasts.openingDraft") });
       navigate(createPageUrl(`ProposalDetail?id=${existing.id}`));
       return;
     }
@@ -168,7 +170,7 @@ export default function SmartPlanDetail() {
       });
       maybeCreateProposal(`${notes} ${transcript} ${nextSummary}`);
     } catch (e) {
-      setSummaryError(e?.message || "Failed to generate summary");
+      setSummaryError(e?.message || t("smartPlan.detail.summary.error"));
     } finally {
       setSummaryLoading(false);
     }
@@ -187,7 +189,7 @@ export default function SmartPlanDetail() {
   if (!taskId) {
     return (
       <div className="p-6">
-        <p className="text-slate-600">No task id provided.</p>
+        <p className="text-slate-600">{t("smartPlan.detail.noId")}</p>
       </div>
     );
   }
@@ -195,7 +197,7 @@ export default function SmartPlanDetail() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <p className="text-slate-600">Loading task...</p>
+        <p className="text-slate-600">{t("smartPlan.detail.loading")}</p>
       </div>
     );
   }
@@ -203,8 +205,8 @@ export default function SmartPlanDetail() {
   if (!task) {
     return (
       <div className="p-6">
-        <p className="text-slate-600">Task not found.</p>
-        <Button variant="link" onClick={() => navigate(createPageUrl("SmartPlan"))}>Back to Smart Plan</Button>
+        <p className="text-slate-600">{t("smartPlan.detail.notFound")}</p>
+        <Button variant="link" onClick={() => navigate(createPageUrl("SmartPlan"))}>{t("smartPlan.detail.backToSmartPlan")}</Button>
       </div>
     );
   }
@@ -216,18 +218,18 @@ export default function SmartPlanDetail() {
       <div className="mx-auto max-w-6xl space-y-6">
         <Button variant="ghost" className="flex items-center gap-2" onClick={() => navigate(createPageUrl("SmartPlan"))}>
           <ArrowLeft className="w-4 h-4" />
-          Back to Smart Plan
+          {t("smartPlan.detail.backToSmartPlan")}
         </Button>
 
         <PageHeader
-          title={task.title || "Task detail"}
-          subtitle="Manage notes, transcripts, and AI summary"
+          title={task.title || t("smartPlan.detail.title")}
+          subtitle={t("smartPlan.detail.subtitle")}
           icon={Icon}
           actions={
             task.linked_lead_id ? (
               <Button variant="outline" onClick={() => navigate(createPageUrl(`CustomerDetail?id=${task.linked_lead_id}`))}>
                 <User className="w-4 h-4 mr-2" />
-                View customer
+                {t("smartPlan.detail.viewCustomer")}
               </Button>
             ) : null
           }
@@ -246,13 +248,13 @@ export default function SmartPlanDetail() {
           <CardContent className="space-y-6">
             <Tabs defaultValue="notes">
               <TabsList>
-                <TabsTrigger value="notes">Notes</TabsTrigger>
-                {task.type === "Appointment" ? <TabsTrigger value="transcript">Transcript</TabsTrigger> : null}
-                <TabsTrigger value="summary">Summary</TabsTrigger>
+                <TabsTrigger value="notes">{t("smartPlan.detail.tabs.notes")}</TabsTrigger>
+                {task.type === "Appointment" ? <TabsTrigger value="transcript">{t("smartPlan.detail.tabs.transcript")}</TabsTrigger> : null}
+                <TabsTrigger value="summary">{t("smartPlan.detail.tabs.summary")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="notes" className="space-y-3 mt-4">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes">{t("smartPlan.detail.notes.label")}</Label>
                 <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-[160px]" />
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -261,12 +263,12 @@ export default function SmartPlanDetail() {
                     onClick={() => setRecordingNotes((v) => !v)}
                   >
                     {recordingNotes ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                    {recordingNotes ? "Stop recording" : "Voice note"}
+                    {recordingNotes ? t("smartPlan.detail.notes.stopRecording") : t("smartPlan.detail.notes.voiceNote")}
                   </Button>
                   <Button type="button" variant="outline" asChild>
                     <label className="cursor-pointer inline-flex items-center gap-2">
                       <Upload className="w-4 h-4" />
-                      Upload document
+                      {t("smartPlan.detail.notes.upload")}
                       <input
                         type="file"
                         className="hidden"
@@ -281,21 +283,21 @@ export default function SmartPlanDetail() {
                       <span>{noteAttachments.join(", ")}</span>
                     </div>
                   ) : null}
-                  {recordingNotes ? <span className="text-xs text-amber-600 font-semibold">Recording (simulated)</span> : null}
+                  {recordingNotes ? <span className="text-xs text-amber-600 font-semibold">{t("smartPlan.detail.notes.recordingSimulated")}</span> : null}
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={handleSaveNotes}>Save notes</Button>
+                  <Button onClick={handleSaveNotes}>{t("smartPlan.detail.notes.save")}</Button>
                 </div>
               </TabsContent>
 
               {task.type === "Appointment" ? (
                 <TabsContent value="transcript" className="space-y-3 mt-4">
                   <div>
-                    <Label htmlFor="meeting-link">Meeting link</Label>
-                    <Input id="meeting-link" value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)} placeholder="Paste meeting link" />
+                    <Label htmlFor="meeting-link">{t("smartPlan.detail.transcript.meetingLink")}</Label>
+                    <Input id="meeting-link" value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)} placeholder={t("smartPlan.detail.transcript.meetingLinkPlaceholder")} />
                   </div>
                   <div>
-                    <Label htmlFor="transcript">Transcript</Label>
+                    <Label htmlFor="transcript">{t("smartPlan.detail.transcript.label")}</Label>
                     <Textarea id="transcript" value={transcript} onChange={(e) => setTranscript(e.target.value)} className="min-h-[160px]" />
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -305,12 +307,12 @@ export default function SmartPlanDetail() {
                       onClick={() => setRecordingTranscript((v) => !v)}
                     >
                       {recordingTranscript ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                      {recordingTranscript ? "Stop recording" : "Start recording"}
+                      {recordingTranscript ? t("smartPlan.detail.transcript.stopRecording") : t("smartPlan.detail.transcript.startRecording")}
                     </Button>
                     <Button type="button" variant="outline" asChild>
                       <label className="cursor-pointer inline-flex items-center gap-2">
                         <Upload className="w-4 h-4" />
-                        Upload recording / transcript
+                        {t("smartPlan.detail.transcript.upload")}
                         <input
                           type="file"
                           className="hidden"
@@ -325,10 +327,10 @@ export default function SmartPlanDetail() {
                         <span>{transcriptAttachments.join(", ")}</span>
                       </div>
                     ) : null}
-                    {recordingTranscript ? <span className="text-xs text-amber-600 font-semibold">Recording (simulated)</span> : null}
+                    {recordingTranscript ? <span className="text-xs text-amber-600 font-semibold">{t("smartPlan.detail.notes.recordingSimulated")}</span> : null}
                   </div>
                   <div className="flex justify-end">
-                    <Button onClick={handleSaveTranscript}>Save transcript</Button>
+                    <Button onClick={handleSaveTranscript}>{t("smartPlan.detail.transcript.save")}</Button>
                   </div>
                 </TabsContent>
               ) : null}
@@ -336,33 +338,33 @@ export default function SmartPlanDetail() {
               <TabsContent value="summary" className="space-y-3 mt-4">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="w-4 h-4 text-primary-600" />
-                  <span className="font-semibold text-slate-900">Summary by Mira</span>
+                  <span className="font-semibold text-slate-900">{t("smartPlan.detail.summary.header")}</span>
                 </div>
                 <Textarea
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
                   className="min-h-[140px]"
-                  placeholder="Generate or edit a concise summary..."
+                  placeholder={t("smartPlan.detail.summary.placeholder")}
                 />
                 {summaryError ? <p className="text-sm text-red-600">{summaryError}</p> : null}
                 <div className="flex flex-wrap gap-2 justify-between items-center">
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={handleGenerateSummary} disabled={summaryLoading}>
-                      {summaryLoading ? "Summarizing..." : "Generate with AI"}
+                      {summaryLoading ? t("smartPlan.detail.summary.summarizing") : t("smartPlan.detail.summary.generate")}
                     </Button>
                     <Button variant="outline" onClick={() => setSummary(notes || transcript || summary)}>
-                      Quick summarize
+                      {t("smartPlan.detail.summary.quickSummarize")}
                     </Button>
                   </div>
-                  <Button onClick={handleSaveSummary} disabled={summaryLoading}>Save summary</Button>
+                  <Button onClick={handleSaveSummary} disabled={summaryLoading}>{t("smartPlan.detail.summary.save")}</Button>
                 </div>
               </TabsContent>
             </Tabs>
 
             <Separator />
             <div className="flex flex-wrap gap-3 text-sm text-slate-600">
-              {task.created_at ? <span>Created: {new Date(task.created_at).toLocaleString()}</span> : null}
-              {task.updated_at ? <span>Updated: {new Date(task.updated_at).toLocaleString()}</span> : null}
+              {task.created_at ? <span>{t("smartPlan.detail.created", { date: new Date(task.created_at).toLocaleString() })}</span> : null}
+              {task.updated_at ? <span>{t("smartPlan.detail.updated", { date: new Date(task.updated_at).toLocaleString() })}</span> : null}
             </div>
           </CardContent>
         </Card>

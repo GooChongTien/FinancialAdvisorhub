@@ -28,9 +28,12 @@ import {
   Filter,
   Send,
   Target,
-  TrendingUp
+  TrendingUp,
+  Plus
 } from "lucide-react";
+import NewProposalModal from "@/admin/modules/proposal/components/NewProposalModal";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const stageIcons = {
@@ -53,10 +56,14 @@ export default function NewBusiness() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStage, setFilterStage] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("date-desc");
+  const [isNewProposalModalOpen, setIsNewProposalModalOpen] = useState(false);
+  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [initialModalState, setInitialModalState] = useState({ path: null, productId: null });
 
   const { data: proposals = [], isLoading } = useQuery({
     queryKey: ["proposals"],
@@ -73,37 +80,88 @@ export default function NewBusiness() {
     const action = params.get("action");
     const leadId = params.get("leadId");
     const search = params.get("search");
+    const journeyType = params.get("journeyType");
+    const productId = params.get("productId");
 
     // If search param exists, set it to searchTerm
     if (search && search.trim()) {
       setSearchTerm(search.trim());
     }
 
-    if (action === "new" && leadId) {
-      // Enforce single in-progress proposal per lead
-      const existing = proposals.find(
-        (p) => p.lead_id === leadId && p.status === "In Progress",
-      );
-      if (existing) {
-        navigate(createPageUrl(`ProposalDetail?id=${existing.id}`));
-      } else if (leads.length > 0) {
-        handleCreateProposal(leadId);
+    if (action === "new") {
+      // Enforce single in-progress proposal per lead ONLY if leadId is present
+      if (leadId) {
+        const existing = proposals.find(
+          (p) => p.lead_id === leadId && p.status === "In Progress",
+        );
+        if (existing) {
+          navigate(createPageUrl(`ProposalDetail?id=${existing.id}`));
+          return;
+        }
+      }
+
+      if (leads.length > 0 || !leadId) {
+        setSelectedLeadId(leadId);
+
+        // Map journeyType param to modal path
+        let path = null;
+        if (journeyType === "QA") path = "qa";
+        if (journeyType === "FULL" || journeyType === "GROUP") path = "ff";
+
+        setInitialModalState({ path, productId });
+        setIsNewProposalModalOpen(true);
       }
     }
-  }, [location, proposals, leads]);
+  }, [location, proposals, leads, navigate]);
 
   const createProposalMutation = useMutation({
-    mutationFn: async (leadId) => {
-      const lead = leads.find((l) => l.id === leadId);
+    mutationFn: async (payload) => {
+      const { lead_id, journey_type, stage, product_id, product_name } = payload;
+      const lead = leads.find((l) => l.id === lead_id);
       const proposalNumber = `PRO-${Date.now()}`;
+
+      const fact_finding_data = {
+        personal_details: {
+          name: lead?.name || "",
+          email: lead?.email || "",
+          phone_number: lead?.phone || "",
+        }
+      };
+
+      let quotation_data = {};
+      if (journey_type === "QA" && product_name) {
+        quotation_data = {
+          quote_scenarios: [
+            {
+              id: "main",
+              name: "Quick Quote",
+              is_recommended: true,
+              products: [
+                {
+                  product_name: product_name,
+                  product_id: product_id,
+                  premium_frequency: "Annual",
+                  life_assured_index: 0
+                }
+              ]
+            }
+          ]
+        };
+      }
+
       return adviseUAdminApi.entities.Proposal.create({
         proposal_number: proposalNumber,
-        lead_id: leadId,
-        proposer_name: lead.name,
-        stage: "Fact Finding",
+        lead_id: lead_id,
+        proposer_name: lead?.name || "Unknown",
+        journey_type: journey_type,
+        stage: stage,
+        product_id: product_id,
+        product_name: product_name,
         status: "In Progress",
         completion_percentage: 0,
         last_updated: new Date().toISOString(),
+        quotation_data,
+        fact_finding_data,
       });
     },
     onSuccess: (newProposal) => {
@@ -112,8 +170,9 @@ export default function NewBusiness() {
     },
   });
 
-  const handleCreateProposal = (leadId) => {
-    createProposalMutation.mutate(leadId);
+  const handleCreateProposal = (payload) => {
+    createProposalMutation.mutate(payload);
+    setIsNewProposalModalOpen(false);
   };
 
   const filteredProposals = React.useMemo(() => {
@@ -345,17 +404,26 @@ export default function NewBusiness() {
         {/* Sticky Header Section */}
         <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200 space-y-6">
           <PageHeader
-            title="New Business"
-            subtitle="Track and manage your proposal pipeline"
+            title={t("newBusiness.title")}
+            subtitle={t("newBusiness.subtitle")}
             icon={FileText}
             className="mb-0"
-          />
+          >
+            <Button onClick={() => {
+              setSelectedLeadId(null);
+              setInitialModalState({ path: null, productId: null });
+              setIsNewProposalModalOpen(true);
+            }}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t("newBusiness.cta.newProposal")}
+            </Button>
+          </PageHeader>
 
           {/* Unified Search/Filter/Sort Bar */}
           <SearchFilterBar
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
-            placeholder="Search by proposal number or client name..."
+            placeholder={t("newBusiness.searchPlaceholder")}
             filterButton={
               <Popover>
                 <PopoverTrigger asChild>
@@ -363,7 +431,7 @@ export default function NewBusiness() {
                     variant={filterStage !== "all" || filterStatus !== "all" ? "default" : "outline"}
                     size="icon"
                     className={filterStage !== "all" || filterStatus !== "all" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                    title="Filter"
+                    title={t("newBusiness.filters.title")}
                   >
                     <Filter className="h-4 w-4" />
                   </Button>
@@ -371,32 +439,32 @@ export default function NewBusiness() {
                 <PopoverContent className="w-64">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Stage</h4>
+                      <h4 className="font-semibold text-sm text-slate-900 mb-3">{t("newBusiness.filters.stage")}</h4>
                       <Select value={filterStage} onValueChange={setFilterStage}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Stage" />
+                          <SelectValue placeholder={t("newBusiness.filters.stage")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Stages</SelectItem>
-                          <SelectItem value="Fact Finding">Fact Finding</SelectItem>
-                          <SelectItem value="Financial Planning">Financial Planning</SelectItem>
-                          <SelectItem value="Recommendation">Recommendation</SelectItem>
-                          <SelectItem value="Quotation">Quotation</SelectItem>
-                          <SelectItem value="Application">Application</SelectItem>
+                          <SelectItem value="all">{t("newBusiness.filters.allStages")}</SelectItem>
+                          <SelectItem value="Fact Finding">{t("newBusiness.filters.stageOptions.factFinding")}</SelectItem>
+                          <SelectItem value="Financial Planning">{t("newBusiness.filters.stageOptions.financialPlanning")}</SelectItem>
+                          <SelectItem value="Recommendation">{t("newBusiness.filters.stageOptions.recommendation")}</SelectItem>
+                          <SelectItem value="Quotation">{t("newBusiness.filters.stageOptions.quotation")}</SelectItem>
+                          <SelectItem value="Application">{t("newBusiness.filters.stageOptions.application")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-sm text-slate-900 mb-3">Filter by Status</h4>
+                      <h4 className="font-semibold text-sm text-slate-900 mb-3">{t("newBusiness.filters.status")}</h4>
                       <Select value={filterStatus} onValueChange={setFilterStatus}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Status" />
+                          <SelectValue placeholder={t("common.status")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="In Progress">In Progress</SelectItem>
-                          <SelectItem value="Pending for UW">Pending UW</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
+                          <SelectItem value="all">{t("newBusiness.filters.allStatus")}</SelectItem>
+                          <SelectItem value="In Progress">{t("newBusiness.filters.statusOptions.inProgress")}</SelectItem>
+                          <SelectItem value="Pending for UW">{t("newBusiness.filters.statusOptions.pendingUw")}</SelectItem>
+                          <SelectItem value="Completed">{t("newBusiness.filters.statusOptions.completed")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -411,42 +479,42 @@ export default function NewBusiness() {
                     variant={sortBy !== "date-desc" ? "default" : "outline"}
                     size="icon"
                     className={sortBy !== "date-desc" ? "bg-primary-600 text-white hover:bg-primary-700" : ""}
-                    title="Sort"
+                    title={t("newBusiness.sort.title")}
                   >
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56">
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-sm text-slate-900 mb-3">Sort by</h4>
+                    <h4 className="font-semibold text-sm text-slate-900 mb-3">{t("newBusiness.sort.title")}</h4>
                     <div className="space-y-2">
                       <Button
                         variant={sortBy === "date-desc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("date-desc")}
                       >
-                        Latest Update
+                        {t("newBusiness.sort.latest")}
                       </Button>
                       <Button
                         variant={sortBy === "date-asc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("date-asc")}
                       >
-                        Oldest Update
+                        {t("newBusiness.sort.oldest")}
                       </Button>
                       <Button
                         variant={sortBy === "name-asc" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("name-asc")}
                       >
-                        Name (A-Z)
+                        {t("newBusiness.sort.name")}
                       </Button>
                       <Button
                         variant={sortBy === "stage" ? "default" : "ghost"}
                         className="w-full justify-start"
                         onClick={() => setSortBy("stage")}
                       >
-                        By Stage
+                        {t("newBusiness.sort.stage")}
                       </Button>
                     </div>
                   </div>
@@ -473,10 +541,10 @@ export default function NewBusiness() {
               <CardContent className="p-12 text-center">
                 <FileText className="w-16 h-16 mx-auto text-slate-300 mb-4" />
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  No proposals found
+                  {t("newBusiness.empty.title")}
                 </h3>
                 <p className="text-slate-500">
-                  Start a new business case from the Customer page
+                  {t("newBusiness.empty.body")}
                 </p>
               </CardContent>
             </Card>
@@ -554,6 +622,15 @@ export default function NewBusiness() {
           )}
         </div>
       </div>
-    </div>
+
+      <NewProposalModal
+        open={isNewProposalModalOpen}
+        onOpenChange={setIsNewProposalModalOpen}
+        onCreate={handleCreateProposal}
+        leadId={selectedLeadId}
+        initialPath={initialModalState.path}
+        initialProductId={initialModalState.productId}
+      />
+    </div >
   );
 }

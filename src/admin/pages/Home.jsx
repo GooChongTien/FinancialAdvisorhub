@@ -6,6 +6,8 @@ import { trackMiraEvent } from "@/admin/lib/miraTelemetry.js";
 import { useLeadDirectory } from "@/admin/state/LeadDirectoryProvider.jsx";
 import { miraCommandMachine } from "@/admin/state/machines/miraCommandMachine.js";
 import { useMiraInsights } from "@/admin/state/providers/MiraInsightsProvider.jsx";
+import { useMiraMode } from "@/admin/state/useMiraMode";
+import { useAgentChatStore } from "@/admin/state/providers/AgentChatProvider.jsx";
 import { createPageUrl } from "@/admin/utils";
 import { createAialEvent, createAialRouter } from "@/lib/aial";
 import {
@@ -69,6 +71,8 @@ export default function Home() {
   const { showToast } = useToast();
   const { leads: leadDirectory } = useLeadDirectory();
   const { insights: globalInsights } = useMiraInsights();
+  const { openSplit } = useMiraMode();
+  const { sendMessage } = useAgentChatStore();
   const [commandState, send] = useMachine(miraCommandMachine);
   const activeMode = commandState.context.mode;
   const persona = commandState.context.persona;
@@ -210,10 +214,10 @@ export default function Home() {
         intentGuess: intentName,
         source: "home-dashboard",
       });
-      // Immediately open full ChatMira; all approvals and actions happen there
-      const from = encodeURIComponent(location.pathname + location.search);
-      const q = new URLSearchParams({ from, prompt: trimmed });
-      navigate(`${createPageUrl("ChatMira")}?${q.toString()}`);
+
+      // Open split view and send message (keeps user in context)
+      openSplit();
+      sendMessage(trimmed);
       return;
     },
     [
@@ -223,8 +227,8 @@ export default function Home() {
       persona,
       activeMode,
       router,
-      navigate,
-      createPageUrl,
+      openSplit,
+      sendMessage,
       showToast,
     ],
   );

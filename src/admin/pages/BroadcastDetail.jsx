@@ -10,6 +10,8 @@ import { Button } from "@/admin/components/ui/button";
 import { Calendar, Megaphone, GraduationCap, TrendingUp, Newspaper, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
+import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
 const getCategoryIcon = (category) => {
   const icons = {
@@ -40,6 +42,15 @@ export default function BroadcastDetail() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const categories = useMemo(
+    () => [
+      { id: "Announcement", label: t("news.categories.announcement") },
+      { id: "Training", label: t("news.categories.training") },
+      { id: "Campaign", label: t("news.categories.campaign") },
+    ],
+    [t],
+  );
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["news-detail", id],
@@ -73,11 +84,11 @@ export default function BroadcastDetail() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <Button variant="ghost" onClick={() => navigate(createPageUrl("News"))}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back to News
+          <ArrowLeft className="h-4 w-4 mr-2" /> {t("news.actions.back")}
         </Button>
 
         <PageHeader
-          title={b?.title || (isLoading ? "Loading..." : "Announcement")}
+          title={b?.title || (isLoading ? t("common.loading") : t("news.announcement"))}
           subtitle={b ? format(new Date(b.published_date), "MMM d, yyyy h:mm a") : ""}
           icon={Icon || Newspaper}
         />
@@ -88,8 +99,10 @@ export default function BroadcastDetail() {
               <div className="mb-4 flex items-center gap-2 text-sm text-slate-600">
                 <Calendar className="h-4 w-4" />
                 <span>{format(new Date(b.published_date), "MMM d, yyyy h:mm a")}</span>
-                <span aria-hidden>?</span>
-                <Badge className={getCategoryColor(b.category)}>{b.category}</Badge>
+                <span aria-hidden>|</span>
+                <Badge className={getCategoryColor(b.category)}>
+                  {categories.find((c) => c.id === b.category)?.label || b.category}
+                </Badge>
               </div>
               <div className="prose max-w-none whitespace-pre-wrap leading-relaxed text-slate-800">
                 {b.content}

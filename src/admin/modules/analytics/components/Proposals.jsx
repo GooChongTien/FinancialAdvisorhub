@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/
 import { Skeleton } from "@/admin/components/ui/skeleton";
 import { CheckCircle2, Clock, DollarSign, FileText } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Area,
     AreaChart,
@@ -25,6 +26,7 @@ const COLORS = ["#0ea5e9", "#f97316", "#22c55e", "#6366f1", "#eab308"];
 
 export default function Proposals() {
     const { proposals, loading } = useAnalyticsData();
+    const { t } = useTranslation();
 
     const kpis = useMemo(() => {
         const totalProposals = proposals.length;
@@ -87,7 +89,7 @@ export default function Proposals() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Total Proposals</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.proposals.total")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.totalProposals}</p>
                                     <span className="text-xs font-medium text-green-600">+14%</span>
@@ -103,7 +105,7 @@ export default function Proposals() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Active Proposals</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.proposals.active")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.activeProposals}</p>
                                     <span className="text-xs font-medium text-green-600">+5%</span>
@@ -119,7 +121,7 @@ export default function Proposals() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Success Rate</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.proposals.successRate")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.successRate}%</p>
                                     <span className="text-xs font-medium text-green-600">+6%</span>
@@ -135,7 +137,7 @@ export default function Proposals() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Avg. Deal Size</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.proposals.avgDeal")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">${kpis.avgDealSize.toLocaleString()}</p>
                                     <span className="text-xs font-medium text-green-600">+18%</span>
@@ -155,32 +157,36 @@ export default function Proposals() {
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Proposal Trend Analysis</CardTitle>
-                            <p className="text-sm text-slate-500">Created, completed, and rejected proposals</p>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.proposals.trendSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
-                        <div className="h-72">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                    <XAxis dataKey="month" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} name="Created" />
-                                    <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name="Completed" />
-                                    <Line type="monotone" dataKey="rejected" stroke="#ef4444" strokeWidth={2} name="Rejected" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
+                                <div className="h-72">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={trendData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                            <XAxis dataKey="month" />
+                                            <YAxis />
+                                            <Tooltip />
+                                            <Legend />
+                                            <Line type="monotone" dataKey="created" stroke="#3b82f6" strokeWidth={2} name={t("analytics.proposals.created")} />
+                                            <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name={t("analytics.proposals.completed")} />
+                                            <Line type="monotone" dataKey="rejected" stroke="#ef4444" strokeWidth={2} name={t("analytics.proposals.rejected")} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
                 </Card>
 
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Proposal Aging Analysis</CardTitle>
-                            <p className="text-sm text-slate-500">Active proposals by age</p>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.proposals.agingSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -205,7 +211,9 @@ export default function Proposals() {
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Proposals by Product Category</CardTitle>
-                            <p className="text-sm text-slate-500">Proposal distribution across products</p>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.proposals.productSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -237,7 +245,9 @@ export default function Proposals() {
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Conversion Rate Trend</CardTitle>
-                            <p className="text-sm text-slate-500">Success rate over time (%)</p>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.proposals.conversionSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">

@@ -1,55 +1,58 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import { createPageUrl } from "@/admin/utils";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/admin/components/ui/tabs";
+import { Badge } from "@/admin/components/ui/badge";
 import { Button } from "@/admin/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
-import { Badge } from "@/admin/components/ui/badge";
-import { Skeleton } from "@/admin/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/admin/components/ui/dialog";
-import { EntityCustomerForm } from "@/admin/modules/customers/components/EntityCustomerForm";
-import { CompanyDetailsCard } from "@/admin/modules/customers/components/CompanyDetailsCard";
-import { KeymanDetailsForm } from "@/admin/modules/customers/components/KeymanDetailsForm";
-import { EmployeeListUpload } from "@/admin/modules/customers/components/EmployeeListUpload";
-import CustomerPortfolio from "@/admin/modules/customers/components/CustomerPortfolio";
-import CustomerServicing from "@/admin/modules/customers/components/CustomerServicing";
-import CustomerGapAnalysis from "@/admin/modules/customers/components/CustomerGapAnalysis";
-import OurJourneyTimeline from "@/admin/modules/customers/components/OurJourneyTimeline";
+import { Skeleton } from "@/admin/components/ui/skeleton";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/admin/components/ui/tabs";
 import { useToast } from "@/admin/components/ui/toast";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
-import { formatCurrency } from "@/lib/utils";
+import { CompanyDetailsCard } from "@/admin/modules/customers/components/CompanyDetailsCard";
+import CustomerPortfolio from "@/admin/modules/customers/components/CustomerPortfolio";
+import CustomerServicing from "@/admin/modules/customers/components/CustomerServicing";
+import { EmployeeListUpload } from "@/admin/modules/customers/components/EmployeeListUpload";
+import { EntityCustomerForm } from "@/admin/modules/customers/components/EntityCustomerForm";
+import { KeymanDetailsForm } from "@/admin/modules/customers/components/KeymanDetailsForm";
+import OurJourneyTimeline from "@/admin/modules/customers/components/OurJourneyTimeline";
 import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
+import { createPageUrl } from "@/admin/utils";
+import { formatCurrency } from "@/lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Building2,
-  Mail,
-  Phone,
-  PencilLine,
-  UserRound,
-  Upload,
   CalendarPlus,
-  Users,
+  Mail,
   NotebookText,
+  PencilLine,
+  Phone,
+  Upload,
+  UserRound,
+  Users,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+
 
 export default function EntityCustomerDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { prefs } = usePreferences();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const params = new URLSearchParams(window.location.search);
+
   const entityId = params.get("id");
   const storageKey = `advisorhub:entity-customer-tab:${entityId ?? "default"}`;
   const employeeStorageKey = `advisorhub:entity-customer:${entityId}:employees`;
@@ -198,14 +201,14 @@ export default function EntityCustomerDetail() {
       setEditingKeymanIndex(null);
       showToast({
         type: "success",
-        title: "Keyman details saved",
+        title: t("entityCustomer.toast.keymanSaved"),
       });
     },
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to save keyman",
-        description: error?.message ?? "Try again.",
+        title: t("entityCustomer.toast.keymanError"),
+        description: error?.message ?? t("entityCustomer.toast.keymanErrorDesc"),
       });
     },
   });
@@ -230,15 +233,15 @@ export default function EntityCustomerDetail() {
       setEmployeeDialogOpen(false);
       showToast({
         type: "success",
-        title: "Employee list uploaded",
-        description: `${rows.length} employees captured for quick servicing.`,
+        title: t("entityCustomer.toast.employeeUploaded"),
+        description: t("entityCustomer.toast.employeeUploadedDesc", { count: rows.length }),
       });
     },
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to save employee roster",
-        description: error?.message ?? "Please try again.",
+        title: t("entityCustomer.toast.employeeError"),
+        description: error?.message ?? t("entityCustomer.toast.employeeErrorDesc"),
       });
     },
   });
@@ -256,14 +259,14 @@ export default function EntityCustomerDetail() {
       setMilestoneDialogOpen(false);
       showToast({
         type: "success",
-        title: "Milestone added",
+        title: t("entityCustomer.toast.milestoneAdded"),
       });
     },
     onError: (error) => {
       showToast({
         type: "error",
-        title: "Unable to add milestone",
-        description: error?.message ?? "Please try again",
+        title: t("entityCustomer.toast.milestoneError"),
+        description: error?.message ?? t("entityCustomer.toast.milestoneErrorDesc"),
       });
     },
   });
@@ -291,8 +294,8 @@ export default function EntityCustomerDetail() {
     if (!milestoneForm.milestone_title || !milestoneForm.milestone_date) {
       showToast({
         type: "error",
-        title: "Incomplete milestone",
-        description: "Title and date are required.",
+        title: t("entityCustomer.toast.milestoneIncomplete"),
+        description: t("entityCustomer.toast.milestoneIncompleteDesc"),
       });
       return;
     }
@@ -328,10 +331,10 @@ export default function EntityCustomerDetail() {
                 }}
               >
                 <PencilLine className="mr-1 h-4 w-4" />
-                Edit
+                {t("entityCustomer.buttons.edit")}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => handleRemoveKeyman(index)}>
-                Remove
+                {t("entityCustomer.buttons.remove")}
               </Button>
             </div>
           </div>
@@ -340,15 +343,15 @@ export default function EntityCustomerDetail() {
         <CardContent className="space-y-2 text-sm text-slate-600">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-slate-400" />
-            <span>{keyman.role_in_business || "No role specified"}</span>
+            <span>{keyman.role_in_business || t("entityCustomer.keyman.noRole")}</span>
           </div>
           <div className="flex items-center gap-2">
             <NotebookText className="h-4 w-4 text-slate-400" />
             <span>
-              Coverage:{" "}
+              {t("entityCustomer.keyman.coverage")}:{" "}
               {keyman.coverage_amount
                 ? formatCurrency(Number(keyman.coverage_amount) || 0, prefs)
-                : "Not set"}
+                : t("entityCustomer.keyman.notSet")}
             </span>
           </div>
         </CardContent>
@@ -369,9 +372,9 @@ export default function EntityCustomerDetail() {
   if (!customer) {
     return (
       <div className="p-8 text-center">
-        <p className="text-slate-500">Entity customer not found.</p>
+        <p className="text-slate-500">{t("entityCustomer.notFound")}</p>
         <Button variant="ghost" className="mt-4" onClick={() => navigate(createPageUrl("EntityCustomers"))}>
-          Back to Entity Customers
+          {t("entityCustomer.backToList")}
         </Button>
       </div>
     );
@@ -399,7 +402,7 @@ export default function EntityCustomerDetail() {
                 <p className="text-sm text-slate-500">{customer.business_registration_no}</p>
               </div>
               <Badge variant="secondary" className="ml-auto">
-                Entity Client
+                {t("entityCustomer.badges.entityClient")}
               </Badge>
             </div>
             <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-600">
@@ -419,15 +422,15 @@ export default function EntityCustomerDetail() {
           </div>
           <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
             <PencilLine className="mr-2 h-4 w-4" />
-            Edit
+            {t("entityCustomer.buttons.edit")}
           </Button>
         </div>
         <div className="mx-auto max-w-6xl px-6 pb-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="scrollbar-hide overflow-x-auto rounded-lg border border-slate-200 bg-slate-50">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-              <TabsTrigger value="servicing">Servicing</TabsTrigger>
+              <TabsTrigger value="overview">{t("entityCustomer.tabs.overview")}</TabsTrigger>
+              <TabsTrigger value="portfolio">{t("entityCustomer.tabs.portfolio")}</TabsTrigger>
+              <TabsTrigger value="servicing">{t("entityCustomer.tabs.servicing")}</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -445,7 +448,7 @@ export default function EntityCustomerDetail() {
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="border-slate-200 shadow-sm">
                 <CardHeader className="flex items-center justify-between pb-2">
-                  <CardTitle>Keyman Coverage</CardTitle>
+                  <CardTitle>{t("entityCustomer.sections.keymanCoverage")}</CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
@@ -455,13 +458,13 @@ export default function EntityCustomerDetail() {
                     }}
                   >
                     <UserRound className="mr-2 h-4 w-4" />
-                    Add Keyman
+                    {t("entityCustomer.buttons.addKeyman")}
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {keymanList.length === 0 && (
                     <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                      No keyman captured yet.
+                      {t("entityCustomer.keyman.empty")}
                     </div>
                   )}
                   {keymanList.map((keyman, index) => renderKeymanCard(keyman, index))}
@@ -470,29 +473,29 @@ export default function EntityCustomerDetail() {
 
               <Card className="border-slate-200 shadow-sm">
                 <CardHeader className="flex items-center justify-between pb-2">
-                  <CardTitle>Employee Coverage</CardTitle>
+                  <CardTitle>{t("entityCustomer.sections.employeeCoverage")}</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => setEmployeeDialogOpen(true)}>
                     <Upload className="mr-2 h-4 w-4" />
-                    Upload List
+                    {t("entityCustomer.buttons.uploadList")}
                   </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {employeeRoster.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                      Upload a CSV of employees to prefill group servicing requests.
+                      {t("entityCustomer.employee.uploadPrompt")}
                     </div>
                   ) : (
                     <>
                       <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">
-                        {employeeRoster.length} employees stored for this entity.
+                        {t("entityCustomer.employee.stored", { count: employeeRoster.length })}
                       </div>
                       <div className="overflow-hidden rounded-lg border border-slate-200">
                         <table className="w-full text-sm">
                           <thead className="bg-slate-100">
                             <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                              <th className="px-3 py-2">Name</th>
-                              <th className="px-3 py-2">Email</th>
-                              <th className="px-3 py-2">Role</th>
+                              <th className="px-3 py-2">{t("entityCustomer.employee.tableHeaders.name")}</th>
+                              <th className="px-3 py-2">{t("entityCustomer.employee.tableHeaders.email")}</th>
+                              <th className="px-3 py-2">{t("entityCustomer.employee.tableHeaders.role")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -516,10 +519,10 @@ export default function EntityCustomerDetail() {
 
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="flex items-center justify-between pb-2">
-                <CardTitle>Our Journey</CardTitle>
+                <CardTitle>{t("entityCustomer.sections.ourJourney")}</CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setMilestoneDialogOpen(true)}>
                   <CalendarPlus className="mr-2 h-4 w-4" />
-                  Add Milestone
+                  {t("entityCustomer.buttons.addMilestone")}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -532,22 +535,22 @@ export default function EntityCustomerDetail() {
                         milestones={normalizedMilestones}
                         activeId={activeMilestoneId}
                         onSelect={(milestone) => setActiveMilestoneId(milestone.id)}
-                        emptyMessage="No milestones yet. Capture anniversaries, claims, and wins here."
+                        emptyMessage={t("entityCustomer.milestone.empty")}
                       />
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-white p-4">
-                      <h3 className="text-base font-semibold text-slate-900">Milestone Detail</h3>
+                      <h3 className="text-base font-semibold text-slate-900">{t("entityCustomer.sections.milestoneDetail")}</h3>
                       {activeMilestone ? (
                         <div className="mt-3 space-y-3 text-sm text-slate-600">
                           <p className="text-slate-900">{activeMilestone.title}</p>
-                          <p>{activeMilestone.description || "No description provided"}</p>
+                          <p>{activeMilestone.description || t("entityCustomer.milestone.noDescription")}</p>
                           <p className="text-xs text-slate-500">
                             {new Date(activeMilestone.date).toLocaleDateString()}
                           </p>
                         </div>
                       ) : (
                         <p className="mt-3 text-sm text-slate-500">
-                          Select a milestone to view the details.
+                          {t("entityCustomer.milestone.selectPrompt")}
                         </p>
                       )}
                     </div>
@@ -571,7 +574,7 @@ export default function EntityCustomerDetail() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Entity Customer</DialogTitle>
+            <DialogTitle>{t("entityCustomer.dialogs.editEntity")}</DialogTitle>
           </DialogHeader>
           <EntityCustomerForm
             initialData={customer}
@@ -583,15 +586,15 @@ export default function EntityCustomerDetail() {
                   setEditDialogOpen(false);
                   showToast({
                     type: "success",
-                    title: "Entity updated",
-                    description: `${updated.company_name} saved successfully.`,
+                    title: t("entityCustomer.toast.entityUpdated"),
+                    description: t("entityCustomer.toast.entityUpdatedDesc", { name: updated.company_name }),
                   });
                 },
                 (error) =>
                   showToast({
                     type: "error",
-                    title: "Unable to update",
-                    description: error?.message ?? "Please try again.",
+                    title: t("entityCustomer.toast.entityUpdateError"),
+                    description: error?.message ?? t("entityCustomer.toast.entityUpdateErrorDesc"),
                   }),
               );
             }}
@@ -603,7 +606,7 @@ export default function EntityCustomerDetail() {
       <Dialog open={keymanDialogOpen} onOpenChange={setKeymanDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingKeymanIndex !== null ? "Edit Keyman" : "Add Keyman"}</DialogTitle>
+            <DialogTitle>{editingKeymanIndex !== null ? t("entityCustomer.dialogs.editKeyman") : t("entityCustomer.dialogs.addKeyman")}</DialogTitle>
           </DialogHeader>
           <KeymanDetailsForm
             initialData={editingKeymanIndex !== null ? keymanList[editingKeymanIndex] : undefined}
@@ -619,7 +622,7 @@ export default function EntityCustomerDetail() {
       <Dialog open={employeeDialogOpen} onOpenChange={setEmployeeDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Upload Employee List</DialogTitle>
+            <DialogTitle>{t("entityCustomer.dialogs.uploadEmployee")}</DialogTitle>
           </DialogHeader>
           <EmployeeListUpload
             requiredColumns={["name", "email", "role"]}
@@ -632,11 +635,11 @@ export default function EntityCustomerDetail() {
       <Dialog open={milestoneDialogOpen} onOpenChange={setMilestoneDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>New Milestone</DialogTitle>
+            <DialogTitle>{t("entityCustomer.dialogs.newMilestone")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Title</label>
+              <label className="text-sm font-medium text-slate-700">{t("entityCustomer.milestone.formLabels.title")}</label>
               <input
                 type="text"
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -647,7 +650,7 @@ export default function EntityCustomerDetail() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Date</label>
+              <label className="text-sm font-medium text-slate-700">{t("entityCustomer.milestone.formLabels.date")}</label>
               <input
                 type="date"
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -658,7 +661,7 @@ export default function EntityCustomerDetail() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Category</label>
+              <label className="text-sm font-medium text-slate-700">{t("entityCustomer.milestone.formLabels.category")}</label>
               <select
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                 value={milestoneForm.category}
@@ -666,16 +669,16 @@ export default function EntityCustomerDetail() {
                   setMilestoneForm((prev) => ({ ...prev, category: event.target.value }))
                 }
               >
-                <option>General</option>
-                <option>Policy</option>
-                <option>Life Event</option>
-                <option>Financial Goal</option>
-                <option>Service</option>
-                <option>Relationship</option>
+                <option>{t("entityCustomer.milestone.categories.general")}</option>
+                <option>{t("entityCustomer.milestone.categories.policy")}</option>
+                <option>{t("entityCustomer.milestone.categories.lifeEvent")}</option>
+                <option>{t("entityCustomer.milestone.categories.financialGoal")}</option>
+                <option>{t("entityCustomer.milestone.categories.service")}</option>
+                <option>{t("entityCustomer.milestone.categories.relationship")}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Description</label>
+              <label className="text-sm font-medium text-slate-700">{t("entityCustomer.milestone.formLabels.description")}</label>
               <textarea
                 rows={3}
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -690,10 +693,10 @@ export default function EntityCustomerDetail() {
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setMilestoneDialogOpen(false)}>
-                Cancel
+                {t("entityCustomer.buttons.cancel")}
               </Button>
               <Button onClick={handleMilestoneSubmit} disabled={updateMilestoneMutation.isPending}>
-                Save Milestone
+                {t("entityCustomer.buttons.saveMilestone")}
               </Button>
             </div>
           </div>

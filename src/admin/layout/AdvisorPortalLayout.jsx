@@ -6,6 +6,7 @@ import adviseULogo from "@/admin/components/ui/advise_u_logo.png";
 import adviseUShield from "@/admin/components/ui/adviseU.png";
 import { Avatar, AvatarFallback } from "@/admin/components/ui/avatar";
 import { Button } from "@/admin/components/ui/button";
+import { useMiraMode } from "@/admin/state/useMiraMode";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ function LayoutWithChatProvider() {
   const queryClient = useQueryClient();
   const { updatePrefs } = usePreferences();
   const { t } = useTranslation();
+  const { openSplit } = useMiraMode();
   const navigationItems = React.useMemo(() => ([
     { title: t("navigation.home"), url: "/advisor/home", icon: Home },
     { title: t("navigation.products"), url: "/advisor/product", icon: Calculator },
@@ -216,13 +218,11 @@ function LayoutWithChatProvider() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, openDrawer, closeDrawer]);
 
-  const handleNewChat = React.useCallback(() => {
+  const handleAskMira = React.useCallback(() => {
     setActiveThread(null);
-    // Always open full-screen chat page first (as requested)
-    // Pass current route so chat page can shrink back to drawer and return
-    const from = encodeURIComponent(location.pathname + location.search);
-    navigate(`/advisor/chat?from=${from}`);
-  }, [location.pathname, location.search, navigate, setActiveThread]);
+    // Open split view (keeps user in context)
+    openSplit();
+  }, [openSplit, setActiveThread]);
 
   const handlePreferredLanguageChange = React.useCallback((languageCode) => {
     updatePrefs({ language: languageCode });
@@ -314,7 +314,7 @@ function LayoutWithChatProvider() {
       <div className="min-h-screen bg-background-tertiary flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-500" />
-          <p className="mt-4 text-sm text-neutral-600">Loading...</p>
+          <p className="mt-4 text-sm text-neutral-600">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -350,7 +350,9 @@ function LayoutWithChatProvider() {
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="absolute flex items-center justify-center rounded-lg border border-menu-divider bg-menu-background p-1.5 text-menu-text transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
               aria-label={
-                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                sidebarCollapsed
+                  ? t("layout.sidebar.expand")
+                  : t("layout.sidebar.collapse")
               }
               style={{
                 top: "calc(40px + 20px + 2.5px)", // logo height (40px) + margin-top (20px) + half border height
@@ -427,26 +429,28 @@ function LayoutWithChatProvider() {
               )}
             >
               <Button
-                onClick={handleNewChat}
+                onClick={handleAskMira}
                 variant="outline"
                 className={cn(
                   "items-center justify-center gap-2 rounded-lg border-white/20 bg-white/5 text-label-l-semibold text-white shadow-sm transition hover:bg-white/10",
-                  (sidebarCollapsed || location.pathname === "/advisor/home" || location.pathname === "/advisor/chat") ? "hidden" : "flex w-full",
+                  sidebarCollapsed ? "hidden" : "flex w-full",
                 )}
               >
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-sky-400 text-white shadow-sm">
                   <Sparkles className="h-3.5 w-3.5" />
                 </span>
                 {!sidebarCollapsed && (
-                  <span className="text-sm font-semibold">Ask Mira</span>
+                  <span className="text-sm font-semibold">
+                    {t("layout.sidebar.askMira")}
+                  </span>
                 )}
               </Button>
               {sidebarCollapsed && (
                 <button
                   type="button"
-                  onClick={handleNewChat}
+                  onClick={handleAskMira}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 via-purple-400 to-sky-400 text-white shadow-sm transition hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
-                  title="Ask Mira"
+                  title={t("layout.sidebar.askMira")}
                 >
                   <Sparkles className="h-4 w-4" />
                 </button>
@@ -484,7 +488,7 @@ function LayoutWithChatProvider() {
                       ? "h-10 w-10 justify-center p-2"
                       : "w-full gap-3 px-2 py-2",
                   )}
-                  title={user?.full_name || "User menu"}
+                  title={user?.full_name || t("layout.userMenu.title")}
                 >
                   <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center">
                     <Avatar className="h-6 w-6">
@@ -496,10 +500,10 @@ function LayoutWithChatProvider() {
                   {!sidebarCollapsed && (
                     <div className="flex-1 text-left">
                       <p className="text-label-l-semibold capitalize text-white">
-                        {user?.full_name || "User"}
+                        {user?.full_name || t("layout.userMenu.fallbackName")}
                       </p>
                       <p className="text-label-s capitalize text-white/70">
-                        {user?.role || "Agent"}
+                        {user?.role || t("layout.userMenu.fallbackRole")}
                       </p>
                     </div>
                   )}
@@ -561,24 +565,26 @@ function LayoutWithChatProvider() {
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-pink-400 via-purple-400 to-sky-400 text-white shadow-sm">
                   <Sparkles className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-sm font-semibold text-slate-800">Mira</span>
+                <span className="text-sm font-semibold text-slate-800">
+                  {t("layout.drawer.title")}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   onClick={() => navigate("/advisor/chat")}
-                  title="Open full screen"
+                  title={t("layout.drawer.fullScreen")}
                 >
-                  Full screen
+                  {t("layout.drawer.fullScreen")}
                 </button>
                 <button
                   type="button"
                   className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
                   onClick={closeDrawer}
-                  aria-label="Close Mira drawer"
+                  aria-label={t("layout.drawer.close")}
                 >
-                  Close
+                  {t("layout.drawer.close")}
                 </button>
               </div>
             </div>
@@ -614,6 +620,7 @@ function ChatSidebar({
   onSelectThread,
   onViewAll,
 }) {
+  const { t } = useTranslation();
   const hasThreads = Array.isArray(threads) && threads.length > 0;
 
   if (sidebarCollapsed) {
@@ -627,15 +634,15 @@ function ChatSidebar({
         {threads.slice(0, 6).map((thread) => {
           const isActive = activeThreadId === thread.id;
           return (
-            <button
-              key={thread.id}
-              type="button"
-              onClick={() => onSelectThread(thread.id)}
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70",
-                isActive && "bg-white/20 text-white",
-              )}
-              title={thread.title || "Mira chat"}
+              <button
+                key={thread.id}
+                type="button"
+                onClick={() => onSelectThread(thread.id)}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70",
+                  isActive && "bg-white/20 text-white",
+                )}
+              title={thread.title || t("layout.sidebar.miraChat")}
             >
               <MessageCircle className="h-4 w-4" />
             </button>
@@ -648,7 +655,7 @@ function ChatSidebar({
   return (
     <div className="mt-4 flex flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 px-3 py-3">
       <span className="text-xs font-semibold uppercase tracking-wide text-white/60">
-        Chats
+        {t("layout.sidebar.chats")}
       </span>
       <div className="mt-3 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
         {isLoading && (
@@ -663,19 +670,19 @@ function ChatSidebar({
         )}
         {!isLoading && error && (
           <div className="rounded-lg bg-white/10 px-3 py-4 text-xs text-white/70">
-            Could not load recent chats.{" "}
+            {t("layout.sidebar.loadError")}{" "}
             <button
               type="button"
               onClick={onViewAll}
               className="underline transition hover:text-white"
             >
-              View all
+              {t("layout.sidebar.viewAll")}
             </button>
           </div>
         )}
         {!isLoading && !error && !hasThreads && (
           <div className="rounded-lg bg-white/5 px-3 py-4 text-xs text-white/70">
-            Start a conversation with Mira to see it here.
+            {t("layout.sidebar.empty")}
           </div>
         )}
         {!isLoading &&
@@ -686,8 +693,8 @@ function ChatSidebar({
             const subtitle =
               thread.lastMessagePreview ||
               (thread.lastMessageRole === "assistant"
-                ? "Assistant replied"
-                : "You sent a message");
+                ? t("layout.sidebar.assistantReplied")
+                : t("layout.sidebar.userSent"));
             return (
               <button
                 key={thread.id}
@@ -707,7 +714,7 @@ function ChatSidebar({
                 <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-medium text-white">
-                      {thread.title || "Untitled chat"}
+                      {thread.title || t("layout.sidebar.untitled")}
                     </span>
                     <span className="flex-shrink-0 text-xs text-white/50">
                       {formatRelativeTime(thread.updatedAt)}
@@ -728,7 +735,7 @@ function ChatSidebar({
           className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70"
         >
           <MoreHorizontal className="h-4 w-4" />
-          All Chats
+          {t("layout.sidebar.allChats")}
         </button>
       </div>
     </div>

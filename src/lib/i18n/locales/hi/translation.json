@@ -1,140 +1,1435 @@
 {
   "common": {
-    "welcome": "स्वागत है",
-    "logout": "लॉगआउट",
-    "save": "सहेजें",
-    "cancel": "रद्द करें",
-    "delete": "हटाएं",
-    "edit": "संपादित करें",
-    "add": "जोड़ें",
-    "search": "खोजें",
-    "filter": "फ़िल्टर",
-    "export": "निर्यात",
-    "import": "आयात",
-    "loading": "लोड हो रहा है...",
-    "error": "त्रुटि",
-    "success": "सफलता",
-    "confirm": "पुष्टि करें",
-    "back": "वापस",
-    "next": "अगला",
-    "previous": "पिछला",
-    "submit": "जमा करें",
-    "close": "बंद करें",
-    "view": "देखें",
-    "download": "डाउनलोड",
-    "upload": "अपलोड",
-    "select": "चुनें",
-    "all": "सभी",
-    "none": "कोई नहीं",
-    "yes": "हाँ",
-    "no": "नहीं",
-    "actions": "क्रियाएं",
-    "status": "स्थिति",
-    "date": "तारीख",
-    "time": "समय",
-    "name": "नाम",
-    "email": "ईमेल",
-    "phone": "फ़ोन",
-    "address": "पता",
-    "notes": "नोट्स",
-    "description": "विवरण",
-    "total": "कुल",
-    "currency": "मुद्रा",
-    "language": "भाषा"
+    "welcome": "Welcome",
+    "logout": "Logout",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close",
+    "view": "View",
+    "download": "Download",
+    "upload": "Upload",
+    "select": "Select",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "time": "Time",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "notes": "Notes",
+    "description": "Description",
+    "total": "Total",
+    "currency": "Currency",
+    "language": "Language",
+    "dropFileHere": "Drop file here",
+    "or": "or",
+    "chooseFile": "choose file",
+    "validationErrors": "Validation Errors",
+    "warnings": "Warnings",
+    "preview": "Preview"
   },
   "navigation": {
-    "home": "होम",
-    "dashboard": "डैशबोर्ड",
-    "customers": "ग्राहक",
-    "newBusiness": "नया व्यवसाय",
-    "quickQuote": "त्वरित कोट",
-    "proposals": "प्रस्ताव",
-    "policies": "नीतियां",
-    "analytics": "विश्लेषण",
-    "smartPlan": "स्मार्ट योजना",
-    "servicing": "सेवा",
-    "news": "समाचार",
-    "products": "उत्पाद",
-    "settings": "सेटिंग्स",
-    "profile": "प्रोफ़ाइल"
+    "home": "Home",
+    "dashboard": "Visualizers",
+    "customers": "Customers",
+    "newBusiness": "New Business",
+    "quickQuote": "Quick Quote",
+    "proposals": "Proposals",
+    "policies": "Policies",
+    "analytics": "Analytics",
+    "smartPlan": "Smart Plan",
+    "servicing": "Servicing",
+    "news": "News",
+    "products": "Products",
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "layout": {
+    "sidebar": {
+      "expand": "Expand sidebar",
+      "collapse": "Collapse sidebar",
+      "askMira": "Ask Mira",
+      "miraChat": "Mira Chat",
+      "chats": "Chats",
+      "loadError": "Failed to load chats",
+      "viewAll": "View all",
+      "empty": "No chats yet",
+      "assistantReplied": "Assistant replied",
+      "userSent": "You sent",
+      "untitled": "Untitled chat",
+      "allChats": "All Chats"
+    },
+    "userMenu": {
+      "title": "User menu",
+      "fallbackName": "Advisor",
+      "fallbackRole": "Advisor"
+    },
+    "drawer": {
+      "title": "Drawer",
+      "fullScreen": "Open in full screen",
+      "close": "Close drawer"
+    }
   },
   "customer": {
-    "title": "ग्राहक",
-    "addCustomer": "ग्राहक जोड़ें",
-    "editCustomer": "ग्राहक संपादित करें",
-    "customerDetails": "ग्राहक विवरण",
-    "customerType": "ग्राहक प्रकार",
-    "individual": "व्यक्तिगत",
-    "entity": "इकाई",
-    "companyName": "कंपनी का नाम",
-    "businessRegNo": "व्यवसाय पंजीकरण संख्या",
-    "industry": "उद्योग",
-    "numEmployees": "कर्मचारियों की संख्या",
-    "annualRevenue": "वार्षिक राजस्व",
-    "contactPerson": "संपर्क व्यक्ति",
-    "contactNumber": "संपर्क नंबर",
-    "leadSource": "लीड स्रोत",
-    "customerStatus": "स्थिति",
-    "dateOfBirth": "जन्म तिथि",
-    "gender": "लिंग",
-    "nationality": "राष्ट्रीयता",
-    "occupation": "व्यवसाय",
-    "maritalStatus": "वैवाहिक स्थिति",
-    "smokerStatus": "धूम्रपान स्थिति",
-    "keymanDetails": "प्रमुख व्यक्ति विवरण",
-    "addKeyman": "प्रमुख व्यक्ति जोड़ें",
-    "keymanName": "प्रमुख व्यक्ति का नाम",
-    "keymanPosition": "पद",
-    "keymanAge": "आयु",
-    "coverageAmount": "कवरेज राशि"
+    "title": "Customers",
+    "addCustomer": "Add Customer",
+    "editCustomer": "Edit Customer",
+    "customerDetails": "Customer Details",
+    "customerType": "Customer Type",
+    "individual": "Individual",
+    "entity": "Entity",
+    "companyName": "Company Name",
+    "businessRegNo": "Business Registration Number",
+    "industry": "Industry",
+    "numEmployees": "Number of Employees",
+    "annualRevenue": "Annual Revenue",
+    "annualSalary": "Annual Salary",
+    "contactPerson": "Contact Person",
+    "contactNumber": "Contact Number",
+    "leadSource": "Lead Source",
+    "customerStatus": "Status",
+    "dateOfBirth": "Date of Birth",
+    "gender": "Gender",
+    "nationality": "Nationality",
+    "occupation": "Occupation",
+    "maritalStatus": "Marital Status",
+    "smokerStatus": "Smoker Status",
+    "keymanDetails": "Keyman Details",
+    "addKeyman": "Add Keyman",
+    "keymanName": "Keyman Name",
+    "position": "Position / Title",
+    "keymanPosition": "Position",
+    "keymanAge": "Age",
+    "coverageAmount": "Coverage Amount",
+    "roleInBusiness": "Role in Business",
+    "medicalNotes": "Medical / Health Notes"
+  },
+  "customerDetail": {
+    "notFound": "Customer not found.",
+    "badges": {
+      "existing": "Existing customer",
+      "new": "New lead"
+    },
+    "age": "Age {{count}}",
+    "activeProposals": "{{count}} active proposals",
+    "activeServiceRequests": "{{count}} open service requests",
+    "activePolicies": "{{count}} active policies",
+    "tabs": {
+      "overview": "Overview",
+      "portfolio": "Portfolio",
+      "servicing": "Servicing",
+      "gap": "Coverage gap"
+    },
+    "journeyTitle": "Customer journey",
+    "journeyEmpty": "No milestones recorded yet."
+  },
+  "entityCustomer": {
+    "notFound": "Entity customer not found.",
+    "backToList": "Back to Entity Customers",
+    "badges": {
+      "entityClient": "Entity Client"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "portfolio": "Portfolio",
+      "servicing": "Servicing"
+    },
+    "sections": {
+      "keymanCoverage": "Keyman Coverage",
+      "employeeCoverage": "Employee Coverage",
+      "ourJourney": "Our Journey",
+      "milestoneDetail": "Milestone Detail"
+    },
+    "buttons": {
+      "edit": "Edit",
+      "addKeyman": "Add Keyman",
+      "uploadList": "Upload List",
+      "addMilestone": "Add Milestone",
+      "remove": "Remove",
+      "cancel": "Cancel",
+      "saveMilestone": "Save Milestone"
+    },
+    "keyman": {
+      "noRole": "No role specified",
+      "coverage": "Coverage",
+      "notSet": "Not set",
+      "empty": "No keyman captured yet."
+    },
+    "employee": {
+      "stored": "{{count}} employees stored for this entity.",
+      "uploadPrompt": "Upload a CSV of employees to prefill group servicing requests.",
+      "tableHeaders": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role"
+      }
+    },
+    "milestone": {
+      "empty": "No milestones yet. Capture anniversaries, claims, and wins here.",
+      "selectPrompt": "Select a milestone to view the details.",
+      "noDescription": "No description provided",
+      "formLabels": {
+        "title": "Title",
+        "date": "Date",
+        "category": "Category",
+        "description": "Description"
+      },
+      "categories": {
+        "general": "General",
+        "policy": "Policy",
+        "lifeEvent": "Life Event",
+        "financialGoal": "Financial Goal",
+        "service": "Service",
+        "relationship": "Relationship"
+      }
+    },
+    "dialogs": {
+      "editEntity": "Edit Entity Customer",
+      "editKeyman": "Edit Keyman",
+      "addKeyman": "Add Keyman",
+      "uploadEmployee": "Upload Employee List",
+      "newMilestone": "New Milestone"
+    },
+    "toast": {
+      "keymanSaved": "Keyman details saved",
+      "keymanError": "Unable to save keyman",
+      "keymanErrorDesc": "Try again.",
+      "employeeUploaded": "Employee list uploaded",
+      "employeeUploadedDesc": "{{count}} employees captured for quick servicing.",
+      "employeeError": "Unable to save employee roster",
+      "employeeErrorDesc": "Please try again.",
+      "milestoneAdded": "Milestone added",
+      "milestoneError": "Unable to add milestone",
+      "milestoneErrorDesc": "Please try again",
+      "milestoneIncomplete": "Incomplete milestone",
+      "milestoneIncompleteDesc": "Title and date are required.",
+      "entityUpdated": "Entity updated",
+      "entityUpdatedDesc": "{{name}} saved successfully.",
+      "entityUpdateError": "Unable to update",
+      "entityUpdateErrorDesc": "Please try again."
+    }
   },
   "proposal": {
-    "title": "प्रस्ताव",
-    "newProposal": "नया प्रस्ताव",
-    "proposalNumber": "प्रस्ताव संख्या",
-    "proposer": "प्रस्तावक",
-    "stage": "चरण",
-    "factFinding": "तथ्य खोज",
-    "fna": "वित्तीय आवश्यकता विश्लेषण",
-    "recommendation": "सिफारिश",
-    "quotation": "कोटेशन",
-    "application": "आवेदन",
-    "completionPercentage": "पूर्णता प्रतिशत",
-    "lastUpdated": "अंतिम अपडेट",
-    "inProgress": "प्रगति में",
-    "pendingUW": "अंडरराइटिंग लंबित",
-    "pendingPayment": "भुगतान लंबित",
-    "pendingApproval": "अनुमोदन लंबित",
-    "completed": "पूर्ण",
-    "cancelled": "रद्द"
+    "title": "Proposals",
+    "newProposal": "New Proposal",
+    "proposalNumber": "Proposal Number",
+    "proposer": "Proposer",
+    "stage": "Stage",
+    "factFinding": "Fact Finding",
+    "fna": "FNA",
+    "recommendation": "Recommendation",
+    "quotation": "Quotation",
+    "application": "Application",
+    "completionPercentage": "Completion",
+    "lastUpdated": "Last Updated",
+    "inProgress": "In Progress",
+    "pendingUW": "Pending for UW",
+    "pendingPayment": "Pending for Payment",
+    "pendingApproval": "Pending for Approval",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "quoteSummary": {
+    "title": "Quote Generated Successfully!",
+    "subtitle": "Review your premium details below",
+    "notFound": "No quote data found",
+    "backToProducts": "Back to Products",
+    "sections": {
+      "premiumSummary": "Premium Summary",
+      "premiumBreakdown": "Premium Breakdown",
+      "nextSteps": "Next Steps"
+    },
+    "labels": {
+      "recommendedMonthly": "Recommended Monthly Premium",
+      "affordablePayment": "Affordable monthly payment for your coverage",
+      "annualPremium": "Annual Premium",
+      "totalPremium": "Total Premium ({{years}} years)",
+      "sumAssured": "Sum Assured",
+      "excellentValue": "Excellent Value",
+      "valueMessage": "For just {{monthly}}/month, you get {{sumAssured}} in coverage - that's {{ratio}}x your total premium paid!"
+    },
+    "buttons": {
+      "startFullProposal": "Start Full Proposal",
+      "saveQuote": "Save Quote",
+      "shareWithCustomer": "Share with Customer",
+      "newQuickQuote": "New Quick Quote"
+    },
+    "alerts": {
+      "quoteSaved": "Quote saved! (Feature to be implemented)",
+      "shareQuote": "Share quote (Feature to be implemented)",
+      "proposalError": "Unable to start full proposal",
+      "proposalCreationFailed": "Failed to create proposal"
+    }
+  },
+  "policy": {
+    "title": "Policies",
+    "policyNumber": "Policy Number",
+    "productName": "Product Name",
+    "coverageType": "Coverage Type",
+    "sumAssured": "Sum Assured",
+    "premiumAmount": "Premium Amount",
+    "premiumFrequency": "Premium Frequency",
+    "policyStartDate": "Policy Start Date",
+    "policyEndDate": "Policy End Date",
+    "policyStatus": "Status",
+    "active": "Active",
+    "lapsed": "Lapsed",
+    "surrendered": "Surrendered",
+    "matured": "Matured",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "semiAnnual": "Semi-Annual",
+    "annual": "Annual"
+  },
+  "policyDetail": {
+    "notFound": "Policy not found",
+    "backToCustomer": "Back to Customer",
+    "print": "Print",
+    "policyNumber": "Policy #{{number}}",
+    "sections": {
+      "policyDetails": "Policy Details",
+      "beneficiaries": "Beneficiaries",
+      "policyDocuments": "Policy Documents"
+    },
+    "labels": {
+      "coverageType": "Coverage Type",
+      "status": "Status",
+      "effectiveDate": "Effective Date",
+      "maturityDate": "Maturity Date",
+      "premiumAmount": "Premium Amount",
+      "premiumFrequency": "Premium Frequency",
+      "sumAssured": "Sum Assured",
+      "paymentStatus": "Payment Status"
+    },
+    "empty": {
+      "noBeneficiaries": "No beneficiaries recorded.",
+      "noDocuments": "No policy documents available."
+    },
+    "document": {
+      "download": "Download",
+      "defaultTitle": "Document {{number}}"
+    }
+  },
+  "chat": {
+    "allChats": {
+      "title": "All Chats",
+      "description": "Browse and search your recent conversations with Mira.",
+      "searchPlaceholder": "Search chat titles or messages",
+      "sortBy": "Sort by",
+      "newChat": "New Chat",
+      "loading": "Loading chats…",
+      "error": "We couldn't load your chats right now. Please try again.",
+      "retry": "Retry",
+      "empty": "No chats found. Start a new conversation with Mira.",
+      "untitledConversation": "Untitled conversation",
+      "noMessages": "No messages captured yet.",
+      "open": "Open"
+    },
+    "sort": {
+      "recent": "Recent",
+      "oldest": "Oldest",
+      "alpha": "Alphabetical"
+    },
+    "chatMira": {
+      "title": "Mira Chat",
+      "backToDashboard": "Back to Dashboard",
+      "allowAction": "Allow Mira to perform this action?",
+      "requested": "Requested: {{tool}}",
+      "plannedActions": {
+        "running": "Running auto-actions…",
+        "completed": "Actions completed automatically",
+        "failed": "Failed: {{error}}",
+        "unknownError": "Unknown error",
+        "title": "Planned actions",
+        "undo": "Undo",
+        "defaultAction": "action"
+      },
+      "emptyState": {
+        "title": "Chat with Mira",
+        "subtitle": "Your AI insurance assistant is here to help with customers, analytics, tasks, and more.",
+        "tips": "Try asking questions in natural language. I can help you navigate, analyze data, and complete tasks.",
+        "prompts": {
+          "customerAnalysis": {
+            "title": "Customer Analysis",
+            "prompt": "Show me my top customers by premium value"
+          },
+          "salesPerformance": {
+            "title": "Sales Performance",
+            "prompt": "What are my sales trends for this quarter?"
+          },
+          "pendingTasks": {
+            "title": "Pending Tasks",
+            "prompt": "Show me my pending tasks and upcoming appointments"
+          },
+          "recommendations": {
+            "title": "Recommendations",
+            "prompt": "Give me product recommendations for my customer base"
+          }
+        }
+      }
+    },
+    "miraOps": {
+      "title": "Mira Ops Console",
+      "subtitle": "Inspect auto-actions, confirmation requirements, failures, and alerts in near real-time.",
+      "refresh": "Refresh",
+      "modules": {
+        "all": "All modules",
+        "customer": "Customer",
+        "newBusiness": "New Business",
+        "product": "Product",
+        "analytics": "Analytics",
+        "smartPlan": "Smart Plan",
+        "news": "News",
+        "visualizer": "Visualizer"
+      },
+      "status": {
+        "all": "All outcomes",
+        "success": "Success",
+        "failure": "Failure"
+      },
+      "ranges": {
+        "24h": "24 hours",
+        "7d": "7 days",
+        "30d": "30 days",
+        "all": "All time"
+      },
+      "badges": {
+        "success": "Success",
+        "failed": "Failed",
+        "critical": "Critical",
+        "important": "Important",
+        "info": "Info"
+      },
+      "insights": {
+        "empty": "No active insights for this advisor.",
+        "previewTitle": "Advisor insight preview",
+        "previewDesc": "Enter an advisor ID or click “View insights” in the telemetry table to mirror their feed.",
+        "placeholder": "Advisor UUID…",
+        "load": "Load insights",
+        "clear": "Clear",
+        "error": "Unable to load advisor insights.",
+        "selectAdvisor": "Select an advisor to preview exactly what their ChatMira sidebar shows.",
+        "loading": "Loading insights…",
+        "viewInsights": "View insights"
+      },
+      "alerts": {
+        "failureRateExceeded": "Auto-action failure rate {{percent}}% exceeds 5% in the last {{minutes}} minutes.",
+        "pagerDuty": "Total window events: {{total}}. Pager duties armed—investigate failing actions below.",
+        "failureRateNormal": "Failure rate {{percent}}% in the last {{minutes}} minutes (below threshold)."
+      },
+      "failingActions": {
+        "empty": "No failures detected during the 7-day window.",
+        "title": "Top failing actions (7d)",
+        "headers": {
+          "action": "Action",
+          "failures": "Failures",
+          "lastFailure": "Last failure"
+        }
+      },
+      "events": {
+        "loading": "Loading recent actions…",
+        "empty": "No telemetry events found for the selected filters.",
+        "error": "Failed to load telemetry data.",
+        "headers": {
+          "timestamp": "Timestamp",
+          "modulePage": "Module / Page",
+          "action": "Action",
+          "outcome": "Outcome",
+          "confirm": "Confirm?",
+          "entity": "Entity",
+          "correlation": "Correlation",
+          "details": "Details",
+          "advisor": "Advisor"
+        },
+        "cells": {
+          "required": "Required",
+          "auto": "Auto",
+          "viewLabel": "View {{label}}"
+        }
+      },
+      "summary": {
+        "totalEvents": "Total events",
+        "filteredWindow": "Filtered window",
+        "allTime": "All time",
+        "successful": "Successful",
+        "autoActionsCompleted": "Auto actions completed",
+        "failures": "Failures",
+        "requiresFollowUp": "Requires follow-up",
+        "sevenDaySuccessRate": "7-day success rate",
+        "computedFromTelemetry": "Computed from telemetry"
+      },
+      "filters": {
+        "title": "Filters",
+        "module": "Module",
+        "outcome": "Outcome",
+        "timeRange": "Time range",
+        "search": "Search",
+        "searchPlaceholder": "Skill, page, target…"
+      },
+      "pagination": {
+        "showing": "Showing",
+        "of": "of",
+        "events": "events",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {{current}} of {{total}}"
+      }
+    }
+  },
+  "smartPlan": {
+    "detail": {
+      "title": "Task detail",
+      "subtitle": "Manage notes, transcripts, and AI summary",
+      "backToSmartPlan": "Back to Smart Plan",
+      "viewCustomer": "View customer",
+      "loading": "Loading task...",
+      "notFound": "Task not found.",
+      "noId": "No task id provided.",
+      "created": "Created: {{date}}",
+      "updated": "Updated: {{date}}",
+      "tabs": {
+        "notes": "Notes",
+        "transcript": "Transcript",
+        "summary": "Summary"
+      },
+      "notes": {
+        "label": "Notes",
+        "voiceNote": "Voice note",
+        "stopRecording": "Stop recording",
+        "upload": "Upload document",
+        "recordingSimulated": "Recording (simulated)",
+        "save": "Save notes"
+      },
+      "transcript": {
+        "label": "Transcript",
+        "meetingLink": "Meeting link",
+        "meetingLinkPlaceholder": "Paste meeting link",
+        "startRecording": "Start recording",
+        "stopRecording": "Stop recording",
+        "upload": "Upload recording / transcript",
+        "save": "Save transcript"
+      },
+      "summary": {
+        "header": "Summary by Mira",
+        "placeholder": "Generate or edit a concise summary...",
+        "generate": "Generate with AI",
+        "summarizing": "Summarizing...",
+        "quickSummarize": "Quick summarize",
+        "save": "Save summary",
+        "error": "Failed to generate summary"
+      },
+      "toasts": {
+        "saveFailed": "Failed to save",
+        "tryAgain": "Try again.",
+        "proposalCreated": "Draft proposal created",
+        "openingProposal": "Opening proposal detail.",
+        "proposalFailed": "Proposal creation failed",
+        "existingProposal": "Existing proposal found",
+        "openingDraft": "Opening current draft."
+      },
+      "defaults": {
+        "unknown": "Unknown",
+        "factFinding": "Fact Finding",
+        "inProgress": "In Progress"
+      }
+    },
+    "main": {
+      "title": "Smart Plan",
+      "subtitle": "Plan every follow-up with AI-powered tasks & appointments",
+      "newEvent": "New Event",
+      "loading": "Loading...",
+      "empty": "No tasks found",
+      "emptySearch": "No tasks match your search",
+      "proTips": {
+        "title": "Pro Tips",
+        "content": "Drag & drop events to reschedule • Click any event to view details • Check the box to mark tasks complete"
+      },
+      "viewMode": {
+        "list": "List",
+        "calendar": "Calendar"
+      },
+      "connectCalendar": {
+        "button": "Connect Your Calendar",
+        "title": "Connect Your Calendar",
+        "provider": "Provider",
+        "syncMode": "Sync mode",
+        "accountEmail": "Account email",
+        "syncPast": "Sync past events",
+        "save": "Save connection",
+        "cancel": "Cancel",
+        "simulated": "This is a simulated connection. OAuth and real sync will be added later.",
+        "providers": {
+          "google": "Google Calendar",
+          "outlook": "Outlook",
+          "apple": "Apple Calendar"
+        },
+        "modes": {
+          "twoWay": "Two-way sync",
+          "oneWay": "One-way (pull events)"
+        },
+        "ranges": {
+          "7d": "Last 7 days",
+          "30d": "Last 30 days",
+          "90d": "Last 90 days"
+        }
+      },
+      "export": {
+        "title": "Export Calendar",
+        "dateRange": "Date Range",
+        "allEvents": "All Events",
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "custom": "Custom",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "formatHeader": "Export Format: .ICS Calendar File",
+        "importInto": "The exported file can be imported into:",
+        "howToImport": "How to Import:",
+        "download": "Download .ICS File",
+        "instructions": {
+          "google": "Settings → Import & Export → Select file",
+          "outlook": "File → Open & Export → Import/Export → iCalendar",
+          "apple": "File → Import → Select .ics file"
+        }
+      },
+      "delete": {
+        "title": "Delete Event",
+        "confirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
+        "button": "Delete",
+        "deleting": "Deleting..."
+      },
+      "filters": {
+        "title": "Filters",
+        "clearAll": "Clear All",
+        "timeRange": "Time Range",
+        "eventType": "Event Type",
+        "customer": "Customer",
+        "showBirthdays": "Show Birthdays",
+        "showCompleted": "Show Completed",
+        "options": {
+          "today": "Today",
+          "week": "This Week",
+          "month": "This Month",
+          "all": "All",
+          "allTypes": "All Types",
+          "appointment": "Appointment",
+          "task": "Task",
+          "allCustomers": "All Customers"
+        }
+      },
+      "sort": {
+        "title": "Sort by",
+        "dateAsc": "Date (Earliest First)",
+        "dateDesc": "Date (Latest First)",
+        "titleAsc": "Title (A-Z)",
+        "type": "By Type"
+      },
+      "calendar": {
+        "today": "Today",
+        "allDay": "ALL DAY",
+        "more": "+{{count}} more",
+        "weekHeader": "Week of {{start}} - {{end}}",
+        "days": {
+          "sunday": "Sunday",
+          "monday": "Monday",
+          "tuesday": "Tuesday",
+          "wednesday": "Wednesday",
+          "thursday": "Thursday",
+          "friday": "Friday",
+          "saturday": "Saturday"
+        }
+      },
+      "toasts": {
+        "eventCreated": "Event Created",
+        "eventCreatedDesc": "Your event has been added successfully.",
+        "createFailed": "Failed to create event",
+        "tryAgain": "Please try again.",
+        "eventUpdated": "Event Updated",
+        "eventUpdatedDesc": "Your changes have been saved.",
+        "updateFailed": "Failed to update event",
+        "eventDeleted": "Event Deleted",
+        "eventDeletedDesc": "The event has been removed.",
+        "deleteFailed": "Failed to delete event",
+        "proposalCreated": "Draft proposal created",
+        "proposalCreatedDesc": "We detected intent and started a proposal draft.",
+        "proposalFailed": "Proposal creation failed",
+        "proposalFailedDesc": "Unable to create proposal from task intent.",
+        "existingDraft": "Existing draft found",
+        "existingDraftDesc": "Opening the current in-progress proposal.",
+        "connected": "{{provider}} connected",
+        "syncModeDesc": "Sync mode: {{mode}}. (Simulated)",
+        "calendarExported": "Calendar Exported",
+        "icsDownloaded": "ICS file downloaded successfully.",
+        "undo": "Undo",
+        "eventMoved": "Event moved to {{date}}"
+      },
+      "synthetic": {
+        "birthday": "Birthday: {{name}}",
+        "wish": "Wish customer happy birthday"
+      },
+      "badges": {
+        "overdue": "Overdue"
+      }
+    }
   },
   "servicing": {
-    "title": "सेवा",
-    "serviceRequests": "सेवा अनुरोध",
-    "priority": "प्राथमिकता",
-    "low": "कम",
-    "medium": "मध्यम",
-    "high": "उच्च",
-    "urgent": "तत्काल"
+    "title": "Servicing",
+    "serviceRequests": "Service Requests",
+    "newRequest": "New Request",
+    "requestType": "Request Type",
+    "priority": "Priority",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "urgent": "Urgent",
+    "assignedTo": "Assigned To",
+    "dueDate": "Due Date",
+    "slaStatus": "SLA Status",
+    "onTrack": "On Track",
+    "atRisk": "At Risk",
+    "breached": "Breached",
+    "resolution": "Resolution",
+    "resolvedAt": "Resolved At",
+    "resolvedBy": "Resolved By",
+    "customerRating": "Customer Rating",
+    "customerFeedback": "Customer Feedback",
+    "attachments": "Attachments",
+    "communicationHistory": "Communication History",
+    "sourceChannel": "Source Channel",
+    "portal": "Portal",
+    "emailChannel": "Email",
+    "phone": "Phone",
+    "whatsapp": "WhatsApp",
+    "walkIn": "Walk-in",
+    "mobileApp": "Mobile App"
+  },
+  "serviceRequestDetail": {
+    "back": "Back to service requests",
+    "notFound": "Service request not found.",
+    "badges": {
+      "priority": "Priority: {{priority}}"
+    },
+    "toast": {
+      "updated": "Service request updated",
+      "updateError": "Unable to update service request",
+      "updateErrorBody": "Please try again or contact support if the issue persists."
+    },
+    "details": {
+      "title": "Request details",
+      "created": "Created",
+      "updated": "Last updated",
+      "description": "Description",
+      "descriptionEmpty": "No description provided.",
+      "resolution": "Resolution notes",
+      "resolutionEmpty": "No resolution notes recorded yet."
+    },
+    "customer": {
+      "title": "Customer",
+      "unassigned": "Unassigned",
+      "unknownType": "Unknown type",
+      "viewDetail": "View customer detail"
+    },
+    "update": {
+      "title": "Update status",
+      "status": "Status",
+      "priority": "Priority",
+      "dueDate": "Due date",
+      "resolutionNotes": "Resolution notes",
+      "resolutionPlaceholder": "Add internal notes about how this request was resolved...",
+      "save": "Save changes"
+    }
+  },
+  "milestones": {
+    "title": "Our Journey",
+    "customerMilestones": "Customer Milestones",
+    "addMilestone": "Add Milestone",
+    "milestoneType": "Milestone Type",
+    "milestoneTitle": "Title",
+    "milestoneDate": "Date",
+    "category": "Category",
+    "policyMilestone": "Policy",
+    "lifeEvent": "Life Event",
+    "financialGoal": "Financial Goal",
+    "service": "Service",
+    "relationship": "Relationship",
+    "general": "General",
+    "celebrated": "Celebrated",
+    "celebrationMethod": "Celebration Method",
+    "policyAnniversary": "Policy Anniversary",
+    "birthday": "Birthday",
+    "firstPolicy": "First Policy Purchase"
+  },
+  "visualizer": {
+    "title": "Creative Visualizer",
+    "financialProjections": "Financial Projections",
+    "newProjection": "New Projection",
+    "projectionName": "Projection Name",
+    "projectionType": "Type",
+    "retirement": "Retirement",
+    "education": "Education",
+    "savingsGoal": "Savings Goal",
+    "investmentGrowth": "Investment Growth",
+    "protectionCoverage": "Protection Coverage",
+    "wealthAccumulation": "Wealth Accumulation",
+    "estatePlanning": "Estate Planning",
+    "initialAmount": "Initial Amount",
+    "monthlyContribution": "Monthly Contribution",
+    "annualContribution": "Annual Contribution",
+    "targetAmount": "Target Amount",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "projectionYears": "Projection Years",
+    "returnRate": "Return Rate",
+    "inflationRate": "Inflation Rate",
+    "chartType": "Chart Type",
+    "lineChart": "Line Chart",
+    "barChart": "Bar Chart",
+    "areaChart": "Area Chart",
+    "comboChart": "Combo Chart",
+    "scenario": "Scenario",
+    "baseline": "Baseline",
+    "compareScenarios": "Compare Scenarios",
+    "scenarioView": {
+      "title": "Scenario Visualizer",
+      "subtitle": "Visualize wealth projections during good times and bad times",
+      "selectLabel": "Select Customer:",
+      "selectPlaceholder": "Choose a customer to visualize...",
+      "loadingOption": "Loading customers...",
+      "emptyOption": "No customers found",
+      "tabs": {
+        "projection": "Wealth Projection",
+        "cashflow": "Cash Flow",
+        "insights": "Insights"
+      },
+      "insightsTitle": "Mira's Insights",
+      "insightsBody": "Insights will be generated based on selected events and projections.",
+      "emptyTitle": "No Customer Selected",
+      "emptyBody": "Select a customer above to view their wealth projection, trigger destiny events, and compare scenarios.",
+      "assumedReason": "Customer financial data not available",
+      "retirementGoal": "Retirement"
+    },
+    "scenario": {
+      "title": "Scenario Visualizer",
+      "subtitle": "Visualize wealth projections during good times and bad times",
+      "selectLabel": "Select Customer:",
+      "selectPlaceholder": "Choose a customer to visualize...",
+      "loadingOption": "Loading customers...",
+      "emptyOption": "No customers found",
+      "tabs": {
+        "projection": "Wealth Projection",
+        "cashflow": "Cash Flow",
+        "insights": "Insights"
+      },
+      "insightsTitle": "Mira's Insights",
+      "insightsBody": "Insights will be generated based on selected events and projections.",
+      "emptyTitle": "No Customer Selected",
+      "emptyBody": "Select a customer above to view their wealth projection, trigger destiny events, and compare scenarios.",
+      "assumedReason": "Customer financial data not available",
+      "retirementGoal": "Retirement"
+    }
+  },
+  "news": {
+    "title": "News",
+    "feedTitle": "Advisor News Feed",
+    "feedSubtitle": "Stay up to date with announcements, campaigns, and training updates.",
+    "searchPlaceholder": "Search news by title or content...",
+    "announcement": "Announcement",
+    "training": "Training",
+    "campaign": "Campaign",
+    "pinned": "Pinned",
+    "publishedDate": "Published Date",
+    "categories": {
+      "all": "All categories",
+      "announcement": "Announcements",
+      "training": "Training",
+      "campaign": "Campaigns"
+    },
+    "sections": {
+      "pinned": "Pinned highlights",
+      "recent": "Recent updates"
+    },
+    "status": {
+      "draft": "Draft"
+    },
+    "actions": {
+      "compose": "Compose",
+      "readMore": "Read more",
+      "markVisible": "Mark all visible as read",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "unread": "Mark as unread",
+      "back": "Back to news"
+    },
+    "filters": {
+      "button": "Filter",
+      "title": "Filter by category"
+    },
+    "sort": {
+      "button": "Sort",
+      "title": "Sort news",
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "titleAsc": "Title (A–Z)"
+    },
+    "composeForm": {
+      "title": "Compose announcement",
+      "untitled": "Untitled announcement",
+      "fields": {
+        "title": "Title",
+        "titlePlaceholder": "Enter a clear, descriptive title",
+        "audience": "Audience",
+        "audiencePlaceholder": "All advisors",
+        "category": "Category",
+        "categoryPlaceholder": "Select category",
+        "message": "Message",
+        "messagePlaceholder": "Write your announcement message..."
+      },
+      "saving": "Saving draft...",
+      "save": "Save draft"
+    },
+    "toast": {
+      "draftSavedTitle": "Draft saved",
+      "draftSavedDesc": "Your announcement draft has been saved.",
+      "draftErrorTitle": "Unable to save draft",
+      "genericError": "Something went wrong. Please try again.",
+      "pinnedTitle": "Post pinned",
+      "pinnedDesc": "This post is now pinned to the top of the feed.",
+      "unpinnedTitle": "Post unpinned",
+      "unpinnedDesc": "This post has been removed from the pinned section.",
+      "pinErrorTitle": "Unable to update pin status"
+    },
+    "empty": {
+      "title": "No news yet",
+      "body": "When announcements are published, they will appear here."
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Visualize your pipeline, customers, and servicing performance.",
+    "moduleLabel": "Analytics module:",
+    "modulePlaceholder": "Select module",
+    "modules": {
+      "businessOverview": "Business overview",
+      "customers": "Customers",
+      "proposals": "Proposals",
+      "servicing": "Servicing"
+    },
+    "customers": {
+      "total": "Total customers",
+      "newThisMonth": "New this month",
+      "hotLeads": "Hot leads",
+      "avgValue": "Avg customer value",
+      "acquisitionTitle": "Customer acquisition",
+      "acquisitionSubtitle": "New individual vs entity customers over time",
+      "sourceTitle": "Top acquisition sources",
+      "sourceSubtitle": "Where your customers are coming from",
+      "temperatureTitle": "Pipeline temperature",
+      "temperatureSubtitle": "How warm your customer pipeline is",
+      "typeTitle": "Customer type mix",
+      "typeSubtitle": "Distribution of individual vs entity customers"
+    },
+    "proposals": {
+      "total": "Total proposals",
+      "active": "Active proposals",
+      "successRate": "Success rate",
+      "avgDeal": "Avg deal size",
+      "trendSubtitle": "Created, completed, and rejected proposals over time",
+      "created": "Created",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "agingSubtitle": "How long proposals stay open",
+      "productSubtitle": "Proposals by product category",
+      "conversionSubtitle": "Conversion rate over time"
+    },
+    "servicing": {
+      "total": "Total service requests",
+      "pending": "Pending requests",
+      "avgResolution": "Avg resolution time",
+      "satisfaction": "Customer satisfaction",
+      "trendTitle": "Servicing volume & status",
+      "trendSubtitle": "Created, pending, and resolved requests over time",
+      "created": "Created",
+      "resolved": "Resolved",
+      "typeTitle": "Request types",
+      "typeSubtitle": "What customers are requesting",
+      "statusTitle": "Request status breakdown",
+      "statusSubtitle": "Completed vs in progress vs pending",
+      "requests": "Requests",
+      "resolutionTitle": "Resolution time",
+      "resolutionSubtitle": "How long it takes to resolve requests"
+    },
+    "business": {
+      "range": {
+        "30D": "Last 30 days",
+        "90D": "Last 90 days",
+        "YTD": "Year to date",
+        "12M": "Last 12 months"
+      },
+      "kpi": {
+        "newPolicies": "New policies",
+        "totalPremium": "Total premium",
+        "activeProposals": "Active proposals",
+        "customers": "Customers"
+      },
+      "charts": {
+        "monthlyTitle": "Premium & policies over time",
+        "monthlySubtitle": "New policies, active proposals, and premium by month",
+        "policiesTitle": "Policy issuance trend",
+        "policiesSubtitle": "New policies vs team average",
+        "productMixTitle": "Product mix by policy count",
+        "productMixSubtitle": "Which products drive your book of business",
+        "conversionTitle": "Lead to policy conversion funnel",
+        "conversionSubtitle": "From leads to proposals to policies",
+        "completionTitle": "Average proposal completion",
+        "completionSubtitle": "How complete your proposals are on average",
+        "goalsTitle": "Goals vs actuals",
+        "goalsSubtitle": "Track progress against quarterly targets",
+        "topProductsTitle": "Top products by premium",
+        "topProductsSubtitle": "Highest premium contribution",
+        "table": {
+          "rank": "Rank",
+          "product": "Product",
+          "policies": "Policies",
+          "premium": "Premium",
+          "empty": "No products yet"
+        },
+        "productUnknown": "Unknown product"
+      },
+      "tooltips": {
+        "premium": "Total premium",
+        "policies": "New policies",
+        "teamAvg": "Team average policies",
+        "policiesLabel": "Policies"
+      }
+    }
+  },
+  "home": {
+    "title": "Chat with Mira",
+    "subtitle": "Your AI insurance assistant is here to help with customers, analytics, tasks, and more.",
+    "hint": "Try asking questions in natural language. I can help you navigate, analyze data, and complete tasks.",
+    "placeholder": "Ask Mira anything...",
+    "prompts": {
+      "customerAnalysis": {
+        "title": "Customer Analysis",
+        "description": "Show me my top customers by premium value",
+        "prompt": "Show me my top customers by premium value"
+      },
+      "salesPerformance": {
+        "title": "Sales Performance",
+        "description": "What are my sales trends for this quarter?",
+        "prompt": "What are my sales trends for this quarter?"
+      },
+      "pendingTasks": {
+        "title": "Pending Tasks",
+        "description": "Show me my pending tasks and upcoming appointments",
+        "prompt": "Show me my pending tasks and upcoming appointments"
+      },
+      "recommendations": {
+        "title": "Recommendations",
+        "description": "Give me product recommendations for my customer base",
+        "prompt": "Give me product recommendations for my customer base"
+      }
+    }
+  },
+  "customers": {
+    "title": "Customer Management",
+    "subtitle": "Manage your leads and customers",
+    "newLead": "New Lead",
+    "searchPlaceholder": "Search by name, contact, or ID...",
+    "filters": {
+      "title": "Filters",
+      "clearAll": "Clear All",
+      "clearAllFilters": "Clear All Filters",
+      "customerType": "Customer Type",
+      "allTypes": "All types",
+      "individual": "Individual",
+      "entity": "Entity",
+      "leadSource": "Lead Source",
+      "allSources": "All sources",
+      "relationship": "Relationship",
+      "allRelationships": "All relationships",
+      "leadsOnly": "Leads only",
+      "clientsOnly": "Customers only",
+      "new": "New",
+      "existing": "Existing",
+      "temperature": "Temperature",
+      "allTemperatures": "All temperatures",
+      "hot": "Hot",
+      "warm": "Warm",
+      "cold": "Cold",
+      "lastContacted": "Last Contacted",
+      "anyTime": "Any time",
+      "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "over30Days": "More than 30 days",
+      "never": "Never contacted"
+    },
+    "sort": {
+      "title": "Sort by",
+      "lastContacted": "Last Contacted",
+      "name": "Name (A-Z)",
+      "nextAppointment": "Next Appointment"
+    },
+    "badges": {
+      "type": "Type: {{value}}",
+      "relationship": "Relationship: {{value}}",
+      "temperature": "Temperature: {{value}}",
+      "source": "Source: {{value}}",
+      "created": "Created {{range}}",
+      "createdFrom": "from {{date}}",
+      "createdTo": "to {{date}}",
+      "lastContacted": "Last contacted: {{value}}",
+      "remove": "Remove {{label}}"
+    },
+    "counts": {
+      "showing": "{{visible}} of {{total}}",
+      "empty": "No leads"
+    },
+    "empty": {
+      "title": "No leads found",
+      "description": "Try adjusting your filters or start by adding your first lead."
+    },
+    "list": {
+      "notAvailable": "Not available",
+      "notContacted": "Not yet contacted",
+      "customerType": {
+        "individual": "Individual",
+        "entity": "Entity"
+      },
+      "relationship": {
+        "existing": "Existing",
+        "new": "New"
+      },
+      "lastContacted": "Last Contacted",
+      "created": "Created",
+      "nextAppointment": "Next Appointment",
+      "activePolicies": "Active Policies",
+      "totalPremium": "Total Premium",
+      "loadMore": "Load more"
+    },
+    "leadSources": {
+      "event": "Event",
+      "referral": "Referral",
+      "social": "Social Media"
+    },
+    "toasts": {
+      "createTitle": "Lead created",
+      "createDescription": "{{name}} has been added to your pipeline.",
+      "fallbackName": "The lead",
+      "createErrorTitle": "Unable to create lead",
+      "createErrorDescription": "Please check the details and try again.",
+      "scheduleTitle": "Event scheduled",
+      "scheduleDescription": "The appointment has been added to your planner.",
+      "scheduleErrorTitle": "Unable to schedule event",
+      "scheduleErrorDescription": "Please review the details and try again."
+    },
+    "advanced": {
+      "filtersHidden": "Filters are hidden. Select Show Filters to refine your customer list.",
+      "activeFiltersHeading": "Active filters still applied",
+      "customerBadgeNote": "Customer badge highlights converted customers; status badge reflects the current proposal stage."
+    }
+  },
+  "serviceRequests": {
+    "title": "Service Requests",
+    "subtitle": "Track and manage customer servicing activities",
+    "newRequest": "New Service Request",
+    "createdToast": "Service request created",
+    "createErrorTitle": "Unable to create request",
+    "createErrorBody": "Please try again.",
+    "missingDetails": "Missing details",
+    "missingDetailsBody": "Select a customer, service type, and subject.",
+    "searchPlaceholder": "Search by subject or customer...",
+    "filter": "Filter",
+    "filterStatus": "Filter by Status",
+    "filterType": "Filter by Type",
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "priorityLabel": "Priority: {{priority}}",
+    "emptyTitle": "No service requests found",
+    "emptyBody": "Adjust your filters or create a new request to kickstart servicing activity.",
+    "notAvailable": "Not available",
+    "noDueDate": "No due date",
+    "untitled": "Untitled request",
+    "unassignedCustomer": "Unassigned customer",
+    "createdLabel": "Created",
+    "dueDateLabel": "Due date",
+    "channelLabel": "Channel",
+    "channelDefault": "Portal",
+    "form": {
+      "customer": "Customer",
+      "selectCustomer": "Select customer",
+      "individualGroup": "Individual Customers",
+      "entityGroup": "Entity Customers",
+      "serviceType": "Service Type",
+      "selectType": "Select type",
+      "subject": "Subject",
+      "subjectPlaceholder": "e.g. Renew group life policy",
+      "description": "Description",
+      "descriptionPlaceholder": "Provide details for servicing team",
+      "priority": "Priority",
+      "selectPriority": "Select priority",
+      "dueDate": "Due date"
+    },
+    "create": "Create Request"
   },
   "settings": {
-    "title": "सेटिंग्स",
-    "language": "भाषा",
-    "theme": "थीम",
-    "light": "प्रकाश",
-    "dark": "अंधेरा",
-    "auto": "स्वचालित"
+    "title": "Settings",
+    "profileSettings": "Profile Settings",
+    "preferences": "Preferences",
+    "notifications": "Notifications",
+    "security": "Security",
+    "displaySettings": "Display Settings",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto",
+    "dateFormat": "Date Format",
+    "timeFormat": "Time Format",
+    "12hour": "12 Hour",
+    "24hour": "24 Hour",
+    "timezone": "Timezone",
+    "defaultCurrency": "Default Currency",
+    "emailNotifications": "Email Notifications",
+    "pushNotifications": "Push Notifications",
+    "smsNotifications": "SMS Notifications",
+    "aiFeatures": "AI Features",
+    "enableAI": "Enable AI Suggestions",
+    "miraProactive": "Mira Proactive Assistance",
+    "miraLearning": "Mira Learning",
+    "privacy": "Privacy",
+    "allowAnalytics": "Allow Analytics",
+    "behavioralTracking": "Behavioral Tracking",
+    "dataRetention": "Data Retention (days)"
   },
   "validation": {
-    "required": "यह फ़ील्ड आवश्यक है",
-    "invalidEmail": "अमान्य ईमेल पता",
-    "invalidPhone": "अमान्य फ़ोन नंबर"
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number",
+    "minLength": "Minimum length is {{min}} characters",
+    "maxLength": "Maximum length is {{max}} characters",
+    "invalidDate": "Invalid date",
+    "futureDate": "Date must be in the future",
+    "pastDate": "Date must be in the past"
+  },
+  "profile": {
+    "title": "Profile Settings",
+    "subtitle": "Manage your account information and preferences",
+    "saveSuccess": "Your preferences have been saved successfully.",
+    "restoreDefaults": "Restore Defaults",
+    "personal": {
+      "title": "Personal Information",
+      "fullName": "Full Name",
+      "email": "Email Address",
+      "mobile": "Mobile Number",
+      "advisorId": "Advisor ID",
+      "advisorIdExpiry": "Advisor ID Expiry",
+      "accountStatus": "Account Status",
+      "notSet": "Not set",
+      "notAssigned": "Not assigned",
+      "na": "N/A",
+      "active": "Active",
+      "managedByAdmin": "Managed by administrator"
+    },
+    "security": {
+      "title": "Security",
+      "twoFA": "Two-Factor Authentication",
+      "twoFADesc": "Add an extra layer of security to your account",
+      "changePassword": "Change Password",
+      "changePasswordDesc": "Update your password to keep your account secure",
+      "changePasswordCta": "Change Password",
+      "requiresCurrent": "Requires current password and strong new password",
+      "passwordHint": "Min 8 chars, upper+lowercase, number, special"
+    },
+    "preferences": {
+      "title": "User Preferences",
+      "language": "Language",
+      "currency": "Currency",
+      "saveChanges": "Save Changes"
+    },
+    "toast": {
+      "twoFAEnabledTitle": "Two-Factor Enabled",
+      "twoFAEnabledDesc": "2FA is now active. Store your backup codes safely.",
+      "twoFADisabledTitle": "Two-Factor Disabled",
+      "twoFADisabledDesc": "2FA has been disabled for your account.",
+      "emailNoticeTitle": "Email Notice",
+      "emailNoticeDesc": "A confirmation email will be sent to {{email}}.",
+      "passwordUpdatedTitle": "Password Updated",
+      "passwordUpdatedDesc": "You will be signed out for security.",
+      "passwordChangeError": "Unable to change password"
+    },
+    "validation": {
+      "currentRequired": "Current password is required",
+      "minLength": "New password must be at least 8 characters",
+      "uppercase": "At least one uppercase letter is required",
+      "lowercase": "At least one lowercase letter is required",
+      "number": "At least one number is required",
+      "special": "At least one special character is required",
+      "mismatch": "Passwords do not match"
+    },
+    "dialog": {
+      "changePasswordTitle": "Change Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "cancel": "Cancel",
+      "updatePassword": "Update Password"
+    },
+    "twofaSetup": {
+      "title": "Enable Two-Factor Authentication",
+      "instructions": "Scan the QR code or use the secret key in your authenticator app.",
+      "secretLabel": "Secret Key",
+      "qrInstruction": "Scan this QR code with your authenticator app",
+      "uriLabel": "Authenticator URI",
+      "backupCodes": "Backup Codes",
+      "regenerate": "Regenerate",
+      "download": "Download",
+      "finish": "Finish Setup"
+    },
+    "twofaDisable": {
+      "title": "Disable Two-Factor Authentication",
+      "body": "Are you sure you want to disable 2FA? This will reduce account security.",
+      "cancel": "Cancel",
+      "confirm": "Disable 2FA"
+    }
   },
   "messages": {
-    "saveSuccess": "सफलतापूर्वक सहेजा गया",
-    "saveError": "सहेजने में विफल",
-    "deleteSuccess": "सफलतापूर्वक हटाया गया",
-    "deleteError": "हटाने में विफल",
-    "noData": "कोई डेटा उपलब्ध नहीं"
+    "saveSuccess": "Saved successfully",
+    "saveError": "Failed to save",
+    "deleteSuccess": "Deleted successfully",
+    "deleteError": "Failed to delete",
+    "deleteConfirm": "Are you sure you want to delete this item?",
+    "noData": "No data available",
+    "loadingData": "Loading data...",
+    "networkError": "Network error. Please try again.",
+    "sessionExpired": "Your session has expired. Please login again."
+  },
+  "product": {
+    "title": "Products",
+    "subtitle": "Browse and compare products by category",
+    "filters": {
+      "searchPlaceholder": "Search products, codes, or descriptions...",
+      "quickQuote": "Allow Quick Quote",
+      "factFind": "Require Fact Finding",
+      "all": "All",
+      "yes": "Yes",
+      "no": "No",
+      "clear": "Clear",
+      "title": "Filters"
+    },
+    "categories": {
+      "all": "All",
+      "life": "Life Insurance",
+      "health": "Health Insurance",
+      "general": "General Insurance",
+      "group": "Group Insurance"
+    },
+    "tabs": {
+      "all": "All",
+      "life": "Life",
+      "health": "Health",
+      "general": "General",
+      "group": "Group"
+    },
+    "errors": {
+      "load": "Failed to load products"
+    },
+    "empty": {
+      "title": "No products found",
+      "body": "Adjust your filters or search to see more products."
+    },
+    "cta": {
+      "getQuote": "Get Quote",
+      "viewDetails": "View Details"
+    },
+    "status": {
+      "loading": "Loading products..."
+    }
+  },
+  "newBusiness": {
+    "title": "New Business",
+    "subtitle": "Start a new quote or proposal",
+    "leadSelect": "Select Lead",
+    "leadPlaceholder": "Choose a lead to start",
+    "productSelect": "Select Product",
+    "productPlaceholder": "Choose a product",
+    "searchPlaceholder": "Search by proposal number or client name...",
+    "filters": {
+      "title": "Filter",
+      "stage": "Filter by Stage",
+      "status": "Filter by Status",
+      "allStages": "All Stages",
+      "allStatus": "All Status",
+      "stageOptions": {
+        "factFinding": "Fact Finding",
+        "financialPlanning": "Financial Planning",
+        "recommendation": "Recommendation",
+        "quotation": "Quotation",
+        "application": "Application"
+      },
+      "statusOptions": {
+        "inProgress": "In Progress",
+        "pendingUw": "Pending UW",
+        "completed": "Completed"
+      }
+    },
+    "sort": {
+      "title": "Sort by",
+      "latest": "Latest Update",
+      "oldest": "Oldest Update",
+      "name": "Name (A-Z)",
+      "stage": "By Stage"
+    },
+    "cta": {
+      "start": "Start Journey",
+      "back": "Back",
+      "newProposal": "New Proposal"
+    },
+    "empty": {
+      "title": "No proposals found",
+      "body": "Start a new business case from the Customer page"
+    },
+    "status": {
+      "loading": "Loading..."
+    },
+    "journey": {
+      "qa": "Quick Application",
+      "full": "Full Application"
+    },
+    "errors": {
+      "missingLead": "Please select a lead.",
+      "missingProduct": "Please select a product."
+    }
   }
 }

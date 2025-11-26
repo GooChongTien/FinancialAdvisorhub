@@ -27,7 +27,7 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'es', name: 'Spanish', nativeName: 'Español' },
 ];
 
-const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((lang) => lang.code);
+const LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((language) => language.code);
 
 i18n
   .use(LanguageDetector)
@@ -53,3 +53,4 @@ i18n
   });
 
 export default i18n;
+

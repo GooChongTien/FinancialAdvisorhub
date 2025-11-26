@@ -6,8 +6,9 @@ import { Label } from "@/admin/components/ui/label";
 import { Textarea } from "@/admin/components/ui/textarea";
 import { Input } from "@/admin/components/ui/input";
 import { Badge } from "@/admin/components/ui/badge";
-import { Upload, Mic, MicOff, FileText, ClipboardList, CheckCircle2, Calendar, Paperclip } from "lucide-react";
+import { Upload, Mic, MicOff, FileText, ClipboardList, CheckCircle2, Calendar, Paperclip, Radio } from "lucide-react";
 import supabase from "@/admin/api/supabaseClient.js";
+import { useVoiceRecording } from "@/admin/hooks/useVoiceRecording.ts";
 
 const deriveSummary = (task) => {
   if (task?.ai_summary) return task.ai_summary;
@@ -32,10 +33,39 @@ export default function TaskDetailDrawer({
   );
   const [meetingLink, setMeetingLink] = useState(task?.meeting_link || "");
   const [attachments, setAttachments] = useState([]);
-  const [isRecording, setIsRecording] = useState(false);
   const [localSummary, setLocalSummary] = useState(task?.ai_summary || "");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState("");
+
+  // Voice recording for Notes tab
+  const notesVoice = useVoiceRecording({
+    continuous: true,
+    interimResults: true,
+    language: "en-US",
+    onTranscript: (text, isFinal) => {
+      if (isFinal) {
+        setNotes((prev) => prev + (prev ? " " : "") + text);
+      }
+    },
+    onError: (error) => {
+      console.error("Notes voice recording error:", error);
+    },
+  });
+
+  // Voice recording for Transcript tab
+  const transcriptVoice = useVoiceRecording({
+    continuous: true,
+    interimResults: true,
+    language: "en-US",
+    onTranscript: (text, isFinal) => {
+      if (isFinal) {
+        setTranscript((prev) => prev + (prev ? " " : "") + text);
+      }
+    },
+    onError: (error) => {
+      console.error("Transcript voice recording error:", error);
+    },
+  });
 
   React.useEffect(() => {
     if (!task) return;
@@ -44,6 +74,9 @@ export default function TaskDetailDrawer({
     setMeetingLink(task.meeting_link || "");
     setLocalSummary(task.ai_summary || "");
     setAttachments([]);
+    // Reset voice recording state when task changes
+    notesVoice.resetTranscript();
+    transcriptVoice.resetTranscript();
   }, [task]);
 
   const isAppointment = task?.type === "Appointment";
@@ -143,12 +176,38 @@ export default function TaskDetailDrawer({
                 placeholder="Add text notes or meeting highlights..."
                 className="min-h-[140px]"
               />
+              {/* Real-time interim transcript preview */}
+              {notesVoice.isRecording && notesVoice.interimTranscript && (
+                <div className="text-sm text-slate-500 italic bg-slate-50 border border-slate-200 rounded-lg p-2">
+                  {notesVoice.interimTranscript}...
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsRecording((v) => !v)}>
-                {isRecording ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                {isRecording ? "Stop recording" : "Voice note"}
+              <Button
+                type="button"
+                variant={notesVoice.isRecording ? "destructive" : "outline"}
+                onClick={() => {
+                  if (notesVoice.isRecording) {
+                    notesVoice.stopRecording();
+                  } else {
+                    notesVoice.startRecording();
+                  }
+                }}
+                disabled={!notesVoice.isSupported}
+              >
+                {notesVoice.isRecording ? (
+                  <>
+                    <MicOff className="w-4 h-4 mr-2" />
+                    Stop recording
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4 mr-2" />
+                    Voice note
+                  </>
+                )}
               </Button>
               <Button type="button" variant="outline" asChild>
                 <label className="cursor-pointer inline-flex items-center gap-2">
@@ -168,7 +227,22 @@ export default function TaskDetailDrawer({
                   <span>{attachments.join(", ")}</span>
                 </div>
               ) : null}
-              {isRecording ? <span className="text-xs text-amber-600 font-semibold">Recording (simulated)</span> : null}
+              {notesVoice.isRecording && (
+                <div className="flex items-center gap-2 text-xs text-red-600 font-semibold animate-pulse">
+                  <Radio className="w-4 h-4" />
+                  Recording... ({notesVoice.backend === "webspeech" ? "Browser STT" : "Whisper API"})
+                </div>
+              )}
+              {notesVoice.error && (
+                <div className="text-xs text-red-600">
+                  {notesVoice.error}
+                </div>
+              )}
+              {!notesVoice.isSupported && (
+                <div className="text-xs text-amber-600">
+                  Voice recording not supported in this browser
+                </div>
+              )}
             </div>
 
             <DialogFooter className="mt-2">
@@ -210,7 +284,7 @@ export default function TaskDetailDrawer({
                 <Label htmlFor="meeting-link">Meeting link</Label>
                 <Input
                   id="meeting-link"
-                  placeholder="Paste meeting link"
+                  placeholder="Paste meeting link (Zoom, Teams, Google Meet, etc.)"
                   value={meetingLink}
                   onChange={(e) => setMeetingLink(e.target.value)}
                 />
@@ -225,12 +299,38 @@ export default function TaskDetailDrawer({
                   placeholder="Paste or type the transcript..."
                   className="min-h-[140px]"
                 />
+                {/* Real-time interim transcript preview */}
+                {transcriptVoice.isRecording && transcriptVoice.interimTranscript && (
+                  <div className="text-sm text-slate-500 italic bg-slate-50 border border-slate-200 rounded-lg p-2">
+                    {transcriptVoice.interimTranscript}...
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsRecording((v) => !v)}>
-                  {isRecording ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                  {isRecording ? "Stop recording" : "Start recording"}
+                <Button
+                  type="button"
+                  variant={transcriptVoice.isRecording ? "destructive" : "outline"}
+                  onClick={() => {
+                    if (transcriptVoice.isRecording) {
+                      transcriptVoice.stopRecording();
+                    } else {
+                      transcriptVoice.startRecording();
+                    }
+                  }}
+                  disabled={!transcriptVoice.isSupported}
+                >
+                  {transcriptVoice.isRecording ? (
+                    <>
+                      <MicOff className="w-4 h-4 mr-2" />
+                      Stop recording
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4 h-4 mr-2" />
+                      Start recording
+                    </>
+                  )}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <label className="cursor-pointer inline-flex items-center gap-2">
@@ -241,6 +341,7 @@ export default function TaskDetailDrawer({
                       className="hidden"
                       onChange={handleFileUpload}
                       aria-label="Upload transcript"
+                      accept="audio/*,.txt,.doc,.docx,.pdf"
                     />
                   </label>
                 </Button>
@@ -250,7 +351,22 @@ export default function TaskDetailDrawer({
                     <span>{attachments.join(", ")}</span>
                   </div>
                 ) : null}
-                {isRecording ? <span className="text-xs text-amber-600 font-semibold">Recording (simulated)</span> : null}
+                {transcriptVoice.isRecording && (
+                  <div className="flex items-center gap-2 text-xs text-red-600 font-semibold animate-pulse">
+                    <Radio className="w-4 h-4" />
+                    Recording... ({transcriptVoice.backend === "webspeech" ? "Browser STT" : "Whisper API"})
+                  </div>
+                )}
+                {transcriptVoice.error && (
+                  <div className="text-xs text-red-600">
+                    {transcriptVoice.error}
+                  </div>
+                )}
+                {!transcriptVoice.isSupported && (
+                  <div className="text-xs text-amber-600">
+                    Voice recording not supported in this browser
+                  </div>
+                )}
               </div>
 
               <DialogFooter className="mt-2">

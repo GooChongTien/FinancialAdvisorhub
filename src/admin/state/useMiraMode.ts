@@ -17,6 +17,11 @@ export function useMiraMode() {
     [send],
   );
   const openInsight = useCallback(() => send({ type: "OPEN_INSIGHT" }), [send]);
+  const openSplit = useCallback(
+    (conversationId?: string | null) =>
+      send({ type: "OPEN_SPLIT", conversationId: conversationId ?? null }),
+    [send],
+  );
   const close = useCallback(() => send({ type: "CLOSE" }), [send]);
   const toggleMode = useCallback(
     (next: MiraMode, conversationId?: string | null) =>
@@ -29,19 +34,30 @@ export function useMiraMode() {
     [send],
   );
 
+  const toggleAutoNav = useCallback(() => send({ type: "TOGGLE_AUTO_NAV" }), [send]);
+
+  const setAutoNav = useCallback(
+    (enabled: boolean) => send({ type: "SET_AUTO_NAV", enabled }),
+    [send],
+  );
+
   return useMemo(
     () => ({
       mode,
       previousMode: state.context.previousMode,
       conversationId: state.context.conversationId,
+      autoNavEnabled: state.context.autoNavEnabled,
       openCommand,
       openCopilot,
       openInsight,
+      openSplit,
       close,
       toggleMode,
       attachConversation,
+      toggleAutoNav,
+      setAutoNav,
     }),
-    [mode, state.context, openCommand, openCopilot, openInsight, close, toggleMode, attachConversation],
+    [mode, state.context, openCommand, openCopilot, openInsight, openSplit, close, toggleMode, attachConversation, toggleAutoNav, setAutoNav],
   );
 }
 

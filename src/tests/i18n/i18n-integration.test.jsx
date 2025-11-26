@@ -39,7 +39,7 @@ describe("i18n Integration", () => {
     it("should load English translations correctly", () => {
       expect(i18n.t("common.welcome")).toBe("Welcome");
       expect(i18n.t("common.save")).toBe("Save");
-      expect(i18n.t("navigation.dashboard")).toBe("Dashboard");
+      expect(i18n.t("navigation.dashboard")).toBe("Visualizers");
     });
 
     it("should switch to Chinese and load translations", async () => {
@@ -77,7 +77,7 @@ describe("i18n Integration", () => {
     it("should render component with English translations by default", () => {
       render(<TestComponent />);
       expect(screen.getByText("Welcome")).toBeInTheDocument();
-      expect(screen.getByText("Dashboard")).toBeInTheDocument();
+      expect(screen.getByText("Visualizers")).toBeInTheDocument();
       expect(screen.getByText("Save")).toBeInTheDocument();
     });
 

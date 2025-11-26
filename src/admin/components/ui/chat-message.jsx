@@ -4,7 +4,10 @@
  */
 
 import { clsx } from "clsx";
-import { Bot, User, Wrench, AlertCircle, Target } from "lucide-react";
+import { Bot, User, Wrench, AlertCircle, Target, Navigation, Filter, Search, Edit, Play, FileText, BarChart3, TrendingUp, Eye, Lightbulb } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
+import { MarkdownContent } from "@/admin/components/ui/markdown-content.jsx";
 
 const ACTION_LABELS = {
   navigate: "Navigate",
@@ -86,6 +89,41 @@ function describeAction(action) {
   }
 }
 
+function getActionIcon(action) {
+  if (!action) return Navigation;
+  switch (action.action) {
+    case "navigate":
+      return Navigation;
+    case "set_filter":
+    case "apply_filter":
+      return Filter;
+    case "search_action":
+      return Search;
+    case "open_edit_mode":
+    case "update_field":
+    case "frontend_prefill":
+      return Edit;
+    case "execute":
+    case "submit_action":
+      return Play;
+    case "generate_report":
+      return FileText;
+    case "view_analytics":
+    case "view_analysis":
+      return BarChart3;
+    case "view_chart":
+    case "view_comparison":
+      return TrendingUp;
+    case "view_details":
+    case "view_status":
+      return Eye;
+    case "get_recommendation":
+      return Lightbulb;
+    default:
+      return Target;
+  }
+}
+
 /**
  * Format timestamp for display
  * @param {string} timestamp
@@ -128,6 +166,16 @@ function normalizeTopicLabel(topic) {
   return toTitle(String(topic).replace(/[_-]+/g, " "));
 }
 
+function getInitials(name) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
 /**
  * Chat message component
  * @param {Object} props
@@ -135,6 +183,12 @@ function normalizeTopicLabel(topic) {
  * @param {boolean} [props.streaming] - Whether message is still streaming
  */
 export function ChatMessage({ message, streaming = false }) {
+  const { data: user } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: () => adviseUAdminApi.auth.me(),
+    staleTime: Infinity,
+  });
+
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
   const isTool = message.role === "tool";
@@ -143,10 +197,12 @@ export function ChatMessage({ message, streaming = false }) {
   const showPlanned = isAssistant && plannedActions.length > 0;
   const metadataBadge = isAssistant ? <IntentMetadataBadge metadata={message?.metadata} /> : null;
 
+  const userInitials = getInitials(user?.full_name);
+
   // User messages: right-aligned, compact style
   if (isUser) {
     return (
-      <div className="flex justify-end mb-4 px-4 animate-fade-in">
+      <div className="group flex justify-end mb-4 px-4 animate-fade-in">
         <div className="max-w-[85%] md:max-w-[70%]">
           <div className="flex items-end gap-2 justify-end">
             <div className="bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
@@ -155,11 +211,11 @@ export function ChatMessage({ message, streaming = false }) {
               </div>
             </div>
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-md">
-              <User className="w-4 h-4 text-white" />
+              <span className="text-white text-xs font-bold">{userInitials}</span>
             </div>
           </div>
           {message.timestamp && (
-            <div className="text-[11px] text-neutral-500 mt-1 text-right px-1">
+            <div className="text-[11px] text-neutral-500 mt-1 text-right px-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {formatTime(message.timestamp)}
             </div>
           )}
@@ -171,11 +227,11 @@ export function ChatMessage({ message, streaming = false }) {
   // Assistant messages: left-aligned, spacious style like ChatGPT/Claude
   if (isAssistant) {
     return (
-      <div className="flex justify-start mb-6 px-4 animate-fade-in">
+      <div className="group flex justify-start mb-6 px-4 animate-fade-in">
         <div className="max-w-[85%] md:max-w-[70%]">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 via-neutral-800 to-neutral-900 flex items-center justify-center shadow-md ring-2 ring-neutral-200">
-              <Bot className="w-4 h-4 text-white" />
+              <span className="text-white text-xs font-bold">M</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
@@ -189,8 +245,12 @@ export function ChatMessage({ message, streaming = false }) {
                 )}
               </div>
               <div className="bg-neutral-50 border border-neutral-200 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
-                <div className="text-[15px] leading-relaxed text-neutral-900 whitespace-pre-wrap break-words">
-                  {message.content || <span className="text-neutral-400 italic">No content</span>}
+                <div className="text-[15px] leading-relaxed text-neutral-900">
+                  {message.content ? (
+                    <MarkdownContent content={message.content} />
+                  ) : (
+                    <span className="text-neutral-400 italic">No content</span>
+                  )}
                   {streaming && (
                     <span className="inline-block w-0.5 h-5 ml-1 bg-neutral-400 animate-pulse" />
                   )}
@@ -212,8 +272,9 @@ export function ChatMessage({ message, streaming = false }) {
                 )}
 
                 {showPlanned && (
-                  <div className="mt-3 rounded-xl border border-neutral-200 bg-white p-3 text-xs text-neutral-700">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-neutral-500 mb-2">
+                  <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-blue-700 mb-2.5 flex items-center gap-1.5">
+                      <Target className="w-3 h-3" />
                       Planned actions
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -221,14 +282,19 @@ export function ChatMessage({ message, streaming = false }) {
                         const key = action?.id || `${message.id}-planned-${index}`;
                         const label = formatActionLabel(action);
                         const detail = describeAction(action);
+                        const IconComponent = getActionIcon(action);
                         return (
-                          <div
+                          <button
                             key={key}
-                            className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1.5 text-[11px] font-medium text-neutral-800 shadow-sm hover:bg-neutral-100 transition-colors"
+                            className="group rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2 text-[11px] font-semibold text-white shadow-md hover:shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all active:scale-95 flex items-center gap-1.5"
+                            title={detail || label}
                           >
-                            {label}
-                            {detail && <span className="text-neutral-500">{` · ${detail}`}</span>}
-                          </div>
+                            <IconComponent className="w-3.5 h-3.5" />
+                            <span>{label}</span>
+                            {detail && (
+                              <span className="text-blue-100 font-normal ml-0.5">· {detail}</span>
+                            )}
+                          </button>
                         );
                       })}
                     </div>
@@ -244,7 +310,7 @@ export function ChatMessage({ message, streaming = false }) {
                 )}
               </div>
               {message.timestamp && (
-                <div className="text-[11px] text-neutral-500 mt-1.5 px-1">
+                <div className="text-[11px] text-neutral-500 mt-1.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   {formatTime(message.timestamp)}
                 </div>
               )}

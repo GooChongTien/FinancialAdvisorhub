@@ -1,7 +1,13 @@
+import { supabase } from "@/admin/api/supabaseClient";
+import { Button } from "@/admin/components/ui/button";
 import {
   Card,
   CardContent,
 } from "@/admin/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+} from "@/admin/components/ui/dialog";
 import PageHeader from "@/admin/components/ui/page-header.jsx";
 import {
   Popover,
@@ -16,10 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/admin/components/ui/select";
-import { Button } from "@/admin/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/admin/components/ui/tabs";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
-import { supabase } from "@/admin/api/supabaseClient";
 import ProductCard from "@/admin/modules/product/components/ProductCard";
 import { products as productSeed } from "@/admin/modules/product/data/products";
 import { createPageUrl } from "@/admin/utils";
@@ -28,15 +32,16 @@ import {
   Filter,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 // Category definitions
 const CATEGORIES = [
-  { id: "all", label: "All" },
-  { id: "life", label: "Life Insurance" },
-  { id: "health", label: "Health Insurance" },
-  { id: "general", label: "General Insurance" },
-  { id: "group", label: "Group Insurance" },
+  { id: "all", labelKey: "all" },
+  { id: "life", labelKey: "life" },
+  { id: "health", labelKey: "health" },
+  { id: "general", labelKey: "general" },
+  { id: "group", labelKey: "group" },
 ];
 
 const CATEGORY_IMAGES = {
@@ -116,6 +121,7 @@ const mergeProduct = (dbProduct) => {
 
 export default function Product() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
@@ -136,8 +142,8 @@ export default function Product() {
         .order("product_name", { ascending: true });
 
       if (!isMounted) return;
-      if (fetchError) {
-        setError(fetchError.message || "Failed to load products");
+        if (fetchError) {
+        setError(fetchError.message || t("product.errors.load"));
       } else {
         const merged = (data || []).map(mergeProduct);
         setProducts(merged);
@@ -160,26 +166,26 @@ export default function Product() {
 
     const bySearch = search
       ? byCategory.filter((p) => {
-          const haystack = `${p.product_name || ""} ${p.product_code || ""} ${p.description || ""}`.toLowerCase();
-          return haystack.includes(search.toLowerCase());
-        })
+        const haystack = `${p.product_name || ""} ${p.product_code || ""} ${p.description || ""}`.toLowerCase();
+        return haystack.includes(search.toLowerCase());
+      })
       : byCategory;
 
     const byQuickQuote =
       filterQuickQuote === "all"
         ? bySearch
         : bySearch.filter(
-            (p) => Boolean(p.allow_quick_quote) === (filterQuickQuote === "yes"),
-          );
+          (p) => Boolean(p.allow_quick_quote) === (filterQuickQuote === "yes"),
+        );
 
     const byFactFind =
       filterFactFind === "all"
         ? byQuickQuote
         : byQuickQuote.filter(
-            (p) =>
-              Boolean(p.require_fact_finding) ===
-              (filterFactFind === "yes"),
-          );
+          (p) =>
+            Boolean(p.require_fact_finding) ===
+            (filterFactFind === "yes"),
+        );
 
     return byFactFind;
   }, [activeTab, products, search, filterQuickQuote, filterFactFind]);
@@ -214,12 +220,7 @@ export default function Product() {
     [activeTab],
   );
 
-  const handleSelectProduct = useCallback((product) => {
-    // Navigate to product detail (to be implemented)
-    // For now, we can use a query param or state to show detail
-    // But the plan says "Implement ProductDetail view", so we might want to route to a detail page or show it here.
-    // Given the structure, let's assume we stay on page but render detail component if selected.
-    // However, for better URL management, let's use query param ?productId=...
+const handleSelectProduct = useCallback((product) => {
     navigate(`${createPageUrl("Product")}?productId=${product.id}`);
   }, [navigate]);
 
@@ -229,6 +230,15 @@ export default function Product() {
   const selectedProduct = useMemo(() =>
     products.find(p => p.id === selectedProductId),
     [selectedProductId, products]);
+
+  const handleCloseDetail = () => {
+    navigate(createPageUrl("Product"));
+  };
+
+  const handleGetQuote = (product) => {
+    // Redirect to New Business with QA journey and product selected
+    navigate(createPageUrl(`NewBusiness?action=new&journeyType=QA&productId=${product.id}`));
+  };
 
   useMiraPageData(
     () => ({
@@ -243,9 +253,9 @@ export default function Product() {
   );
 
   // If a product is selected, render the Detail view (placeholder for now, will implement next)
-  if (selectedProduct) {
-    return <ProductDetailContainer product={selectedProduct} onBack={() => navigate(createPageUrl("Product"))} />;
-  }
+  // if (selectedProduct) {
+  //   return <ProductDetailContainer product={selectedProduct} onBack={() => navigate(createPageUrl("Product"))} />;
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
@@ -253,8 +263,8 @@ export default function Product() {
         {/* Sticky Header */}
         <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md py-4 -mx-8 px-8 border-b border-slate-200/50 transition-all duration-200">
           <PageHeader
-            title="Product Management"
-            subtitle="Browse insurance solutions by line of business and generate a quote in seconds"
+            title={t("product.title")}
+            subtitle={t("product.subtitle")}
             icon={Calculator}
             className="mb-0"
           />
@@ -269,7 +279,7 @@ export default function Product() {
                       value={category.id}
                       className="rounded-full border border-slate-200 bg-white px-6 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-all data-[state=active]:border-primary-600 data-[state=active]:bg-primary-50 data-[state=active]:text-primary-700"
                     >
-                      {category.label}
+                      {t(`product.categories.${category.labelKey}`)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -281,7 +291,7 @@ export default function Product() {
             <SearchFilterBar
               searchValue={search}
               onSearchChange={setSearch}
-              placeholder="Search products, codes, or descriptions..."
+              placeholder={t("product.filters.searchPlaceholder")}
               filterButton={
                 <Popover>
                   <PopoverTrigger asChild>
@@ -297,7 +307,7 @@ export default function Product() {
                           ? "bg-primary-600 text-white hover:bg-primary-700"
                           : ""
                       }
-                      title="Filter products"
+                      title={t("product.filters.title")}
                     >
                       <Filter className="h-4 w-4" />
                     </Button>
@@ -306,7 +316,7 @@ export default function Product() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-semibold text-slate-900">
-                          Filters
+                          {t("product.filters.title")}
                         </h4>
                         <Button
                           variant="ghost"
@@ -316,42 +326,42 @@ export default function Product() {
                             setFilterFactFind("all");
                           }}
                         >
-                          Clear
+                          {t("product.filters.clear")}
                         </Button>
                       </div>
                       <div className="space-y-2">
                         <div className="text-xs font-semibold text-slate-600">
-                          Allow Quick Quote
+                          {t("product.filters.quickQuote")}
                         </div>
                         <Select
                           value={filterQuickQuote}
                           onValueChange={setFilterQuickQuote}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="All" />
+                            <SelectValue placeholder={t("product.filters.all")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
-                            <SelectItem value="no">No</SelectItem>
+                            <SelectItem value="all">{t("product.filters.all")}</SelectItem>
+                            <SelectItem value="yes">{t("product.filters.yes")}</SelectItem>
+                            <SelectItem value="no">{t("product.filters.no")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
                         <div className="text-xs font-semibold text-slate-600">
-                          Require Fact Finding
+                          {t("product.filters.factFind")}
                         </div>
                         <Select
                           value={filterFactFind}
                           onValueChange={setFilterFactFind}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="All" />
+                            <SelectValue placeholder={t("product.filters.all")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="yes">Yes</SelectItem>
-                            <SelectItem value="no">No</SelectItem>
+                            <SelectItem value="all">{t("product.filters.all")}</SelectItem>
+                            <SelectItem value="yes">{t("product.filters.yes")}</SelectItem>
+                            <SelectItem value="no">{t("product.filters.no")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -368,7 +378,7 @@ export default function Product() {
           {loading ? (
             <Card className="border-slate-200 bg-slate-50">
               <CardContent className="p-12 text-center text-slate-500">
-                Loading products...
+                {t("product.status.loading")}
               </CardContent>
             </Card>
           ) : error ? (
@@ -380,7 +390,7 @@ export default function Product() {
           ) : filteredProducts.length === 0 ? (
             <Card className="border-slate-200 bg-slate-50">
               <CardContent className="p-12 text-center text-slate-500">
-                No products available in this category.
+                {t("product.empty.title")}
               </CardContent>
             </Card>
           ) : (
@@ -397,99 +407,27 @@ export default function Product() {
           )}
         </div>
       </div>
+      {/* Product Detail Modal */}
+      <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && handleCloseDetail()}>
+        <DialogContent className="max-w-5xl h-[90vh] overflow-y-auto p-0">
+          {selectedProduct && (
+            <div className="p-6">
+              <ProductDetail
+                product={selectedProduct}
+                onBack={handleCloseDetail}
+                onGetQuote={handleGetQuote}
+                isModal={true}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 // Placeholder for ProductDetailContainer to avoid breaking build before next step
 // We will replace this with the actual import in the next step
-import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
-import ProductApplication from "@/admin/modules/product/components/ProductApplication";
 import ProductDetail from "@/admin/modules/product/components/ProductDetail";
-import ProductQuote from "@/admin/modules/product/components/ProductQuote";
 
-function ProductDetailContainer({ product, onBack }) {
-  const navigate = useNavigate();
-  const urlParams = new URLSearchParams(window.location.search);
-  const view = urlParams.get("view") || "detail";
-
-  // State to hold quote result across views
-  // In a real app, this might be in a context or URL params
-  const [quoteData, setQuoteData] = useState(null);
-
-  const handleGetQuote = (product) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("view", "quote");
-    navigate(`${createPageUrl("Product")}?${params.toString()}`);
-  };
-
-  const handleProceedApplication = (result, formData) => {
-    setQuoteData({ result, formData });
-    const params = new URLSearchParams(window.location.search);
-    params.set("view", "application");
-    navigate(`${createPageUrl("Product")}?${params.toString()}`);
-  };
-
-  const handleStartProposal = async (result, formData) => {
-    // Create a new proposal via API and navigate to it
-    try {
-      const newProposal = await adviseUAdminApi.entities.Proposal.create({
-        product_id: product.id,
-        product_name: product.product_name,
-        status: "Draft",
-        premium: result.annual,
-        sum_assured: formData.sum_assured,
-        policy_term: formData.policy_term,
-        // Add other fields as needed
-      });
-      navigate(createPageUrl(`ProposalDetail?id=${newProposal.id}`));
-    } catch (e) {
-      console.error("Failed to create proposal", e);
-      // Fallback or error handling
-      alert("Simulating proposal creation...");
-      navigate(createPageUrl("Proposal"));
-    }
-  };
-
-  const handleBackToDetail = () => {
-    const params = new URLSearchParams(window.location.search);
-    params.delete("view");
-    navigate(`${createPageUrl("Product")}?${params.toString()}`);
-  };
-
-  const handleBackToQuote = () => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("view", "quote");
-    navigate(`${createPageUrl("Product")}?${params.toString()}`);
-  };
-
-  if (view === "quote") {
-    return (
-      <ProductQuote
-        product={product}
-        onBack={handleBackToDetail}
-        onProceedApplication={handleProceedApplication}
-        onStartProposal={handleStartProposal}
-      />
-    );
-  }
-
-  if (view === "application") {
-    return (
-      <ProductApplication
-        product={product}
-        quoteResult={quoteData?.result || { total: 0 }} // Fallback if state lost on refresh
-        onBack={handleBackToQuote}
-        onComplete={onBack} // Back to list
-      />
-    );
-  }
-
-  return (
-    <ProductDetail
-      product={product}
-      onBack={onBack}
-      onGetQuote={handleGetQuote}
-    />
-  );
-}
+// ProductDetailContainer removed as we now use Modal

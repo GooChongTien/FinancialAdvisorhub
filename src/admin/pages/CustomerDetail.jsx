@@ -16,10 +16,12 @@ import { calculateCustomerTemperature } from "@/lib/customer-temperature";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Briefcase, FileText, TrendingUp, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 export default function CustomerDetail() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const urlParams = new URLSearchParams(window.location.search);
   const leadId = urlParams.get("id");
   const storageKey = `advisorhub:customer-detail-tab:${leadId ?? "default"}`;
@@ -138,7 +140,7 @@ export default function CustomerDetail() {
   if (!lead) {
     return (
       <div className="p-8 text-center">
-        <p className="text-slate-500">Lead not found</p>
+        <p className="text-slate-500">{t("customerDetail.notFound")}</p>
       </div>
     );
   }
@@ -177,7 +179,7 @@ export default function CustomerDetail() {
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-2xl font-bold text-slate-900">{lead.name}</h1>
               <Badge className={lead.is_client ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}>
-                {lead.is_client ? "Existing" : "New"}
+                {lead.is_client ? t("customerDetail.badges.existing") : t("customerDetail.badges.new")}
               </Badge>
               <TemperatureBadge
                 {...calculateCustomerTemperature({
@@ -189,27 +191,24 @@ export default function CustomerDetail() {
             </div>
             <div className="flex items-center gap-4 text-slate-600 text-sm">
               {lead.customer_type !== "Entity" && getAge() && (
-                <span>{getAge()} years old</span>
+                <span>{t("customerDetail.age", { count: getAge() })}</span>
               )}
               {lead.customer_type === "Entity" && lead.industry && (
                 <span>{lead.industry}</span>
               )}
-              <span>•</span>
+              <span aria-hidden="true">|</span>
               <span>
-                {lead.active_proposals ?? 0} active{" "}
-                {(lead.active_proposals ?? 0) === 1 ? "proposal" : "proposals"}
+                {t("customerDetail.activeProposals", { count: lead.active_proposals ?? 0 })}
               </span>
-              <span>•</span>
+              <span aria-hidden="true">|</span>
               <span>
-                {lead.open_service_requests ?? 0} service{" "}
-                {(lead.open_service_requests ?? 0) === 1 ? "request" : "requests"}
+                {t("customerDetail.activeServiceRequests", { count: lead.open_service_requests ?? 0 })}
               </span>
               {lead.is_client && (
                 <>
-                  <span>•</span>
+                  <span aria-hidden="true">|</span>
                   <span>
-                    {policies.length} active{" "}
-                    {policies.length === 1 ? "policy" : "policies"}
+                    {t("customerDetail.activePolicies", { count: policies.length })}
                   </span>
                 </>
               )}
@@ -218,7 +217,7 @@ export default function CustomerDetail() {
 
           {/* Breadcrumb */}
           <div className="text-xs text-slate-500 mb-4">
-            <span className="cursor-pointer hover:text-primary-600" onClick={() => navigate(createPageUrl("Customer"))}>Customers</span>
+            <span className="cursor-pointer hover:text-primary-600" onClick={() => navigate(createPageUrl("Customer"))}>{t("navigation.customers")}</span>
             <span className="mx-2">/</span>
             <span>{lead.name}</span>
           </div>
@@ -231,7 +230,7 @@ export default function CustomerDetail() {
                 className="data-[state=active]:bg-primary-600 data-[state=active]:text-white"
               >
                 <User className="mr-2 h-4 w-4" />
-                Overview
+                {t("customerDetail.tabs.overview")}
               </TabsTrigger>
               {lead.is_client && (
                 <>
@@ -240,14 +239,14 @@ export default function CustomerDetail() {
                     className="data-[state=active]:bg-primary-600 data-[state=active]:text-white"
                   >
                     <Briefcase className="mr-2 h-4 w-4" />
-                    Portfolio
+                    {t("customerDetail.tabs.portfolio")}
                   </TabsTrigger>
                   <TabsTrigger
                     value="servicing"
                     className="data-[state=active]:bg-primary-600 data-[state=active]:text-white"
                   >
                     <FileText className="mr-2 h-4 w-4" />
-                    Servicing
+                    {t("customerDetail.tabs.servicing")}
                   </TabsTrigger>
                   {lead.customer_type !== "Entity" && (
                     <TabsTrigger
@@ -255,7 +254,7 @@ export default function CustomerDetail() {
                       className="data-[state=active]:bg-primary-600 data-[state=active]:text-white"
                     >
                       <TrendingUp className="mr-2 h-4 w-4" />
-                      Gap & Opportunity
+                      {t("customerDetail.tabs.gap")}
                     </TabsTrigger>
                   )}
                 </>
@@ -274,7 +273,7 @@ export default function CustomerDetail() {
                 <CardHeader className="border-b border-slate-100 bg-slate-50/50">
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-primary-600" />
-                    Our Journey
+                    {t("customerDetail.journeyTitle")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -282,7 +281,7 @@ export default function CustomerDetail() {
                     milestones={normalizedMilestones}
                     activeId={selectedMilestoneId}
                     onSelect={(milestone) => setSelectedMilestoneId(milestone.id)}
-                    emptyMessage="No milestones captured yet."
+                    emptyMessage={t("customerDetail.journeyEmpty")}
                     className="border-none shadow-none"
                   />
                 </CardContent>
@@ -311,3 +310,10 @@ export default function CustomerDetail() {
     </div>
   );
 }
+
+
+
+
+
+
+

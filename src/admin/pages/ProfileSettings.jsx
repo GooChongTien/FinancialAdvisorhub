@@ -23,9 +23,11 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, Settings as SettingsIcon, Shield, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showSuccess, setShowSuccess] = useState(false);
   const { showToast } = useToast();
   const [showPwdDialog, setShowPwdDialog] = useState(false);
@@ -120,26 +122,34 @@ export default function ProfileSettings() {
     setPreferences({ ...preferences, two_fa_enabled: true });
     updatePrefs({ two_fa_enabled: true });
     setShow2FASetup(false);
-    showToast({ type: "success", title: "Two-Factor Enabled", description: "2FA is now active. Store your backup codes safely." });
+    showToast({
+      type: "success",
+      title: t("profile.toast.twoFAEnabledTitle"),
+      description: t("profile.toast.twoFAEnabledDesc"),
+    });
   };
 
   const confirmDisable2FA = async () => {
     setPreferences({ ...preferences, two_fa_enabled: false });
     updatePrefs({ two_fa_enabled: false });
     setShow2FADisableConfirm(false);
-    showToast({ type: "success", title: "Two-Factor Disabled", description: "2FA has been disabled for your account." });
+    showToast({
+      type: "success",
+      title: t("profile.toast.twoFADisabledTitle"),
+      description: t("profile.toast.twoFADisabledDesc"),
+    });
   };
 
   const validatePassword = () => {
     setPwdError("");
     const { current, next, confirm } = pwdForm;
-    if (!current) return setPwdError("Current password is required");
-    if (!next || next.length < 8) return setPwdError("New password must be at least 8 characters");
-    if (!/[A-Z]/.test(next)) return setPwdError("Include at least one uppercase letter");
-    if (!/[a-z]/.test(next)) return setPwdError("Include at least one lowercase letter");
-    if (!/\d/.test(next)) return setPwdError("Include at least one number");
-    if (!/[\W_]/.test(next)) return setPwdError("Include at least one special character");
-    if (next !== confirm) return setPwdError("Password confirmation does not match");
+    if (!current) return setPwdError(t("profile.validation.currentRequired"));
+    if (!next || next.length < 8) return setPwdError(t("profile.validation.minLength"));
+    if (!/[A-Z]/.test(next)) return setPwdError(t("profile.validation.uppercase"));
+    if (!/[a-z]/.test(next)) return setPwdError(t("profile.validation.lowercase"));
+    if (!/\d/.test(next)) return setPwdError(t("profile.validation.number"));
+    if (!/[\W_]/.test(next)) return setPwdError(t("profile.validation.special"));
+    if (next !== confirm) return setPwdError(t("profile.validation.mismatch"));
     return "ok";
   };
 
@@ -151,15 +161,23 @@ export default function ProfileSettings() {
       try {
         const me = await adviseUAdminApi.auth.me();
         if (me?.email) {
-          showToast({ type: "info", title: "Email Notice", description: `A confirmation email will be sent to ${me.email}.` });
+          showToast({
+            type: "info",
+            title: t("profile.toast.emailNoticeTitle"),
+            description: t("profile.toast.emailNoticeDesc", { email: me.email }),
+          });
         }
       } catch { }
-      showToast({ type: "success", title: "Password Updated", description: "You will be signed out for security." });
+      showToast({
+        type: "success",
+        title: t("profile.toast.passwordUpdatedTitle"),
+        description: t("profile.toast.passwordUpdatedDesc"),
+      });
       setShowPwdDialog(false);
       await adviseUAdminApi.auth.logout();
       window.location.href = "/";
     } catch (e) {
-      setPwdError(e?.message ?? "Unable to change password");
+      setPwdError(e?.message ?? t("profile.toast.passwordChangeError"));
     }
   };
 
@@ -167,7 +185,7 @@ export default function ProfileSettings() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 p-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center py-12">Loading...</div>
+          <div className="text-center py-12">{t("common.loading")}</div>
         </div>
       </div>
     );
@@ -189,8 +207,8 @@ export default function ProfileSettings() {
         {/* Sticky Header Section */}
         <div className="sticky top-0 z-20 -mx-8 -mt-8 px-8 pt-8 pb-4 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-200">
           <PageHeader
-            title="Profile Settings"
-            subtitle="Manage your account information and preferences"
+            title={t("profile.title")}
+            subtitle={t("profile.subtitle")}
             icon={SettingsIcon}
             className="mb-0"
           />
@@ -200,7 +218,7 @@ export default function ProfileSettings() {
           <Alert className="bg-green-50 border-green-200">
             <Check className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              Your preferences have been saved successfully.
+              {t("profile.saveSuccess")}
             </AlertDescription>
           </Alert>
         )}
@@ -209,75 +227,75 @@ export default function ProfileSettings() {
           <CardHeader className="border-b border-slate-100">
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5 text-primary-600" />
-              Personal Information
+              {t("profile.personal.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Full Name</Label>
+                <Label>{t("profile.personal.fullName")}</Label>
                 <Input
                   value={user?.full_name || ""}
                   disabled
                   className="bg-slate-50"
                 />
                 <p className="text-xs text-slate-500">
-                  Managed by administrator
+                  {t("profile.personal.managedByAdmin")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Email Address</Label>
+                <Label>{t("profile.personal.email")}</Label>
                 <Input
                   value={user?.email || ""}
                   disabled
                   className="bg-slate-50"
                 />
                 <p className="text-xs text-slate-500">
-                  Managed by administrator
+                  {t("profile.personal.managedByAdmin")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Mobile Number</Label>
+                <Label>{t("profile.personal.mobile")}</Label>
                 <Input
-                  value={user?.mobile_number || "Not set"}
+                  value={user?.mobile_number || t("profile.personal.notSet")}
                   disabled
                   className="bg-slate-50"
                 />
                 <p className="text-xs text-slate-500">
-                  Managed by administrator
+                  {t("profile.personal.managedByAdmin")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Advisor ID</Label>
+                <Label>{t("profile.personal.advisorId")}</Label>
                 <Input
-                  value={user?.advisor_id || "Not assigned"}
+                  value={user?.advisor_id || t("profile.personal.notAssigned")}
                   disabled
                   className="bg-slate-50"
                 />
                 <p className="text-xs text-slate-500">
-                  Managed by administrator
+                  {t("profile.personal.managedByAdmin")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Advisor ID Expiry</Label>
+                <Label>{t("profile.personal.advisorIdExpiry")}</Label>
                 <Input
-                  value={user?.advisor_id_expiry || "N/A"}
+                  value={user?.advisor_id_expiry || t("profile.personal.na")}
                   disabled
                   className="bg-slate-50"
                 />
                 <p className="text-xs text-slate-500">
-                  Managed by administrator
+                  {t("profile.personal.managedByAdmin")}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Account Status</Label>
+                <Label>{t("profile.personal.accountStatus")}</Label>
                 <Input
-                  value={user?.account_status || "Active"}
+                  value={user?.account_status || t("profile.personal.active")}
                   disabled
                   className="bg-slate-50"
                 />
                 <p className="text-xs text-slate-500">
-                  Managed by administrator
+                  {t("profile.personal.managedByAdmin")}
                 </p>
               </div>
             </div>
@@ -290,7 +308,7 @@ export default function ProfileSettings() {
                   updatePrefs({ language: "en", currency: "SGD" });
                 }}
               >
-                Restore Defaults
+                {t("profile.restoreDefaults")}
               </Button>
               <div />
             </div>
@@ -301,15 +319,15 @@ export default function ProfileSettings() {
           <CardHeader className="border-b border-slate-100">
             <CardTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary-600" />
-              Security
+              {t("profile.security.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Two-Factor Authentication</Label>
+                <Label>{t("profile.security.twoFA")}</Label>
                 <p className="text-sm text-slate-500 mt-1">
-                  Add an extra layer of security to your account
+                  {t("profile.security.twoFADesc")}
                 </p>
               </div>
               <Switch
@@ -319,14 +337,16 @@ export default function ProfileSettings() {
             </div>
             <Separator />
             <div>
-              <Label>Change Password</Label>
+              <Label>{t("profile.security.changePassword")}</Label>
               <p className="text-sm text-slate-500 mt-1 mb-4">
-                Update your password to keep your account secure
+                {t("profile.security.changePasswordDesc")}
               </p>
               <Button variant="outline" onClick={() => setShowPwdDialog(true)}>
-                Change Password
+                {t("profile.security.changePasswordCta")}
               </Button>
-              <p className="text-xs text-slate-400 mt-2">Requires current password and strong new password</p>
+              <p className="text-xs text-slate-400 mt-2">
+                {t("profile.security.requiresCurrent")}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -335,13 +355,13 @@ export default function ProfileSettings() {
           <CardHeader className="border-b border-slate-100">
             <CardTitle className="flex items-center gap-2">
               <SettingsIcon className="w-5 h-5 text-primary-600" />
-              User Preferences
+              {t("profile.preferences.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Language</Label>
+                <Label>{t("profile.preferences.language")}</Label>
                 <Select
                   value={preferences.language}
                   onValueChange={(value) => {
@@ -363,7 +383,7 @@ export default function ProfileSettings() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Currency</Label>
+                <Label>{t("profile.preferences.currency")}</Label>
                 <CurrencySelector
                   value={preferences.currency}
                   onChange={(value) => {
@@ -380,7 +400,7 @@ export default function ProfileSettings() {
         <div className="flex justify-end">
           <Button onClick={handleSave} className="bg-primary-600 hover:bg-primary-700 px-8">
             <Check className="w-4 h-4 mr-2" />
-            Save Changes
+            {t("profile.preferences.saveChanges")}
           </Button>
         </div>
       </div>
@@ -389,7 +409,7 @@ export default function ProfileSettings() {
       <Dialog open={showPwdDialog} onOpenChange={setShowPwdDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>{t("profile.dialog.changePasswordTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {pwdError && (
@@ -398,21 +418,21 @@ export default function ProfileSettings() {
               </Alert>
             )}
             <div className="space-y-2">
-              <Label>Current Password</Label>
+              <Label>{t("profile.dialog.currentPassword")}</Label>
               <Input type="password" value={pwdForm.current} onChange={(e) => setPwdForm({ ...pwdForm, current: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>New Password</Label>
+              <Label>{t("profile.dialog.newPassword")}</Label>
               <Input type="password" value={pwdForm.next} onChange={(e) => setPwdForm({ ...pwdForm, next: e.target.value })} />
-              <p className="text-xs text-slate-500">Min 8 chars, upper+lowercase, number, special</p>
+              <p className="text-xs text-slate-500">{t("profile.security.passwordHint")}</p>
             </div>
             <div className="space-y-2">
-              <Label>Confirm New Password</Label>
+              <Label>{t("profile.dialog.confirmNewPassword")}</Label>
               <Input type="password" value={pwdForm.confirm} onChange={(e) => setPwdForm({ ...pwdForm, confirm: e.target.value })} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowPwdDialog(false)}>Cancel</Button>
-              <Button className="bg-primary-600 hover:bg-primary-700" onClick={submitPasswordChange}>Update Password</Button>
+              <Button variant="outline" onClick={() => setShowPwdDialog(false)}>{t("profile.dialog.cancel")}</Button>
+              <Button className="bg-primary-600 hover:bg-primary-700" onClick={submitPasswordChange}>{t("profile.dialog.updatePassword")}</Button>
             </div>
           </div>
         </DialogContent>
@@ -422,19 +442,23 @@ export default function ProfileSettings() {
       <Dialog open={show2FASetup} onOpenChange={setShow2FASetup}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Enable Two-Factor Authentication</DialogTitle>
+            <DialogTitle>{t("profile.twofaSetup.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">Scan this key in Google Authenticator or Authy, or add the account manually.</p>
+            <p className="text-sm text-slate-600">
+              {t("profile.twofaSetup.instructions")}
+            </p>
             <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Secret</p>
+              <p className="text-xs text-slate-500 mb-1">{t("profile.twofaSetup.secretLabel")}</p>
               <p className="font-mono text-sm">{twoFASecret}</p>
             </div>
             {otpUri && (
               <div className="flex flex-col items-center gap-2">
-                <p className="text-xs text-slate-500">Scan QR in your authenticator app</p>
+                <p className="text-xs text-slate-500">
+                  {t("profile.twofaSetup.qrInstruction")}
+                </p>
                 <img
-                  alt="2FA QR Code"
+                  alt={t("profile.twofaSetup.qrInstruction")}
                   className="border border-slate-200 rounded bg-white"
                   width={180}
                   height={180}
@@ -443,25 +467,27 @@ export default function ProfileSettings() {
               </div>
             )}
             <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">otpauth URI</p>
+              <p className="text-xs text-slate-500 mb-1">{t("profile.twofaSetup.uriLabel")}</p>
               <p className="font-mono text-xs break-all">{otpUri}</p>
             </div>
             <Separator />
             <div>
-              <p className="text-sm font-medium mb-2">Backup Codes</p>
+              <p className="text-sm font-medium mb-2">
+                {t("profile.twofaSetup.backupCodes")}
+              </p>
               <ul className="grid grid-cols-2 gap-2 text-sm font-mono">
                 {backupCodes.map((c) => (
                   <li key={c} className="px-2 py-1 rounded border border-slate-200 bg-white">{c}</li>
                 ))}
               </ul>
               <div className="flex gap-2 mt-3">
-                <Button variant="outline" onClick={genBackupCodes}>Regenerate Codes</Button>
-                <Button variant="outline" onClick={downloadCodes}>Download Codes</Button>
+                <Button variant="outline" onClick={genBackupCodes}>{t("profile.twofaSetup.regenerate")}</Button>
+                <Button variant="outline" onClick={downloadCodes}>{t("profile.twofaSetup.download")}</Button>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShow2FASetup(false)}>Cancel</Button>
-              <Button className="bg-primary-600 hover:bg-primary-700" onClick={finalizeEnable2FA}>Finish</Button>
+              <Button variant="outline" onClick={() => setShow2FASetup(false)}>{t("profile.dialog.cancel")}</Button>
+              <Button className="bg-primary-600 hover:bg-primary-700" onClick={finalizeEnable2FA}>{t("profile.twofaSetup.finish")}</Button>
             </div>
           </div>
         </DialogContent>
@@ -471,12 +497,14 @@ export default function ProfileSettings() {
       <Dialog open={show2FADisableConfirm} onOpenChange={setShow2FADisableConfirm}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Disable Two-Factor?</DialogTitle>
+            <DialogTitle>{t("profile.twofaDisable.title")}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-slate-600">You will remove the extra layer of security. Continue?</p>
+          <p className="text-sm text-slate-600">
+            {t("profile.twofaDisable.body")}
+          </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setShow2FADisableConfirm(false)}>Cancel</Button>
-            <Button className="bg-red-600 hover:bg-red-700" onClick={confirmDisable2FA}>Disable 2FA</Button>
+            <Button variant="outline" onClick={() => setShow2FADisableConfirm(false)}>{t("profile.twofaDisable.cancel")}</Button>
+            <Button className="bg-red-600 hover:bg-red-700" onClick={confirmDisable2FA}>{t("profile.twofaDisable.confirm")}</Button>
           </div>
         </DialogContent>
       </Dialog>

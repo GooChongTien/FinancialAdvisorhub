@@ -12,7 +12,7 @@ import { Input } from "@/admin/components/ui/input";
 import { useToast } from "@/admin/components/ui/toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Play, Plus, Save } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ReactFlow,
@@ -241,30 +241,31 @@ export default function WorkflowEditor() {
             if (error) throw error;
             return data;
         },
-        onSuccess: (data) => {
-            // Initialize nodes and edges from DB
-            if (data.nodes) {
-                setNodes(
-                    data.nodes.map((n) => ({
-                        id: n.id,
-                        type: n.type,
-                        position: n.position || { x: 0, y: 0 },
-                        data: n.config || {},
-                    }))
-                );
-            }
-            if (data.edges) {
-                setEdges(
-                    data.edges.map((e) => ({
-                        id: e.id,
-                        source: e.source_id,
-                        target: e.target_id,
-                        label: e.condition,
-                    }))
-                );
-            }
-        },
     });
+
+    // Initialize nodes and edges from DB when workflow loads
+    useEffect(() => {
+        if (workflow?.nodes) {
+            setNodes(
+                workflow.nodes.map((n) => ({
+                    id: n.id,
+                    type: n.type,
+                    position: { x: n.position_x || 0, y: n.position_y || 0 },
+                    data: { label: n.name, ...n.config },
+                }))
+            );
+        }
+        if (workflow?.edges) {
+            setEdges(
+                workflow.edges.map((e) => ({
+                    id: e.id,
+                    source: e.source_node_id,
+                    target: e.target_node_id,
+                    label: e.condition_label,
+                }))
+            );
+        }
+    }, [workflow, setNodes, setEdges]);
 
     const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
@@ -462,29 +463,238 @@ export default function WorkflowEditor() {
                                 </div>
 
                                 {/* Type-specific configuration */}
-                                {selectedNode.type === "agent" && (
-                                    <div>
-                                        <label className="text-xs font-medium text-slate-700 mb-1.5 block">
-                                            Instructions
-                                        </label>
-                                        <textarea
-                                            value={selectedNode.data.instructions || ""}
-                                            onChange={(e) => {
-                                                setNodes((nds) =>
-                                                    nds.map((n) => {
-                                                        if (n.id === selectedNode.id) {
-                                                            return {
-                                                                ...n,
-                                                                data: { ...n.data, instructions: e.target.value },
-                                                            };
-                                                        }
-                                                        return n;
-                                                    })
-                                                );
-                                            }}
-                                            placeholder="You are a helpful assistant..."
-                                            className="w-full min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                                {(selectedNode.type === "agent" || selectedNode.type === "llm") && (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                System Prompt
+                                            </label>
+                                            <textarea
+                                                value={selectedNode.data.system_prompt || ""}
+                                                onChange={(e) => {
+                                                    setNodes((nds) =>
+                                                        nds.map((n) => {
+                                                            if (n.id === selectedNode.id) {
+                                                                return {
+                                                                    ...n,
+                                                                    data: { ...n.data, system_prompt: e.target.value },
+                                                                };
+                                                            }
+                                                            return n;
+                                                        })
+                                                    );
+                                                }}
+                                                placeholder="You are Mira, an expert insurance advisor assistant. You help analyze customer needs and create proposals..."
+                                                className="w-full min-h-[100px] rounded-md border border-slate-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                Define the AI's role, personality, and capabilities
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                Prompt Template
+                                            </label>
+                                            <textarea
+                                                value={selectedNode.data.prompt_template || ""}
+                                                onChange={(e) => {
+                                                    setNodes((nds) =>
+                                                        nds.map((n) => {
+                                                            if (n.id === selectedNode.id) {
+                                                                return {
+                                                                    ...n,
+                                                                    data: { ...n.data, prompt_template: e.target.value },
+                                                                };
+                                                            }
+                                                            return n;
+                                                        })
+                                                    );
+                                                }}
+                                                placeholder="Analyze this transcript: {{transcript}}"
+                                                className="w-full min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <p className="text-xs text-slate-500 mt-1">
+                                                Use {`{{variable}}`} syntax for dynamic values
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                    Model
+                                                </label>
+                                                <select
+                                                    value={selectedNode.data.model || "gpt-4o-mini"}
+                                                    onChange={(e) => {
+                                                        setNodes((nds) =>
+                                                            nds.map((n) => {
+                                                                if (n.id === selectedNode.id) {
+                                                                    return {
+                                                                        ...n,
+                                                                        data: { ...n.data, model: e.target.value },
+                                                                    };
+                                                                }
+                                                                return n;
+                                                            })
+                                                        );
+                                                    }}
+                                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
+                                                    <option value="gpt-4o">GPT-4o (Balanced)</option>
+                                                    <option value="gpt-4-turbo">GPT-4 Turbo (Advanced)</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                    Temperature
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="2"
+                                                    step="0.1"
+                                                    value={selectedNode.data.temperature ?? 0.2}
+                                                    onChange={(e) => {
+                                                        setNodes((nds) =>
+                                                            nds.map((n) => {
+                                                                if (n.id === selectedNode.id) {
+                                                                    return {
+                                                                        ...n,
+                                                                        data: {
+                                                                            ...n.data,
+                                                                            temperature: parseFloat(e.target.value),
+                                                                        },
+                                                                    };
+                                                                }
+                                                                return n;
+                                                            })
+                                                        );
+                                                    }}
+                                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                    Max Tokens
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="4096"
+                                                    value={selectedNode.data.max_tokens || 512}
+                                                    onChange={(e) => {
+                                                        setNodes((nds) =>
+                                                            nds.map((n) => {
+                                                                if (n.id === selectedNode.id) {
+                                                                    return {
+                                                                        ...n,
+                                                                        data: {
+                                                                            ...n.data,
+                                                                            max_tokens: parseInt(e.target.value),
+                                                                        },
+                                                                    };
+                                                                }
+                                                                return n;
+                                                            })
+                                                        );
+                                                    }}
+                                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                    Output Variable
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={selectedNode.data.output_variable || ""}
+                                                    onChange={(e) => {
+                                                        setNodes((nds) =>
+                                                            nds.map((n) => {
+                                                                if (n.id === selectedNode.id) {
+                                                                    return {
+                                                                        ...n,
+                                                                        data: {
+                                                                            ...n.data,
+                                                                            output_variable: e.target.value,
+                                                                        },
+                                                                    };
+                                                                }
+                                                                return n;
+                                                            })
+                                                        );
+                                                    }}
+                                                    placeholder="result"
+                                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                Output Format
+                                            </label>
+                                            <select
+                                                value={selectedNode.data.output_format || "text"}
+                                                onChange={(e) => {
+                                                    setNodes((nds) =>
+                                                        nds.map((n) => {
+                                                            if (n.id === selectedNode.id) {
+                                                                return {
+                                                                    ...n,
+                                                                    data: { ...n.data, output_format: e.target.value },
+                                                                };
+                                                            }
+                                                            return n;
+                                                        })
+                                                    );
+                                                }}
+                                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="text">Plain Text</option>
+                                                <option value="json">JSON Object</option>
+                                                <option value="json_schema">JSON with Schema</option>
+                                            </select>
+                                        </div>
+
+                                        {selectedNode.data.output_format === "json_schema" && (
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-700 mb-1.5 block">
+                                                    Output JSON Schema
+                                                </label>
+                                                <textarea
+                                                    value={selectedNode.data.output_schema || ""}
+                                                    onChange={(e) => {
+                                                        setNodes((nds) =>
+                                                            nds.map((n) => {
+                                                                if (n.id === selectedNode.id) {
+                                                                    return {
+                                                                        ...n,
+                                                                        data: {
+                                                                            ...n.data,
+                                                                            output_schema: e.target.value,
+                                                                        },
+                                                                    };
+                                                                }
+                                                                return n;
+                                                            })
+                                                        );
+                                                    }}
+                                                    placeholder='{"type": "object", "properties": {"summary": {"type": "string"}}}'
+                                                    className="w-full min-h-[80px] rounded-md border border-slate-300 px-3 py-2 text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                    JSON Schema for structured output (OpenAI format)
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

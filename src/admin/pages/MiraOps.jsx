@@ -1,62 +1,63 @@
-import React, { useCallback, useDeferredValue, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { fetchMiraEvents, fetchAdvisorInsights } from "@/admin/api/miraOpsApi.js";
-import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
-import { createPageUrl } from "@/admin/utils";
-import {
-  buildAlertState,
-  computeTopFailingActions,
-  DEFAULT_MIN_ALERT_EVENTS,
-} from "@/admin/lib/miraOpsMetrics.js";
+import { fetchAdvisorInsights, fetchMiraEvents } from "@/admin/api/miraOpsApi.js";
+import { Badge } from "@/admin/components/ui/badge";
+import { Button } from "@/admin/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/admin/components/ui/card";
-import { Badge } from "@/admin/components/ui/badge";
-import { Button } from "@/admin/components/ui/button";
 import { Input } from "@/admin/components/ui/input";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/admin/components/ui/select";
+import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
 import {
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
+  buildAlertState,
+  computeTopFailingActions,
+  DEFAULT_MIN_ALERT_EVENTS,
+} from "@/admin/lib/miraOpsMetrics.js";
+import { createPageUrl } from "@/admin/utils";
+import { useQuery } from "@tanstack/react-query";
+import {
   Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
   TrendingDown,
   TrendingUp,
-  Loader2,
 } from "lucide-react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const MODULE_OPTIONS = [
-  { label: "All modules", value: "all" },
-  { label: "Customer", value: "customer" },
-  { label: "New Business", value: "new_business" },
-  { label: "Product", value: "product" },
-  { label: "Analytics", value: "analytics" },
-  { label: "Smart Plan", value: "todo" },
-  { label: "News", value: "news" },
-  { label: "Visualizer", value: "visualizer" },
+  { labelKey: "chat.miraOps.modules.all", value: "all" },
+  { labelKey: "chat.miraOps.modules.customer", value: "customer" },
+  { labelKey: "chat.miraOps.modules.newBusiness", value: "new_business" },
+  { labelKey: "chat.miraOps.modules.product", value: "product" },
+  { labelKey: "chat.miraOps.modules.analytics", value: "analytics" },
+  { labelKey: "chat.miraOps.modules.smartPlan", value: "todo" },
+  { labelKey: "chat.miraOps.modules.news", value: "news" },
+  { labelKey: "chat.miraOps.modules.visualizer", value: "visualizer" },
 ];
 
 const STATUS_OPTIONS = [
-  { label: "All outcomes", value: "all" },
-  { label: "Success", value: "success" },
-  { label: "Failure", value: "failure" },
+  { labelKey: "chat.miraOps.status.all", value: "all" },
+  { labelKey: "chat.miraOps.status.success", value: "success" },
+  { labelKey: "chat.miraOps.status.failure", value: "failure" },
 ];
 
 const RANGE_OPTIONS = [
-  { label: "24 hours", value: "24h", hours: 24 },
-  { label: "7 days", value: "7d", hours: 24 * 7 },
-  { label: "30 days", value: "30d", hours: 24 * 30 },
-  { label: "All time", value: "all" },
+  { labelKey: "chat.miraOps.ranges.24h", value: "24h", hours: 24 },
+  { labelKey: "chat.miraOps.ranges.7d", value: "7d", hours: 24 * 7 },
+  { labelKey: "chat.miraOps.ranges.30d", value: "30d", hours: 24 * 30 },
+  { labelKey: "chat.miraOps.ranges.all", value: "all" },
 ];
 
 const ENTITY_ROUTE_BUILDERS = {
@@ -96,27 +97,29 @@ function formatTimestamp(value) {
 }
 
 function OutcomeBadge({ success }) {
+  const { t } = useTranslation();
   if (success) {
     return (
       <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
         <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-        Success
+        {t("chat.miraOps.badges.success")}
       </Badge>
     );
   }
   return (
     <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100">
       <AlertTriangle className="mr-1 h-3.5 w-3.5" />
-      Failed
+      {t("chat.miraOps.badges.failed")}
     </Badge>
   );
 }
 
 function AdvisorInsightsList({ insights = [] }) {
+  const { t } = useTranslation();
   if (!insights.length) {
     return (
       <div className="rounded-lg border border-slate-200 p-3 text-xs text-slate-500">
-        No active insights for this advisor.
+        {t("chat.miraOps.insights.empty")}
       </div>
     );
   }
@@ -129,10 +132,10 @@ function AdvisorInsightsList({ insights = [] }) {
             <div className="flex items-center justify-between text-[11px] text-slate-500">
               <span className={`rounded-full px-2 py-0.5 font-semibold ${priorityStyle}`}>
                 {insight.priority === "critical"
-                  ? "Critical"
+                  ? t("chat.miraOps.badges.critical")
                   : insight.priority === "important"
-                    ? "Important"
-                    : "Info"}
+                    ? t("chat.miraOps.badges.important")
+                    : t("chat.miraOps.badges.info")}
               </span>
               {insight.updated_at ? <span>{formatTimestamp(insight.updated_at)}</span> : null}
             </div>
@@ -195,6 +198,7 @@ function buildEntityLink(entityType, entityId) {
 }
 
 function AlertCallout({ state }) {
+  const { t } = useTranslation();
   if (!state) return null;
   const percent = (state.rate * 100).toFixed(1);
   if (state.active) {
@@ -203,10 +207,10 @@ function AlertCallout({ state }) {
         <CardContent className="flex flex-col gap-1 py-4 text-sm text-rose-700">
           <div className="flex items-center gap-2 font-semibold">
             <AlertTriangle className="h-4 w-4" />
-            Auto-action failure rate {percent}% exceeds 5% in the last {ALERT_WINDOW_MINUTES} minutes.
+            {t("chat.miraOps.alerts.failureRateExceeded", { percent, minutes: ALERT_WINDOW_MINUTES })}
           </div>
           <p>
-            Total window events: {state.total}. Pager duties armed—investigate failing actions below.
+            {t("chat.miraOps.alerts.pagerDuty", { total: state.total })}
           </p>
         </CardContent>
       </Card>
@@ -216,17 +220,18 @@ function AlertCallout({ state }) {
     <Card className="border-emerald-200 bg-emerald-50">
       <CardContent className="flex items-center gap-2 py-3 text-sm text-emerald-700">
         <CheckCircle2 className="h-4 w-4" />
-        Failure rate {percent}% in the last {ALERT_WINDOW_MINUTES} minutes (below threshold).
+        {t("chat.miraOps.alerts.failureRateNormal", { percent, minutes: ALERT_WINDOW_MINUTES })}
       </CardContent>
     </Card>
   );
 }
 
 function TopFailingActionsList({ actions }) {
+  const { t } = useTranslation();
   if (!actions.length) {
     return (
       <div className="rounded-lg border border-slate-200 p-4 text-sm text-slate-500">
-        No failures detected during the 7-day window.
+        {t("chat.miraOps.failingActions.empty")}
       </div>
     );
   }
@@ -235,9 +240,9 @@ function TopFailingActionsList({ actions }) {
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
           <tr>
-            <th className="px-3 py-2">Action</th>
-            <th className="px-3 py-2">Failures</th>
-            <th className="px-3 py-2">Last failure</th>
+            <th className="px-3 py-2">{t("chat.miraOps.failingActions.headers.action")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.failingActions.headers.failures")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.failingActions.headers.lastFailure")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -257,17 +262,18 @@ function TopFailingActionsList({ actions }) {
 }
 
 function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
-        Loading recent actions…
+        {t("chat.miraOps.events.loading")}
       </div>
     );
   }
   if (!events.length) {
     return (
       <div className="rounded-lg border border-slate-200 p-6 text-sm text-slate-500">
-        No telemetry events found for the selected filters.
+        {t("chat.miraOps.events.empty")}
       </div>
     );
   }
@@ -276,15 +282,15 @@ function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) 
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
           <tr>
-            <th className="px-3 py-2">Timestamp</th>
-            <th className="px-3 py-2">Module / Page</th>
-            <th className="px-3 py-2">Action</th>
-            <th className="px-3 py-2">Outcome</th>
-            <th className="px-3 py-2">Confirm?</th>
-            <th className="px-3 py-2">Entity</th>
-            <th className="px-3 py-2">Correlation</th>
-            <th className="px-3 py-2">Details</th>
-            <th className="px-3 py-2">Advisor</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.timestamp")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.modulePage")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.action")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.outcome")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.confirm")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.entity")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.correlation")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.details")}</th>
+            <th className="px-3 py-2">{t("chat.miraOps.events.headers.advisor")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -321,7 +327,7 @@ function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) 
                   <OutcomeBadge success={event.success} />
                 </td>
                 <td className="px-3 py-3 text-xs text-slate-600">
-                  {event.confirm_required ? "Required" : "Auto"}
+                  {event.confirm_required ? t("chat.miraOps.events.cells.required") : t("chat.miraOps.events.cells.auto")}
                 </td>
                 <td className="px-3 py-3 text-xs text-slate-600">
                   {entityLink ? (
@@ -330,7 +336,7 @@ function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) 
                       className="px-0 text-primary-600"
                       onClick={() => navigate(entityLink.url)}
                     >
-                      View {entityLink.label}
+                      {t("chat.miraOps.events.cells.viewLabel", { label: entityLink.label })}
                     </Button>
                   ) : (
                     "—"
@@ -352,7 +358,7 @@ function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) 
                         className="px-0 text-primary-600"
                         onClick={() => onViewAdvisorInsights?.(event.advisor_id)}
                       >
-                        View insights
+                        {t("chat.miraOps.insights.viewInsights")}
                       </Button>
                     </div>
                   ) : (
@@ -370,6 +376,7 @@ function EventsTable({ events = [], loading, navigate, onViewAdvisorInsights }) 
 
 export default function MiraOps() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [moduleFilter, setModuleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rangeFilter, setRangeFilter] = useState("24h");
@@ -498,44 +505,44 @@ export default function MiraOps() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">
-            Mira Ops Console
+            {t("chat.miraOps.title")}
           </h1>
           <p className="text-sm text-slate-500">
-            Inspect auto-actions, confirmation requirements, failures, and alerts in near real-time.
+            {t("chat.miraOps.subtitle")}
           </p>
         </div>
         <Button variant="outline" onClick={handleRefresh} disabled={isFetching}>
           <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          Refresh
+          {t("chat.miraOps.refresh")}
         </Button>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
-          title="Total events"
+          title={t("chat.miraOps.summary.totalEvents")}
           value={pagination.total ?? events.length}
-          subtitle={rangeFilter === "all" ? "All time" : "Filtered window"}
+          subtitle={rangeFilter === "all" ? t("chat.miraOps.summary.allTime") : t("chat.miraOps.summary.filteredWindow")}
           icon={Activity}
           accent="bg-sky-100 text-sky-700"
         />
         <SummaryCard
-          title="Successful"
+          title={t("chat.miraOps.summary.successful")}
           value={summary.success}
-          subtitle="Auto actions completed"
+          subtitle={t("chat.miraOps.summary.autoActionsCompleted")}
           icon={CheckCircle2}
           accent="bg-emerald-100 text-emerald-700"
         />
         <SummaryCard
-          title="Failures"
+          title={t("chat.miraOps.summary.failures")}
           value={summary.failure}
-          subtitle="Requires follow-up"
+          subtitle={t("chat.miraOps.summary.requiresFollowUp")}
           icon={AlertTriangle}
           accent="bg-rose-100 text-rose-700"
         />
         <SummaryCard
-          title="7-day success rate"
+          title={t("chat.miraOps.summary.sevenDaySuccessRate")}
           value={sevenDaySuccessRate}
-          subtitle="Computed from telemetry"
+          subtitle={t("chat.miraOps.summary.computedFromTelemetry")}
           icon={TrendingUp}
           accent="bg-indigo-100 text-indigo-700"
         />
@@ -546,13 +553,13 @@ export default function MiraOps() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base text-slate-800">
-            Filters
+            {t("chat.miraOps.filters.title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 md:flex-row">
           <div className="flex flex-1 flex-col gap-1">
             <span className="text-xs font-medium uppercase text-slate-500">
-              Module
+              {t("chat.miraOps.filters.module")}
             </span>
             <Select
               value={moduleFilter}
@@ -562,12 +569,12 @@ export default function MiraOps() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="All modules" />
+                <SelectValue placeholder={t("chat.miraOps.modules.all")} />
               </SelectTrigger>
               <SelectContent>
                 {MODULE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -575,7 +582,7 @@ export default function MiraOps() {
           </div>
           <div className="flex flex-1 flex-col gap-1">
             <span className="text-xs font-medium uppercase text-slate-500">
-              Outcome
+              {t("chat.miraOps.filters.outcome")}
             </span>
             <Select
               value={statusFilter}
@@ -585,12 +592,12 @@ export default function MiraOps() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="All outcomes" />
+                <SelectValue placeholder={t("chat.miraOps.status.all")} />
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -598,7 +605,7 @@ export default function MiraOps() {
           </div>
           <div className="flex flex-1 flex-col gap-1">
             <span className="text-xs font-medium uppercase text-slate-500">
-              Time range
+              {t("chat.miraOps.filters.timeRange")}
             </span>
             <Select
               value={rangeFilter}
@@ -608,12 +615,12 @@ export default function MiraOps() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="24 hours" />
+                <SelectValue placeholder={t("chat.miraOps.ranges.24h")} />
               </SelectTrigger>
               <SelectContent>
                 {RANGE_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -621,10 +628,10 @@ export default function MiraOps() {
           </div>
           <div className="flex flex-1 flex-col gap-1">
             <span className="text-xs font-medium uppercase text-slate-500">
-              Search
+              {t("chat.miraOps.filters.search")}
             </span>
             <Input
-              placeholder="Skill, page, target…"
+              placeholder={t("chat.miraOps.filters.searchPlaceholder")}
               value={searchTerm}
               onChange={(event) => {
                 setPage(0);
@@ -632,12 +639,12 @@ export default function MiraOps() {
               }}
             />
           </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
 
       {error && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {error.message || "Failed to load telemetry data."}
+          {error.message || t("chat.miraOps.events.error")}
         </div>
       )}
 
@@ -653,15 +660,15 @@ export default function MiraOps() {
         <div className="space-y-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base text-slate-800">Advisor insight preview</CardTitle>
+              <CardTitle className="text-base text-slate-800">{t("chat.miraOps.insights.previewTitle")}</CardTitle>
               <p className="text-xs text-slate-500">
-                Enter an advisor ID or click “View insights” in the telemetry table to mirror their feed.
+                {t("chat.miraOps.insights.previewDesc")}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-col gap-2">
                 <Input
-                  placeholder="Advisor UUID…"
+                  placeholder={t("chat.miraOps.insights.placeholder")}
                   value={insightAdvisorInput}
                   onChange={(event) => setInsightAdvisorInput(event.target.value)}
                 />
@@ -671,7 +678,7 @@ export default function MiraOps() {
                     onClick={() => handleAdvisorInsightsLookup(insightAdvisorInput)}
                     disabled={!insightAdvisorInput.trim()}
                   >
-                    Load insights
+                    {t("chat.miraOps.insights.load")}
                   </Button>
                   <Button
                     type="button"
@@ -679,23 +686,23 @@ export default function MiraOps() {
                     onClick={clearAdvisorInsights}
                     disabled={!insightAdvisorTarget}
                   >
-                    Clear
+                    {t("chat.miraOps.insights.clear")}
                   </Button>
                 </div>
               </div>
               {advisorInsightsError ? (
                 <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
-                  {advisorInsightsError.message || "Unable to load advisor insights."}
+                  {advisorInsightsError.message || t("chat.miraOps.insights.error")}
                 </div>
               ) : null}
               {!insightAdvisorTarget ? (
                 <p className="text-xs text-slate-500">
-                  Select an advisor to preview exactly what their ChatMira sidebar shows.
+                  {t("chat.miraOps.insights.selectAdvisor")}
                 </p>
               ) : advisorInsightsFetching ? (
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Loading insights…
+                  {t("chat.miraOps.insights.loading")}
                 </div>
               ) : (
                 <AdvisorInsightsList insights={advisorInsights} />
@@ -706,7 +713,7 @@ export default function MiraOps() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base text-slate-800 flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-amber-500" />
-                Top failing actions (7d)
+                {t("chat.miraOps.failingActions.title")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -718,16 +725,16 @@ export default function MiraOps() {
 
       <div className="flex flex-col items-center justify-between gap-3 rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-600 md:flex-row">
         <div>
-          Showing{" "}
+          {t("chat.miraOps.pagination.showing")}{" "}
           <span className="font-medium text-slate-900">
             {events.length ? page * PAGE_SIZE + 1 : 0}-
             {page * PAGE_SIZE + events.length}
           </span>{" "}
-          of{" "}
+          {t("chat.miraOps.pagination.of")}{" "}
           <span className="font-medium text-slate-900">
             {pagination.total ?? events.length}
           </span>{" "}
-          events
+          {t("chat.miraOps.pagination.events")}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -736,7 +743,7 @@ export default function MiraOps() {
             disabled={page === 0 || isFetching}
             onClick={() => setPage((prev) => Math.max(0, prev - 1))}
           >
-            Previous
+            {t("chat.miraOps.pagination.previous")}
           </Button>
           <Button
             variant="outline"
@@ -744,11 +751,11 @@ export default function MiraOps() {
             disabled={!pagination.hasMore || isFetching}
             onClick={() => setPage((prev) => prev + 1)}
           >
-            Next
+            {t("chat.miraOps.pagination.next")}
           </Button>
           {totalPages && (
             <span className="text-xs text-slate-500">
-              Page {page + 1} of {totalPages}
+              {t("chat.miraOps.pagination.pageInfo", { current: page + 1, total: totalPages })}
             </span>
           )}
         </div>

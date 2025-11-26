@@ -4,6 +4,7 @@ import { Skeleton } from "@/admin/components/ui/skeleton";
 import useMiraPageData from "@/admin/hooks/useMiraPageData.js";
 import { BarChart3, PieChart as PieChartIcon, Receipt, TrendingUp, Users } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Area,
     AreaChart,
@@ -58,6 +59,7 @@ const FUNNEL_COLORS = ["#0ea5e9", "#6366f1", "#22c55e", "#f97316"];
 
 export default function BusinessOverview() {
     const { leads, policies, proposals, loading } = useAnalyticsData();
+    const { t } = useTranslation();
     const [range, setRange] = useState("12M"); // 30D | 90D | YTD | 12M
     const [drilldown, setDrilldown] = useState(null);
 
@@ -167,14 +169,14 @@ export default function BusinessOverview() {
     const productMix = useMemo(() => {
         const totals = new Map();
         filtered.policies.forEach((p) => {
-            const key = p.product_name || p.plan_name || p.product_code || "Unknown";
+            const key = p.product_name || p.plan_name || p.product_code || t("analytics.business.charts.productUnknown");
             const current = totals.get(key) || { name: key, value: 0, premium: 0 };
             current.value += 1;
             current.premium += Number(p.premium_amount) || 0;
             totals.set(key, current);
         });
         return Array.from(totals.values()).sort((a, b) => b.value - a.value);
-    }, [filtered.policies]);
+    }, [filtered.policies, t]);
 
     const topProducts = useMemo(() => {
         return [...productMix]
@@ -226,10 +228,10 @@ export default function BusinessOverview() {
             <div className="flex items-center justify-end">
                 <div className="flex items-center gap-2">
                     {[
-                        { k: "30D", label: "30D" },
-                        { k: "90D", label: "90D" },
-                        { k: "YTD", label: "YTD" },
-                        { k: "12M", label: "12M" },
+                        { k: "30D" },
+                        { k: "90D" },
+                        { k: "YTD" },
+                        { k: "12M" },
                     ].map((opt) => (
                         <Button
                             key={opt.k}
@@ -237,7 +239,7 @@ export default function BusinessOverview() {
                             className="h-9 px-3"
                             onClick={() => setRange(opt.k)}
                         >
-                            {opt.label}
+                            {t(`analytics.business.range.${opt.k}`)}
                         </Button>
                     ))}
                 </div>
@@ -248,7 +250,7 @@ export default function BusinessOverview() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">New Policies</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.business.kpi.newPolicies")}</p>
                                 <p className="text-2xl font-bold text-slate-900 mt-1">
                                     {kpis.newPolicies.toLocaleString()}
                                 </p>
@@ -263,7 +265,7 @@ export default function BusinessOverview() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Total Premium</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.business.kpi.totalPremium")}</p>
                                 <p className="text-2xl font-bold text-slate-900 mt-1">
                                     ${Math.round(kpis.totalPremium).toLocaleString()}
                                 </p>
@@ -278,7 +280,7 @@ export default function BusinessOverview() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Active Proposals</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.business.kpi.activeProposals")}</p>
                                 <p className="text-2xl font-bold text-slate-900 mt-1">
                                     {kpis.activeProposals.toLocaleString()}
                                 </p>
@@ -293,7 +295,7 @@ export default function BusinessOverview() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Customers</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.business.kpi.customers")}</p>
                                 <p className="text-2xl font-bold text-slate-900 mt-1">
                                     {kpis.clients.toLocaleString()}
                                 </p>
@@ -309,8 +311,8 @@ export default function BusinessOverview() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <Card className="xl:col-span-2 border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
-                        <CardTitle>Monthly Performance</CardTitle>
-                        <span className="text-xs text-slate-500">Premium trend</span>
+                        <CardTitle>{t("analytics.business.charts.monthlyTitle")}</CardTitle>
+                        <span className="text-xs text-slate-500">{t("analytics.business.charts.monthlySubtitle")}</span>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="h-80">
@@ -333,7 +335,7 @@ export default function BusinessOverview() {
                                         stroke="#137fec"
                                         fillOpacity={1}
                                         fill="url(#colorPremium)"
-                                        name="Premium"
+                                        name={t("analytics.business.tooltips.premium")}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -342,8 +344,8 @@ export default function BusinessOverview() {
                 </Card>
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
-                        <CardTitle>Policies vs Team Avg</CardTitle>
-                        <span className="text-xs text-slate-500">click bars to drill</span>
+                        <CardTitle>{t("analytics.business.charts.policiesTitle")}</CardTitle>
+                        <span className="text-xs text-slate-500">{t("analytics.business.charts.policiesSubtitle")}</span>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="h-80">
@@ -357,10 +359,10 @@ export default function BusinessOverview() {
                                     <Bar
                                         dataKey="policiesNew"
                                         fill="#137fec"
-                                        name="New Policies"
+                                        name={t("analytics.business.tooltips.policies")}
                                         onClick={(data) => handleDrillDown({ type: "policies", month: data.month })}
                                     />
-                                    <Bar dataKey="teamAvgPolicies" fill="#22c55e" name="Team Avg" />
+                                    <Bar dataKey="teamAvgPolicies" fill="#22c55e" name={t("analytics.business.tooltips.teamAvg")} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -371,8 +373,10 @@ export default function BusinessOverview() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2"><PieChartIcon className="h-4 w-4" /> Product Mix</CardTitle>
-                        <span className="text-xs text-slate-500">click a slice</span>
+                        <CardTitle className="flex items-center gap-2">
+                            <PieChartIcon className="h-4 w-4" /> {t("analytics.business.charts.productMixTitle")}
+                        </CardTitle>
+                        <span className="text-xs text-slate-500">{t("analytics.business.charts.productMixSubtitle")}</span>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="h-72">
@@ -390,7 +394,8 @@ export default function BusinessOverview() {
                                     <Tooltip
                                         formatter={(value, name, props) => {
                                             const payload = props && props.payload ? props.payload : {};
-                                            return [`${value} policies`, payload.name || name || ""];
+                                            const label = t("analytics.business.tooltips.policiesLabel");
+                                            return [`${value} ${label}`, payload.name || name || ""];
                                         }}
                                     />
                                     <Legend />
@@ -402,8 +407,8 @@ export default function BusinessOverview() {
 
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex items-center justify-between">
-                        <CardTitle>Conversion Funnel</CardTitle>
-                        <span className="text-xs text-slate-500">tap to drill</span>
+                        <CardTitle>{t("analytics.business.charts.conversionTitle")}</CardTitle>
+                        <span className="text-xs text-slate-500">{t("analytics.business.charts.conversionSubtitle")}</span>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="h-72">
@@ -430,8 +435,8 @@ export default function BusinessOverview() {
 
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex items-center justify-between">
-                        <CardTitle>Completion Gauge</CardTitle>
-                        <span className="text-xs text-slate-500">Avg. across proposals</span>
+                        <CardTitle>{t("analytics.business.charts.completionTitle")}</CardTitle>
+                        <span className="text-xs text-slate-500">{t("analytics.business.charts.completionSubtitle")}</span>
                     </CardHeader>
                     <CardContent className="pt-6">
                         <div className="relative h-72">
@@ -456,7 +461,7 @@ export default function BusinessOverview() {
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <p className="text-3xl font-bold text-slate-900">{averageCompletion}%</p>
-                                <p className="text-xs text-slate-500">Avg. completion</p>
+                                <p className="text-xs text-slate-500">{t("analytics.business.charts.completionSubtitle")}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -465,8 +470,8 @@ export default function BusinessOverview() {
 
             <Card className="border-slate-200">
                 <CardHeader className="border-b border-slate-100 flex items-center justify-between">
-                    <CardTitle>Goal-Based Tracker</CardTitle>
-                    <span className="text-xs text-slate-500">Targets vs actuals</span>
+                    <CardTitle>{t("analytics.business.charts.goalsTitle")}</CardTitle>
+                    <span className="text-xs text-slate-500">{t("analytics.business.charts.goalsSubtitle")}</span>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                     {goals.map((g) => {
@@ -491,18 +496,18 @@ export default function BusinessOverview() {
 
             <Card className="border-slate-200">
                 <CardHeader className="border-b border-slate-100 flex items-center justify-between">
-                    <CardTitle>Top Performing Products</CardTitle>
-                    <span className="text-xs text-slate-500">By total premium</span>
+                    <CardTitle>{t("analytics.business.charts.topProductsTitle")}</CardTitle>
+                    <span className="text-xs text-slate-500">{t("analytics.business.charts.topProductsSubtitle")}</span>
                 </CardHeader>
                 <CardContent className="pt-4">
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm">
                             <thead>
                                 <tr className="text-left text-slate-500">
-                                    <th className="py-2 pr-4">Rank</th>
-                                    <th className="py-2 pr-4">Product</th>
-                                    <th className="py-2 pr-4">Policies</th>
-                                    <th className="py-2 pr-4">Premium</th>
+                                    <th className="py-2 pr-4">{t("analytics.business.charts.table.rank")}</th>
+                                    <th className="py-2 pr-4">{t("analytics.business.charts.table.product")}</th>
+                                    <th className="py-2 pr-4">{t("analytics.business.charts.table.policies")}</th>
+                                    <th className="py-2 pr-4">{t("analytics.business.charts.table.premium")}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -517,7 +522,7 @@ export default function BusinessOverview() {
                                 {topProducts.length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="py-4 text-center text-slate-500">
-                                            No product data available in this range.
+                                            {t("analytics.business.charts.table.empty")}
                                         </td>
                                     </tr>
                                 )}

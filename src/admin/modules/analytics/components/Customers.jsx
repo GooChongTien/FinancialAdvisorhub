@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/
 import { Skeleton } from "@/admin/components/ui/skeleton";
 import { AlertCircle, DollarSign, TrendingUp, Users } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Area,
     AreaChart,
@@ -25,6 +26,7 @@ const COLORS = ["#0ea5e9", "#f97316", "#22c55e", "#6366f1"];
 
 export default function Customers() {
     const { leads, loading } = useAnalyticsData();
+    const { t } = useTranslation();
 
     const kpis = useMemo(() => {
         const totalCustomers = leads.filter((l) => !!l.is_client).length;
@@ -87,7 +89,7 @@ export default function Customers() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Total Customers</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.customers.total")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.totalCustomers}</p>
                                     <span className="text-xs font-medium text-green-600">+22%</span>
@@ -103,7 +105,7 @@ export default function Customers() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">New This Month</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.customers.newThisMonth")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.newThisMonth}</p>
                                     <span className="text-xs font-medium text-green-600">+15%</span>
@@ -119,7 +121,7 @@ export default function Customers() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Hot Leads</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.customers.hotLeads")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">{kpis.hotLeads}</p>
                                     <span className="text-xs font-medium text-green-600">+8%</span>
@@ -135,7 +137,7 @@ export default function Customers() {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-slate-500 text-sm">Avg. Customer Value</p>
+                                <p className="text-slate-500 text-sm">{t("analytics.customers.avgValue")}</p>
                                 <div className="flex items-baseline gap-2 mt-1">
                                     <p className="text-2xl font-bold text-slate-900">${kpis.avgValue.toLocaleString()}</p>
                                     <span className="text-xs font-medium text-green-600">+12%</span>
@@ -154,8 +156,10 @@ export default function Customers() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Customer Acquisition Trend</CardTitle>
-                            <p className="text-sm text-slate-500">New customers by type over time</p>
+                            <CardTitle>{t("analytics.customers.acquisitionTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.customers.acquisitionSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -188,8 +192,10 @@ export default function Customers() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Lead Source Distribution</CardTitle>
-                            <p className="text-sm text-slate-500">Where customers come from</p>
+                            <CardTitle>{t("analytics.customers.sourceTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.customers.sourceSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -223,8 +229,10 @@ export default function Customers() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Temperature Trend Over Time</CardTitle>
-                            <p className="text-sm text-slate-500">Lead temperature evolution</p>
+                            <CardTitle>{t("analytics.customers.temperatureTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.customers.temperatureSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -247,8 +255,10 @@ export default function Customers() {
                 <Card className="border-slate-200">
                     <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle>Customer Type Breakdown</CardTitle>
-                            <p className="text-sm text-slate-500">Individual vs Entity customers</p>
+                            <CardTitle>{t("analytics.customers.typeTitle")}</CardTitle>
+                            <p className="text-sm text-slate-500">
+                                {t("analytics.customers.typeSubtitle")}
+                            </p>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6">

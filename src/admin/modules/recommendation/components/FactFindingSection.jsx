@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/admin/components/ui/card";
 import { Input } from "@/admin/components/ui/input";
 import { Label } from "@/admin/components/ui/label";
 import { Button } from "@/admin/components/ui/button";
@@ -25,8 +30,19 @@ import {
   GraduationCap,
   TrendingUp,
   FileText,
+  Building,
+  Upload,
+  Briefcase,
 } from "lucide-react";
-export default function FactFindingSection({ proposal, onSave, isSaving, onNext, readOnly = false, newLeadMode = false }) {
+import { Textarea } from "@/admin/components/ui/textarea";
+export default function FactFindingSection({
+  proposal,
+  onSave,
+  isSaving,
+  onNext,
+  readOnly = false,
+  newLeadMode = false,
+}) {
   const [formData, setFormData] = useState({
     personal_details: {
       title: "",
@@ -43,7 +59,14 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
       address: "",
     },
     dependents: [],
-    cka: { qualifications: [], investment_experience: "", work_experience: [], transaction_frequency: "", skipped: false, outcome: "" },
+    cka: {
+      qualifications: [],
+      investment_experience: "",
+      work_experience: [],
+      transaction_frequency: "",
+      skipped: false,
+      outcome: "",
+    },
     rpq: {
       investment_years: "",
       risk_tolerance: "",
@@ -56,6 +79,8 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
     },
     ...proposal.fact_finding_data,
   });
+
+  const isGroup = proposal.journey_type === "GROUP";
   useEffect(() => {
     if (proposal.fact_finding_data) {
       setFormData({ ...formData, ...proposal.fact_finding_data });
@@ -106,8 +131,11 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
   const computeProgress = () => {
     // Personal details completeness (40%)
     const pd = formData.personal_details || {};
-    const pdCompleteCount = personalRequired.filter((f) =>
-      pd[f] !== undefined && pd[f] !== null && String(pd[f]).toString().length > 0,
+    const pdCompleteCount = personalRequired.filter(
+      (f) =>
+        pd[f] !== undefined &&
+        pd[f] !== null &&
+        String(pd[f]).toString().length > 0,
     ).length;
     const pdScore = (pdCompleteCount / personalRequired.length) * 40;
 
@@ -132,7 +160,27 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
 
     return Math.round(pdScore + depScore + ckaScore + rpqScore);
   };
-  const progress = computeProgress();
+
+  const computeGroupProgress = () => {
+    // Simplified progress for Group: Company Info (50%) + Key Personnel (20%) + Employee Census (30%)
+    const pd = formData.personal_details || {};
+    const required = ["name", "nric", "phone_number", "email", "address"]; // nric here maps to UEN
+    const pdCount = required.filter(
+      (f) => pd[f] && String(pd[f]).length > 0,
+    ).length;
+    const pdScore = (pdCount / required.length) * 50;
+
+    const personnel = formData.dependents || [];
+    const personnelScore = personnel.length > 0 ? 20 : 0;
+
+    // Check if census is uploaded/entered (using a new field or just checking if file exists)
+    // For now, we'll check if 'employee_census' field exists in formData (we'll add it)
+    const censusScore = formData.employee_census ? 30 : 0;
+
+    return Math.round(pdScore + personnelScore + censusScore);
+  };
+
+  const progress = isGroup ? computeGroupProgress() : computeProgress();
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [dirty, setDirty] = useState(false);
 
@@ -184,9 +232,15 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
     if (readOnly) return;
     const quals = formData.cka?.qualifications || [];
     const work = formData.cka?.work_experience || [];
-    const tx = String(formData.cka?.transaction_frequency || "none").toLowerCase();
+    const tx = String(
+      formData.cka?.transaction_frequency || "none",
+    ).toLowerCase();
     const hasTx = tx !== "none" && tx !== "";
-    const outcome = formData.cka?.skipped ? "N.A." : ((quals.length > 0 || work.length > 0 || hasTx) ? "CKA Met" : "CKA Not Met");
+    const outcome = formData.cka?.skipped
+      ? "N.A."
+      : quals.length > 0 || work.length > 0 || hasTx
+        ? "CKA Met"
+        : "CKA Not Met";
     onSave({ ...formData, cka: { ...formData.cka, outcome } });
     setLastSavedAt(new Date().toISOString());
     setDirty(false);
@@ -195,12 +249,21 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
   useEffect(() => {
     const quals = formData.cka?.qualifications || [];
     const work = formData.cka?.work_experience || [];
-    const outcome = formData.cka?.skipped ? "N.A." : ((quals.length > 0 || work.length > 0) ? "CKA Met" : "CKA Not Met");
+    const outcome = formData.cka?.skipped
+      ? "N.A."
+      : quals.length > 0 || work.length > 0
+        ? "CKA Met"
+        : "CKA Not Met";
     if (formData.cka?.outcome !== outcome) {
       setFormData({ ...formData, cka: { ...formData.cka, outcome } });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.cka?.qualifications, formData.cka?.work_experience, formData.cka?.transaction_frequency, formData.cka?.skipped]);
+  }, [
+    formData.cka?.qualifications,
+    formData.cka?.work_experience,
+    formData.cka?.transaction_frequency,
+    formData.cka?.skipped,
+  ]);
   const addDependent = () => {
     setFormData({
       ...formData,
@@ -258,7 +321,9 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
     <div className="space-y-6">
       {/* Draft/Last Saved */}
       {lastSavedAt && (
-        <p className="text-sm text-slate-500">Last saved on {new Date(lastSavedAt).toLocaleString()}</p>
+        <p className="text-sm text-slate-500">
+          Last saved on {new Date(lastSavedAt).toLocaleString()}
+        </p>
       )}
 
       {/* Fact Finding Container - wraps all 4 subsections */}
@@ -270,888 +335,1181 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
-
           {/* Personal Details */}
           <Card className="shadow-md border-slate-200">
             <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white">
               <CardTitle className="flex items-center gap-2 text-xl">
-            {" "}
-            <User className="w-6 h-6 text-blue-600" /> Personal Details{" "}
-          </CardTitle>{" "}
-        </CardHeader>{" "}
-        <CardContent className={`pt-6 ${readOnly ? "pointer-events-none opacity-90" : ""}`}>
-          {" "}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>Title</Label>{" "}
-              <Select
-                value={formData.personal_details.title}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      title: value,
-                    },
-                  })
-                }
-              >
                 {" "}
-                <SelectTrigger>
-                  {" "}
-                  <SelectValue placeholder="Select" />{" "}
-                </SelectTrigger>{" "}
-                <SelectContent>
-                  {" "}
-                  <SelectItem value="Mr">Mr</SelectItem>{" "}
-                  <SelectItem value="Mrs">Mrs</SelectItem>{" "}
-                  <SelectItem value="Ms">Ms</SelectItem>{" "}
-                  <SelectItem value="Dr">Dr</SelectItem>{" "}
-                </SelectContent>{" "}
-              </Select>{" "}
-            </div>{" "}
-            <div className="space-y-2">
+                {isGroup ? (
+                  <Building className="w-6 h-6 text-blue-600" />
+                ) : (
+                  <User className="w-6 h-6 text-blue-600" />
+                )}
+                {isGroup ? "Company Information" : "Personal Details"}{" "}
+              </CardTitle>{" "}
+            </CardHeader>{" "}
+            <CardContent
+              className={`pt-6 ${readOnly ? "pointer-events-none opacity-90" : ""}`}
+            >
               {" "}
-              <Label>
-                Name{personalRequired.includes("name") && (<span className="text-red-600">*</span>)}
-              </Label>{" "}
-              <Input
-                value={formData.personal_details.name}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      name: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>Gender</Label>{" "}
-              <Select
-                value={formData.personal_details.gender}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      gender: value,
-                    },
-                  })
-                }
-              >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {" "}
-                <SelectTrigger>
+                {!isGroup && (
+                  <div className="space-y-2">
+                    {" "}
+                    <Label>Title</Label>{" "}
+                    <Select
+                      value={formData.personal_details.title}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          personal_details: {
+                            ...formData.personal_details,
+                            title: value,
+                          },
+                        })
+                      }
+                    >
+                      {" "}
+                      <SelectTrigger>
+                        {" "}
+                        <SelectValue placeholder="Select" />{" "}
+                      </SelectTrigger>{" "}
+                      <SelectContent>
+                        {" "}
+                        <SelectItem value="Mr">Mr</SelectItem>{" "}
+                        <SelectItem value="Mrs">Mrs</SelectItem>{" "}
+                        <SelectItem value="Ms">Ms</SelectItem>{" "}
+                        <SelectItem value="Dr">Dr</SelectItem>{" "}
+                      </SelectContent>{" "}
+                    </Select>{" "}
+                  </div>
+                )}
+                <div className="space-y-2">
                   {" "}
-                  <SelectValue placeholder="Select" />{" "}
-                </SelectTrigger>{" "}
-                <SelectContent>
+                  <Label>
+                    {isGroup ? "Company Name" : "Name"}
+                    {personalRequired.includes("name") && (
+                      <span className="text-red-600">*</span>
+                    )}
+                  </Label>{" "}
+                  <Input
+                    value={formData.personal_details.name}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_details: {
+                          ...formData.personal_details,
+                          name: e.target.value,
+                        },
+                      })
+                    }
+                  />{" "}
+                </div>{" "}
+                {!isGroup && (
+                  <div className="space-y-2">
+                    {" "}
+                    <Label>Gender</Label>{" "}
+                    <Select
+                      value={formData.personal_details.gender}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          personal_details: {
+                            ...formData.personal_details,
+                            gender: value,
+                          },
+                        })
+                      }
+                    >
+                      {" "}
+                      <SelectTrigger>
+                        {" "}
+                        <SelectValue placeholder="Select" />{" "}
+                      </SelectTrigger>{" "}
+                      <SelectContent>
+                        {" "}
+                        <SelectItem value="Male">Male</SelectItem>{" "}
+                        <SelectItem value="Female">Female</SelectItem>{" "}
+                      </SelectContent>{" "}
+                    </Select>{" "}
+                  </div>
+                )}
+                <div className="space-y-2">
                   {" "}
-                  <SelectItem value="Male">Male</SelectItem>{" "}
-                  <SelectItem value="Female">Female</SelectItem>{" "}
-                </SelectContent>{" "}
-              </Select>{" "}
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>
-                NRIC{personalRequired.includes("nric") && (<span className="text-red-600">*</span>)}
-              </Label>{" "}
-              <Input
-                value={formData.personal_details.nric}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      nric: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-              {!isValidNRIC(formData.personal_details.nric) && (
-                <p className="text-xs text-red-600">Enter a valid NRIC (e.g., S1234567A)</p>
-              )}
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>
-                Date of Birth{personalRequired.includes("date_of_birth") && (<span className="text-red-600">*</span>)}
-              </Label>{" "}
-              <Input
-                type="date"
-                value={formData.personal_details.date_of_birth}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      date_of_birth: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-              {computeAge(formData.personal_details.date_of_birth) !== null && (
-                <p className="text-xs text-slate-500">
-                  Age: {computeAge(formData.personal_details.date_of_birth)}
-                </p>
-              )}
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>
-                Nationality{personalRequired.includes("nationality") && (<span className="text-red-600">*</span>)}
-              </Label>{" "}
-              <Select
-                value={formData.personal_details.nationality}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      nationality: value,
-                    },
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Singaporean">Singaporean</SelectItem>
-                  <SelectItem value="Malaysian">Malaysian</SelectItem>
-                  <SelectItem value="Indonesian">Indonesian</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>Marital Status</Label>{" "}
-              <Select
-                value={formData.personal_details.marital_status}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      marital_status: value,
-                    },
-                  })
-                }
-              >
-                {" "}
-                <SelectTrigger>
+                  <Label>
+                    {isGroup ? "UEN / Registration No" : "NRIC"}
+                    {personalRequired.includes("nric") && (
+                      <span className="text-red-600">*</span>
+                    )}
+                  </Label>{" "}
+                  <Input
+                    value={formData.personal_details.nric}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_details: {
+                          ...formData.personal_details,
+                          nric: e.target.value,
+                        },
+                      })
+                    }
+                  />{" "}
+                  {!isGroup && !isValidNRIC(formData.personal_details.nric) && (
+                    <p className="text-xs text-red-600">
+                      Enter a valid NRIC (e.g., S1234567A)
+                    </p>
+                  )}
+                </div>{" "}
+                {!isGroup && (
+                  <div className="space-y-2">
+                    {" "}
+                    <Label>
+                      Date of Birth
+                      {personalRequired.includes("date_of_birth") && (
+                        <span className="text-red-600">*</span>
+                      )}
+                    </Label>{" "}
+                    <Input
+                      type="date"
+                      value={formData.personal_details.date_of_birth}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          personal_details: {
+                            ...formData.personal_details,
+                            date_of_birth: e.target.value,
+                          },
+                        })
+                      }
+                    />{" "}
+                    {computeAge(formData.personal_details.date_of_birth) !==
+                      null && (
+                      <p className="text-xs text-slate-500">
+                        Age:{" "}
+                        {computeAge(formData.personal_details.date_of_birth)}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {!isGroup && (
+                  <div className="space-y-2">
+                    {" "}
+                    <Label>
+                      Nationality
+                      {personalRequired.includes("nationality") && (
+                        <span className="text-red-600">*</span>
+                      )}
+                    </Label>{" "}
+                    <Select
+                      value={formData.personal_details.nationality}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          personal_details: {
+                            ...formData.personal_details,
+                            nationality: value,
+                          },
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Singaporean">Singaporean</SelectItem>
+                        <SelectItem value="Malaysian">Malaysian</SelectItem>
+                        <SelectItem value="Indonesian">Indonesian</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {!isGroup && (
+                  <div className="space-y-2">
+                    {" "}
+                    <Label>Marital Status</Label>{" "}
+                    <Select
+                      value={formData.personal_details.marital_status}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          personal_details: {
+                            ...formData.personal_details,
+                            marital_status: value,
+                          },
+                        })
+                      }
+                    >
+                      {" "}
+                      <SelectTrigger>
+                        {" "}
+                        <SelectValue placeholder="Select" />{" "}
+                      </SelectTrigger>{" "}
+                      <SelectContent>
+                        {" "}
+                        <SelectItem value="Single">Single</SelectItem>{" "}
+                        <SelectItem value="Married">Married</SelectItem>{" "}
+                        <SelectItem value="Divorced">Divorced</SelectItem>{" "}
+                        <SelectItem value="Widowed">Widowed</SelectItem>{" "}
+                      </SelectContent>{" "}
+                    </Select>{" "}
+                  </div>
+                )}
+                <div className="space-y-2">
                   {" "}
-                  <SelectValue placeholder="Select" />{" "}
-                </SelectTrigger>{" "}
-                <SelectContent>
+                  <Label>Occupation</Label>{" "}
+                  <Input
+                    value={formData.personal_details.occupation}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_details: {
+                          ...formData.personal_details,
+                          occupation: e.target.value,
+                        },
+                      })
+                    }
+                  />{" "}
+                </div>{" "}
+                <div className="space-y-2">
                   {" "}
-                  <SelectItem value="Single">Single</SelectItem>{" "}
-                  <SelectItem value="Married">Married</SelectItem>{" "}
-                  <SelectItem value="Divorced">Divorced</SelectItem>{" "}
-                  <SelectItem value="Widowed">Widowed</SelectItem>{" "}
-                </SelectContent>{" "}
-              </Select>{" "}
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>Occupation</Label>{" "}
-              <Input
-                value={formData.personal_details.occupation}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      occupation: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-            </div>{" "}
-            <div className="space-y-2">
-              {" "}
-              <Label>
-                Phone Number{personalRequired.includes("phone_number") && (<span className="text-red-600">*</span>)}
-              </Label>{" "}
-              <Input
-                value={formData.personal_details.phone_number}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      phone_number: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-              {!isValidPhone(formData.personal_details.phone_number) && (
-                <p className="text-xs text-red-600">Enter a valid phone number</p>
-              )}
-            </div>{" "}
-            <div className="space-y-2 md:col-span-2">
-              {" "}
-              <Label>Email</Label>{" "}
-              <Input
-                type="email"
-                value={formData.personal_details.email}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      email: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-              {!isValidEmail(formData.personal_details.email) && (
-                <p className="text-xs text-red-600">Enter a valid email address</p>
-              )}
-            </div>{" "}
-            <div className="space-y-2 md:col-span-3">
-              {" "}
-              <Label>Address</Label>{" "}
-              <Input
-                value={formData.personal_details.address}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      address: e.target.value,
-                    },
-                  })
-                }
-              />{" "}
-            </div>{" "}
-            <div className="space-y-2 md:col-span-3">
-              <Label>Smoker Status</Label>
-              <Select
-                value={formData.personal_details.smoker_status ? "Yes" : "No"}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    personal_details: {
-                      ...formData.personal_details,
-                      smoker_status: value === "Yes",
-                    },
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>{" "}
-        </CardContent>{" "}
-      </Card>{" "}
+                  <Label>
+                    Phone Number
+                    {personalRequired.includes("phone_number") && (
+                      <span className="text-red-600">*</span>
+                    )}
+                  </Label>{" "}
+                  <Input
+                    value={formData.personal_details.phone_number}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_details: {
+                          ...formData.personal_details,
+                          phone_number: e.target.value,
+                        },
+                      })
+                    }
+                  />{" "}
+                  {!isValidPhone(formData.personal_details.phone_number) && (
+                    <p className="text-xs text-red-600">
+                      Enter a valid phone number
+                    </p>
+                  )}
+                </div>{" "}
+                <div className="space-y-2 md:col-span-2">
+                  {" "}
+                  <Label>Email</Label>{" "}
+                  <Input
+                    type="email"
+                    value={formData.personal_details.email}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_details: {
+                          ...formData.personal_details,
+                          email: e.target.value,
+                        },
+                      })
+                    }
+                  />{" "}
+                  {!isValidEmail(formData.personal_details.email) && (
+                    <p className="text-xs text-red-600">
+                      Enter a valid email address
+                    </p>
+                  )}
+                </div>{" "}
+                <div className="space-y-2 md:col-span-3">
+                  {" "}
+                  <Label>Address</Label>{" "}
+                  <Input
+                    value={formData.personal_details.address}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        personal_details: {
+                          ...formData.personal_details,
+                          address: e.target.value,
+                        },
+                      })
+                    }
+                  />{" "}
+                </div>{" "}
+                {!isGroup && (
+                  <div className="space-y-2 md:col-span-3">
+                    <Label>Smoker Status</Label>
+                    <Select
+                      value={
+                        formData.personal_details.smoker_status ? "Yes" : "No"
+                      }
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          personal_details: {
+                            ...formData.personal_details,
+                            smoker_status: value === "Yes",
+                          },
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>{" "}
+            </CardContent>{" "}
+          </Card>{" "}
           {/* Dependents */}
           <Card className="shadow-md border-slate-200">
-        {" "}
-        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
-          {" "}
-          <div className="flex items-center justify-between">
             {" "}
-            <CardTitle className="flex items-center gap-2 text-xl">
+            <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
               {" "}
-              <Users className="w-6 h-6 text-purple-600" /> Dependents{" "}
-            </CardTitle>{" "}
-            <Button onClick={addDependent} size="sm" variant="outline">
-              {" "}
-              <Plus className="w-4 h-4 mr-2" /> Add Dependent{" "}
-            </Button>{" "}
-          </div>{" "}
-        </CardHeader>{" "}
-        <CardContent className="pt-6">
-          {" "}
-          {formData.dependents.length === 0 ? (
-            <p className="text-center text-slate-400 py-8">
-              No dependents added
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {" "}
-              {formData.dependents.map((dependent, index) => (
-                <div
-                  key={index}
-                  className="p-4 border border-slate-200 rounded-lg relative"
-                >
+              <div className="flex items-center justify-between">
+                {" "}
+                <CardTitle className="flex items-center gap-2 text-xl">
                   {" "}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => removeDependent(index)}
-                  >
-                    {" "}
-                    <Trash2 className="w-4 h-4 text-red-500" />{" "}
-                  </Button>{" "}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                    {" "}
-                    <div className="space-y-2">
-                      <Label>Title</Label>
-                      <Select
-                        value={dependent.title || ""}
-                        onValueChange={(value) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].title = value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Mr">Mr</SelectItem>
-                          <SelectItem value="Mrs">Mrs</SelectItem>
-                          <SelectItem value="Ms">Ms</SelectItem>
-                          <SelectItem value="Dr">Dr</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
+                  <Users className="w-6 h-6 text-purple-600" />{" "}
+                  {isGroup ? "Key Personnel / Directors" : "Dependents"}{" "}
+                </CardTitle>{" "}
+                <Button onClick={addDependent} size="sm" variant="outline">
+                  {" "}
+                  <Plus className="w-4 h-4 mr-2" /> Add{" "}
+                  {isGroup ? "Person" : "Dependent"}{" "}
+                </Button>{" "}
+              </div>{" "}
+            </CardHeader>{" "}
+            <CardContent className="pt-6">
+              {" "}
+              {formData.dependents.length === 0 ? (
+                <p className="text-center text-slate-400 py-8">
+                  No {isGroup ? "key personnel" : "dependents"} added
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {" "}
+                  {formData.dependents.map((dependent, index) => (
+                    <div
+                      key={index}
+                      className="p-4 border border-slate-200 rounded-lg relative"
+                    >
                       {" "}
-                      <Label>Name</Label>{" "}
-                      <Input
-                        value={dependent.name}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].name = e.target.value;
-                          setFormData({
-                            ...formData,
-                            dependents: newDependents,
-                          });
-                        }}
-                      />{" "}
-                    </div>{" "}
-                    <div className="space-y-2">
-                      {" "}
-                      <Label>Relationship</Label>{" "}
-                      <Input
-                        value={dependent.relationship}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].relationship = e.target.value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      />
-                    </div>{" "}
-                    <div className="space-y-2">
-                      {" "}
-                      <Label>Date of Birth</Label>{" "}
-                      <Input
-                        type="date"
-                        value={dependent.date_of_birth}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].date_of_birth = e.target.value;
-                          setFormData({
-                            ...formData,
-                            dependents: newDependents,
-                          });
-                        }}
-                      />{" "}
-                      {computeAge(dependent.date_of_birth) !== null && (
-                        <p className="text-xs text-slate-500">
-                          {computeAge(dependent.date_of_birth) >= 18 ? "Adult" : "Child"}
-                        </p>
-                      )}
-                    </div>{" "}
-                    <div className="space-y-2">
-                      <Label>Gender</Label>
-                      <Select
-                        value={dependent.gender || ""}
-                        onValueChange={(value) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].gender = value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => removeDependent(index)}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Male">Male</SelectItem>
-                          <SelectItem value="Female">Female</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>NRIC</Label>
-                      <Input
-                        value={dependent.nric || ""}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].nric = e.target.value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Nationality</Label>
-                      <Select
-                        value={dependent.nationality || ""}
-                        onValueChange={(value) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].nationality = value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Singaporean">Singaporean</SelectItem>
-                          <SelectItem value="Malaysian">Malaysian</SelectItem>
-                          <SelectItem value="Indonesian">Indonesian</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label>Email</Label>
-                      <Input
-                        type="email"
-                        value={dependent.email || ""}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].email = e.target.value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Smoker Status</Label>
-                      <Select
-                        value={dependent.smoker_status ? "Yes" : (dependent.smoker_status === false ? "No" : "")}
-                        onValueChange={(value) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].smoker_status = value === "Yes";
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Yes">Yes</SelectItem>
-                          <SelectItem value="No">No</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Phone</Label>
-                      <Input
-                        value={dependent.phone_number || ""}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].phone_number = e.target.value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      />
-                    </div>
-                    {computeAge(dependent.date_of_birth) >= 18 && (
-                      <>
+                        {" "}
+                        <Trash2 className="w-4 h-4 text-red-500" />{" "}
+                      </Button>{" "}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                        {" "}
                         <div className="space-y-2">
-                          <Label>Marital Status</Label>
+                          <Label>Title</Label>
                           <Select
-                            value={dependent.marital_status || ""}
+                            value={dependent.title || ""}
                             onValueChange={(value) => {
                               const newDependents = [...formData.dependents];
-                              newDependents[index].marital_status = value;
-                              setFormData({ ...formData, dependents: newDependents });
+                              newDependents[index].title = value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
                             }}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Single">Single</SelectItem>
-                              <SelectItem value="Married">Married</SelectItem>
-                              <SelectItem value="Divorced">Divorced</SelectItem>
-                              <SelectItem value="Widowed">Widowed</SelectItem>
+                              <SelectItem value="Mr">Mr</SelectItem>
+                              <SelectItem value="Mrs">Mrs</SelectItem>
+                              <SelectItem value="Ms">Ms</SelectItem>
+                              <SelectItem value="Dr">Dr</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Occupation</Label>
+                          {" "}
+                          <Label>Name</Label>{" "}
                           <Input
-                            value={dependent.occupation || ""}
+                            value={dependent.name}
                             onChange={(e) => {
                               const newDependents = [...formData.dependents];
-                              newDependents[index].occupation = e.target.value;
-                              setFormData({ ...formData, dependents: newDependents });
+                              newDependents[index].name = e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          />{" "}
+                        </div>{" "}
+                        <div className="space-y-2">
+                          {" "}
+                          <Label>Relationship</Label>{" "}
+                          <Input
+                            value={dependent.relationship}
+                            onChange={(e) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].relationship =
+                                e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          />
+                        </div>{" "}
+                        <div className="space-y-2">
+                          {" "}
+                          <Label>Date of Birth</Label>{" "}
+                          <Input
+                            type="date"
+                            value={dependent.date_of_birth}
+                            onChange={(e) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].date_of_birth =
+                                e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          />{" "}
+                          {computeAge(dependent.date_of_birth) !== null && (
+                            <p className="text-xs text-slate-500">
+                              {computeAge(dependent.date_of_birth) >= 18
+                                ? "Adult"
+                                : "Child"}
+                            </p>
+                          )}
+                        </div>{" "}
+                        <div className="space-y-2">
+                          <Label>Gender</Label>
+                          <Select
+                            value={dependent.gender || ""}
+                            onValueChange={(value) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].gender = value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>NRIC</Label>
+                          <Input
+                            value={dependent.nric || ""}
+                            onChange={(e) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].nric = e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
                             }}
                           />
                         </div>
-                      </>
-                    )}
-                    <div className="space-y-2 md:col-span-3">
-                      <Label>Address</Label>
-                      <Input
-                        value={dependent.address || ""}
-                        onChange={(e) => {
-                          const newDependents = [...formData.dependents];
-                          newDependents[index].address = e.target.value;
-                          setFormData({ ...formData, dependents: newDependents });
-                        }}
-                      />
+                        <div className="space-y-2">
+                          <Label>Nationality</Label>
+                          <Select
+                            value={dependent.nationality || ""}
+                            onValueChange={(value) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].nationality = value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Singaporean">
+                                Singaporean
+                              </SelectItem>
+                              <SelectItem value="Malaysian">
+                                Malaysian
+                              </SelectItem>
+                              <SelectItem value="Indonesian">
+                                Indonesian
+                              </SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={dependent.email || ""}
+                            onChange={(e) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].email = e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Smoker Status</Label>
+                          <Select
+                            value={
+                              dependent.smoker_status
+                                ? "Yes"
+                                : dependent.smoker_status === false
+                                  ? "No"
+                                  : ""
+                            }
+                            onValueChange={(value) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].smoker_status =
+                                value === "Yes";
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Yes">Yes</SelectItem>
+                              <SelectItem value="No">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Phone</Label>
+                          <Input
+                            value={dependent.phone_number || ""}
+                            onChange={(e) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].phone_number =
+                                e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          />
+                        </div>
+                        {computeAge(dependent.date_of_birth) >= 18 && (
+                          <>
+                            <div className="space-y-2">
+                              <Label>Marital Status</Label>
+                              <Select
+                                value={dependent.marital_status || ""}
+                                onValueChange={(value) => {
+                                  const newDependents = [
+                                    ...formData.dependents,
+                                  ];
+                                  newDependents[index].marital_status = value;
+                                  setFormData({
+                                    ...formData,
+                                    dependents: newDependents,
+                                  });
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Single">Single</SelectItem>
+                                  <SelectItem value="Married">
+                                    Married
+                                  </SelectItem>
+                                  <SelectItem value="Divorced">
+                                    Divorced
+                                  </SelectItem>
+                                  <SelectItem value="Widowed">
+                                    Widowed
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Occupation</Label>
+                              <Input
+                                value={dependent.occupation || ""}
+                                onChange={(e) => {
+                                  const newDependents = [
+                                    ...formData.dependents,
+                                  ];
+                                  newDependents[index].occupation =
+                                    e.target.value;
+                                  setFormData({
+                                    ...formData,
+                                    dependents: newDependents,
+                                  });
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+                        <div className="space-y-2 md:col-span-3">
+                          <Label>Address</Label>
+                          <Input
+                            value={dependent.address || ""}
+                            onChange={(e) => {
+                              const newDependents = [...formData.dependents];
+                              newDependents[index].address = e.target.value;
+                              setFormData({
+                                ...formData,
+                                dependents: newDependents,
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>{" "}
                     </div>
-                  </div>{" "}
+                  ))}{" "}
                 </div>
-              ))}{" "}
-            </div>
-          )}{" "}
-        </CardContent>{" "}
-      </Card>{" "}
-          {/* CKA - Customer Knowledge & Experience */}
-          <SectionCard
-            stage="fact-finding"
-            icon={GraduationCap}
-            title="Customer Knowledge & Experience (CKA)"
-            description="Capture the customer's qualifications and market exposure to support the CKA assessment."
-            badge={
-              <Badge
-                variant={
-                  formData.cka.skipped
-                    ? "secondary"
-                    : formData.cka.outcome === "CKA Met"
-                      ? "success"
-                      : formData.cka.outcome === "CKA Not Met"
-                        ? "warning"
-                        : "secondary"
+              )}{" "}
+            </CardContent>{" "}
+          </Card>{" "}
+          {isGroup && (
+            <Card className="shadow-md border-slate-200">
+              <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-green-50 to-white">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Briefcase className="w-6 h-6 text-green-600" /> Employee
+                  Census
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-500">
+                    Upload or paste the employee census data (Name, DOB, Gender,
+                    Salary, Occupation).
+                  </p>
+                  <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="census">Employee Data (CSV/Excel)</Label>
+                    <Input id="census" type="file" />
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-muted-foreground">
+                        Or paste data
+                      </span>
+                    </div>
+                  </div>
+                  <Textarea
+                    placeholder="Paste employee list here..."
+                    className="min-h-[100px]"
+                    value={formData.employee_census || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        employee_census: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {!isGroup && (
+            <>
+              {/* CKA - Customer Knowledge & Experience */}
+              <SectionCard
+                stage="fact-finding"
+                icon={GraduationCap}
+                title="Customer Knowledge & Experience (CKA)"
+                description="Capture the customer's qualifications and market exposure to support the CKA assessment."
+                badge={
+                  <Badge
+                    variant={
+                      formData.cka.skipped
+                        ? "secondary"
+                        : formData.cka.outcome === "CKA Met"
+                          ? "success"
+                          : formData.cka.outcome === "CKA Not Met"
+                            ? "warning"
+                            : "secondary"
+                    }
+                  >
+                    {formData.cka.skipped
+                      ? "Not Applicable"
+                      : formData.cka.outcome || "Pending"}
+                  </Badge>
+                }
+                actions={
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <span>Skip Section</span>
+                    <Switch
+                      checked={!!formData.cka.skipped}
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          cka: { ...formData.cka, skipped: checked },
+                        })
+                      }
+                      disabled={readOnly}
+                    />
+                  </label>
                 }
               >
-                {formData.cka.skipped ? "Not Applicable" : formData.cka.outcome || "Pending"}
-              </Badge>
-            }
-            actions={
-              <label className="flex items-center gap-2 text-sm text-slate-600">
-                <span>Skip Section</span>
-                <Switch
-                  checked={!!formData.cka.skipped}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, cka: { ...formData.cka, skipped: checked } })
-                  }
-                  disabled={readOnly}
-                />
-              </label>
-            }
-          >
-            {formData.cka.skipped ? (
-              <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                This section has been marked as not applicable. Toggle the switch above to capture CKA details.
-              </p>
-            ) : null}
-            <div className={`space-y-6 ${formData.cka.skipped ? "opacity-50" : ""}`}>
-              <div>
-                <Label className="text-base font-semibold">Relevant Qualifications</Label>
-                <div className="mt-2 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-                  {["CMFAS", "Degree in Finance", "Professional Cert", "N.A."].map((q) => {
-                    const isChecked = (formData.cka.qualifications || []).includes(q);
-                    return (
-                      <label key={q} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={isChecked}
-                          disabled={formData.cka.skipped || readOnly}
-                          onCheckedChange={(checked) => {
-                            const current = new Set(formData.cka.qualifications || []);
-                            if (checked) current.add(q); else current.delete(q);
-                            setFormData({
-                              ...formData,
-                              cka: { ...formData.cka, qualifications: [...current] },
-                            });
-                          }}
-                        />
-                        {q}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-              <Separator />
-              <div>
-                <Label className="text-base font-semibold">Investment Experience</Label>
-                <p className="mb-2 text-sm text-slate-500">
-                  Select all investment products the customer has previously engaged with.
-                </p>
-                <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
-                  {["Unit Trusts", "Bonds", "Equities", "Options/Derivatives", "N.A."].map((w) => {
-                    const isChecked = (formData.cka.work_experience || []).includes(w);
-                    return (
-                      <label key={w} className="flex items-center gap-2">
-                        <Checkbox
-                          checked={isChecked}
-                          disabled={formData.cka.skipped || readOnly}
-                          onCheckedChange={(checked) => {
-                            const current = new Set(formData.cka.work_experience || []);
-                            if (checked) current.add(w); else current.delete(w);
-                            setFormData({
-                              ...formData,
-                              cka: { ...formData.cka, work_experience: [...current] },
-                            });
-                          }}
-                        />
-                        {w}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Transaction Frequency (last 12 months)</Label>
-                <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
-                  {[
-                    { key: "none", label: "None" },
-                    { key: "<3", label: "< 3" },
-                    { key: "3-12", label: "3-12" },
-                    { key: ">12", label: "> 12" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      className={`rounded-md border px-3 py-2 text-sm transition-colors ${
-                        formData.cka.transaction_frequency === opt.key
-                          ? "border-primary-300 bg-primary-50 text-primary-700"
-                          : "border-slate-200 text-slate-600 hover:border-primary-200 hover:bg-primary-50/60"
-                      }`}
-                      onClick={() =>
-                        setFormData({ ...formData, cka: { ...formData.cka, transaction_frequency: opt.key } })
-                      }
-                      disabled={formData.cka.skipped || readOnly}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-          {/* RPQ - Risk Profiling */}
-          <SectionCard
-            stage="fact-finding"
-            icon={TrendingUp}
-            title="Risk Profiling Questionnaire (RPQ)"
-            description="Determine the customer's investment profile to align product recommendations."
-            badge={
-              <Badge variant={formData.rpq.risk_band ? "success" : "secondary"}>
-                {formData.rpq.risk_band || "Pending"}
-              </Badge>
-            }
-          >
-            <div className="space-y-6">
-              <div>
-                <Label className="text-base font-semibold">Investment Experience</Label>
-                <p className="mb-3 text-sm text-slate-500">
-                  How many years of investment experience does the customer have?
-                </p>
-                <RadioGroup
-                  value={formData.rpq.investment_years}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      rpq: { ...formData.rpq, investment_years: value },
-                    })
-                  }
-                  className="space-y-2"
-                >
-                  {[
-                    { id: "exp1", value: "<3", label: "Less than 3 years" },
-                    { id: "exp2", value: "3-5", label: "3 to 5 years" },
-                    { id: "exp3", value: "5-10", label: "5 to 10 years" },
-                    { id: "exp4", value: ">=10", label: "10 years or more" },
-                  ].map((opt) => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={opt.id} disabled={readOnly} />
-                      <Label htmlFor={opt.id}>{opt.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              <Separator />
-              <div>
-                <Label className="text-base font-semibold">Risk Tolerance</Label>
-                <p className="mb-3 text-sm text-slate-500">
-                  I am prepared to accept short-term losses of what percentage of my investments?
-                </p>
-                <RadioGroup
-                  value={formData.rpq.risk_tolerance}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      rpq: { ...formData.rpq, risk_tolerance: value },
-                    })
-                  }
-                  className="space-y-2"
-                >
-                  {[
-                    { id: "risk1", value: "10", label: "Up to 10%" },
-                    { id: "risk2", value: "10-20", label: "10% to 20%" },
-                    { id: "risk3", value: "20-30", label: "20% to 30%" },
-                    { id: "risk4", value: "30", label: "More than 30%" },
-                  ].map((opt) => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={opt.id} disabled={readOnly} />
-                      <Label htmlFor={opt.id}>{opt.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              <Separator />
-              <div>
-                <Label className="text-base font-semibold">Investment Horizon</Label>
-                <p className="mb-3 text-sm text-slate-500">
-                  How long can the customer hold their investments before needing the funds?
-                </p>
-                <RadioGroup
-                  value={formData.rpq.hold_duration}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      rpq: { ...formData.rpq, hold_duration: value },
-                    })
-                  }
-                  className="space-y-2"
-                >
-                  {[
-                    { id: "hold1", value: "<3", label: "Less than 3 years" },
-                    { id: "hold2", value: "3-5", label: "3 to 5 years" },
-                    { id: "hold3", value: "5-10", label: "5 to 10 years" },
-                    { id: "hold4", value: ">=10", label: "10 years or more" },
-                  ].map((opt) => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={opt.id} disabled={readOnly} />
-                      <Label htmlFor={opt.id}>{opt.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              <Separator />
-              <div>
-                <Label className="text-base font-semibold">Financial Capacity</Label>
-                <p className="mb-3 text-sm text-slate-500">
-                  How long can the customer finance the investment before needing funds back?
-                </p>
-                <RadioGroup
-                  value={formData.rpq.finance_duration}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      rpq: { ...formData.rpq, finance_duration: value },
-                    })
-                  }
-                  className="space-y-2"
-                >
-                  {[
-                    { id: "fin1", value: "<3", label: "Less than 3 years" },
-                    { id: "fin2", value: "3-5", label: "3 to 5 years" },
-                    { id: "fin3", value: "5-10", label: "5 to 10 years" },
-                    { id: "fin4", value: ">=10", label: "10 years or more" },
-                  ].map((opt) => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={opt.id} disabled={readOnly} />
-                      <Label htmlFor={opt.id}>{opt.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              <Separator />
-              <div>
-                <Label className="text-base font-semibold">Asset Preference</Label>
-                <p className="mb-3 text-sm text-slate-500">
-                  What is the riskiest asset the customer is comfortable holding?
-                </p>
-                <RadioGroup
-                  value={formData.rpq.riskiest_assets}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      rpq: { ...formData.rpq, riskiest_assets: value },
-                    })
-                  }
-                  className="space-y-2"
-                >
-                  {[
-                    { id: "asset1", value: "bonds", label: "Bonds" },
-                    { id: "asset2", value: "balanced", label: "Balanced funds" },
-                    { id: "asset3", value: "equities", label: "Equities" },
-                    { id: "asset4", value: "derivatives", label: "Options/Derivatives" },
-                  ].map((opt) => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={opt.id} disabled={readOnly} />
-                      <Label htmlFor={opt.id}>{opt.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              <Separator />
-              <div>
-                <Label className="text-base font-semibold">Retirement Timeline</Label>
-                <p className="mb-3 text-sm text-slate-500">
-                  How many years does the customer have until retirement?
-                </p>
-                <RadioGroup
-                  value={formData.rpq.retirement_years}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      rpq: { ...formData.rpq, retirement_years: value },
-                    })
-                  }
-                  className="space-y-2"
-                >
-                  {[
-                    { id: "ret1", value: "<3", label: "Less than 3 years" },
-                    { id: "ret2", value: "3-5", label: "3 to 5 years" },
-                    { id: "ret3", value: "5-10", label: "5 to 10 years" },
-                    { id: "ret4", value: ">=10", label: "10 years or more" },
-                  ].map((opt) => (
-                    <div key={opt.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt.value} id={opt.id} disabled={readOnly} />
-                      <Label htmlFor={opt.id}>{opt.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-              <Button
-                onClick={calculateRPQScore}
-                variant="outline"
-                className="w-full"
-                disabled={!rpqComplete || readOnly}
-              >
-                {rpqComplete ? "Calculate Risk Score" : "Answer all questions to calculate"}
-              </Button>
-              {formData.rpq.total_score > 0 && (
-                <div className="rounded-lg border border-primary-200 bg-primary-50 p-4">
-                  <p className="text-sm font-medium text-slate-900">
-                    Total Score: {formData.rpq.total_score}
+                {formData.cka.skipped ? (
+                  <p className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    This section has been marked as not applicable. Toggle the
+                    switch above to capture CKA details.
                   </p>
-                  <p className="mt-1 text-lg font-bold text-primary-700">
-                    {formData.rpq.risk_band}
-                  </p>
-                  {formData.rpq.assessed_at && (
-                    <p className="mt-1 text-xs text-slate-500">
-                      Assessed on {new Date(formData.rpq.assessed_at).toLocaleString()}
+                ) : null}
+                <div
+                  className={`space-y-6 ${formData.cka.skipped ? "opacity-50" : ""}`}
+                >
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Relevant Qualifications
+                    </Label>
+                    <div className="mt-2 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                      {[
+                        "CMFAS",
+                        "Degree in Finance",
+                        "Professional Cert",
+                        "N.A.",
+                      ].map((q) => {
+                        const isChecked = (
+                          formData.cka.qualifications || []
+                        ).includes(q);
+                        return (
+                          <label key={q} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={isChecked}
+                              disabled={formData.cka.skipped || readOnly}
+                              onCheckedChange={(checked) => {
+                                const current = new Set(
+                                  formData.cka.qualifications || [],
+                                );
+                                if (checked) current.add(q);
+                                else current.delete(q);
+                                setFormData({
+                                  ...formData,
+                                  cka: {
+                                    ...formData.cka,
+                                    qualifications: [...current],
+                                  },
+                                });
+                              }}
+                            />
+                            {q}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Investment Experience
+                    </Label>
+                    <p className="mb-2 text-sm text-slate-500">
+                      Select all investment products the customer has previously
+                      engaged with.
                     </p>
+                    <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                      {[
+                        "Unit Trusts",
+                        "Bonds",
+                        "Equities",
+                        "Options/Derivatives",
+                        "N.A.",
+                      ].map((w) => {
+                        const isChecked = (
+                          formData.cka.work_experience || []
+                        ).includes(w);
+                        return (
+                          <label key={w} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={isChecked}
+                              disabled={formData.cka.skipped || readOnly}
+                              onCheckedChange={(checked) => {
+                                const current = new Set(
+                                  formData.cka.work_experience || [],
+                                );
+                                if (checked) current.add(w);
+                                else current.delete(w);
+                                setFormData({
+                                  ...formData,
+                                  cka: {
+                                    ...formData.cka,
+                                    work_experience: [...current],
+                                  },
+                                });
+                              }}
+                            />
+                            {w}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">
+                      Transaction Frequency (last 12 months)
+                    </Label>
+                    <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+                      {[
+                        { key: "none", label: "None" },
+                        { key: "<3", label: "< 3" },
+                        { key: "3-12", label: "3-12" },
+                        { key: ">12", label: "> 12" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          className={`rounded-md border px-3 py-2 text-sm transition-colors ${
+                            formData.cka.transaction_frequency === opt.key
+                              ? "border-primary-300 bg-primary-50 text-primary-700"
+                              : "border-slate-200 text-slate-600 hover:border-primary-200 hover:bg-primary-50/60"
+                          }`}
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              cka: {
+                                ...formData.cka,
+                                transaction_frequency: opt.key,
+                              },
+                            })
+                          }
+                          disabled={formData.cka.skipped || readOnly}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </SectionCard>
+              {/* RPQ - Risk Profiling */}
+              <SectionCard
+                stage="fact-finding"
+                icon={TrendingUp}
+                title="Risk Profiling Questionnaire (RPQ)"
+                description="Determine the customer's investment profile to align product recommendations."
+                badge={
+                  <Badge
+                    variant={formData.rpq.risk_band ? "success" : "secondary"}
+                  >
+                    {formData.rpq.risk_band || "Pending"}
+                  </Badge>
+                }
+              >
+                <div className="space-y-6">
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Investment Experience
+                    </Label>
+                    <p className="mb-3 text-sm text-slate-500">
+                      How many years of investment experience does the customer
+                      have?
+                    </p>
+                    <RadioGroup
+                      value={formData.rpq.investment_years}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          rpq: { ...formData.rpq, investment_years: value },
+                        })
+                      }
+                      className="space-y-2"
+                    >
+                      {[
+                        { id: "exp1", value: "<3", label: "Less than 3 years" },
+                        { id: "exp2", value: "3-5", label: "3 to 5 years" },
+                        { id: "exp3", value: "5-10", label: "5 to 10 years" },
+                        {
+                          id: "exp4",
+                          value: ">=10",
+                          label: "10 years or more",
+                        },
+                      ].map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={opt.id}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={opt.id}>{opt.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Risk Tolerance
+                    </Label>
+                    <p className="mb-3 text-sm text-slate-500">
+                      I am prepared to accept short-term losses of what
+                      percentage of my investments?
+                    </p>
+                    <RadioGroup
+                      value={formData.rpq.risk_tolerance}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          rpq: { ...formData.rpq, risk_tolerance: value },
+                        })
+                      }
+                      className="space-y-2"
+                    >
+                      {[
+                        { id: "risk1", value: "10", label: "Up to 10%" },
+                        { id: "risk2", value: "10-20", label: "10% to 20%" },
+                        { id: "risk3", value: "20-30", label: "20% to 30%" },
+                        { id: "risk4", value: "30", label: "More than 30%" },
+                      ].map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={opt.id}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={opt.id}>{opt.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Investment Horizon
+                    </Label>
+                    <p className="mb-3 text-sm text-slate-500">
+                      How long can the customer hold their investments before
+                      needing the funds?
+                    </p>
+                    <RadioGroup
+                      value={formData.rpq.hold_duration}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          rpq: { ...formData.rpq, hold_duration: value },
+                        })
+                      }
+                      className="space-y-2"
+                    >
+                      {[
+                        {
+                          id: "hold1",
+                          value: "<3",
+                          label: "Less than 3 years",
+                        },
+                        { id: "hold2", value: "3-5", label: "3 to 5 years" },
+                        { id: "hold3", value: "5-10", label: "5 to 10 years" },
+                        {
+                          id: "hold4",
+                          value: ">=10",
+                          label: "10 years or more",
+                        },
+                      ].map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={opt.id}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={opt.id}>{opt.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Financial Capacity
+                    </Label>
+                    <p className="mb-3 text-sm text-slate-500">
+                      How long can the customer finance the investment before
+                      needing funds back?
+                    </p>
+                    <RadioGroup
+                      value={formData.rpq.finance_duration}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          rpq: { ...formData.rpq, finance_duration: value },
+                        })
+                      }
+                      className="space-y-2"
+                    >
+                      {[
+                        { id: "fin1", value: "<3", label: "Less than 3 years" },
+                        { id: "fin2", value: "3-5", label: "3 to 5 years" },
+                        { id: "fin3", value: "5-10", label: "5 to 10 years" },
+                        {
+                          id: "fin4",
+                          value: ">=10",
+                          label: "10 years or more",
+                        },
+                      ].map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={opt.id}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={opt.id}>{opt.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Asset Preference
+                    </Label>
+                    <p className="mb-3 text-sm text-slate-500">
+                      What is the riskiest asset the customer is comfortable
+                      holding?
+                    </p>
+                    <RadioGroup
+                      value={formData.rpq.riskiest_assets}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          rpq: { ...formData.rpq, riskiest_assets: value },
+                        })
+                      }
+                      className="space-y-2"
+                    >
+                      {[
+                        { id: "asset1", value: "bonds", label: "Bonds" },
+                        {
+                          id: "asset2",
+                          value: "balanced",
+                          label: "Balanced funds",
+                        },
+                        { id: "asset3", value: "equities", label: "Equities" },
+                        {
+                          id: "asset4",
+                          value: "derivatives",
+                          label: "Options/Derivatives",
+                        },
+                      ].map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={opt.id}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={opt.id}>{opt.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <Separator />
+                  <div>
+                    <Label className="text-base font-semibold">
+                      Retirement Timeline
+                    </Label>
+                    <p className="mb-3 text-sm text-slate-500">
+                      How many years does the customer have until retirement?
+                    </p>
+                    <RadioGroup
+                      value={formData.rpq.retirement_years}
+                      onValueChange={(value) =>
+                        setFormData({
+                          ...formData,
+                          rpq: { ...formData.rpq, retirement_years: value },
+                        })
+                      }
+                      className="space-y-2"
+                    >
+                      {[
+                        { id: "ret1", value: "<3", label: "Less than 3 years" },
+                        { id: "ret2", value: "3-5", label: "3 to 5 years" },
+                        { id: "ret3", value: "5-10", label: "5 to 10 years" },
+                        {
+                          id: "ret4",
+                          value: ">=10",
+                          label: "10 years or more",
+                        },
+                      ].map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={opt.id}
+                            disabled={readOnly}
+                          />
+                          <Label htmlFor={opt.id}>{opt.label}</Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                  <Button
+                    onClick={calculateRPQScore}
+                    variant="outline"
+                    className="w-full"
+                    disabled={!rpqComplete || readOnly}
+                  >
+                    {rpqComplete
+                      ? "Calculate Risk Score"
+                      : "Answer all questions to calculate"}
+                  </Button>
+                  {formData.rpq.total_score > 0 && (
+                    <div className="rounded-lg border border-primary-200 bg-primary-50 p-4">
+                      <p className="text-sm font-medium text-slate-900">
+                        Total Score: {formData.rpq.total_score}
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-primary-700">
+                        {formData.rpq.risk_band}
+                      </p>
+                      {formData.rpq.assessed_at && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Assessed on{" "}
+                          {new Date(formData.rpq.assessed_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          </SectionCard>
-
+              </SectionCard>
+            </>
+          )}
           <div className="flex flex-col justify-end gap-2 md:flex-row">
             <div className="flex gap-2">
               <Button
@@ -1195,4 +1553,3 @@ export default function FactFindingSection({ proposal, onSave, isSaving, onNext,
     </div>
   );
 }
-

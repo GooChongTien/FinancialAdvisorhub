@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
-import { Send, Paperclip, Mic, MicOff, Image, FileText } from "lucide-react";
+import { Send, Paperclip, Mic, MicOff, Image, FileText, Radio } from "lucide-react";
 import { Button } from "@/admin/components/ui/button";
 import clsx from "clsx";
+import { useVoiceRecording } from "@/admin/hooks/useVoiceRecording.ts";
 
 export function ChatInput({
   onSend,
@@ -14,13 +15,37 @@ export function ChatInput({
 }) {
   const isControlled = value !== undefined;
   const [message, setMessage] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
 
   const currentMessage = isControlled ? value ?? "" : message;
+
+  // Voice recording with real-time STT
+  const voiceRecording = useVoiceRecording({
+    continuous: true,
+    interimResults: true,
+    language: "en-US",
+    onTranscript: (text, isFinal) => {
+      if (isFinal) {
+        const newMessage = currentMessage + (currentMessage ? " " : "") + text;
+        if (isControlled) {
+          onChange?.({ target: { value: newMessage } });
+        } else {
+          setMessage(newMessage);
+        }
+        // Auto-resize textarea
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
+        }
+      }
+    },
+    onError: (error) => {
+      console.error("Voice recording error:", error);
+    },
+  });
 
   const handleSend = () => {
     const trimmed = currentMessage.trim();
@@ -79,8 +104,11 @@ export function ChatInput({
   };
 
   const toggleRecording = () => {
-    setIsRecording((prev) => !prev);
-    // TODO: Implement actual voice recording
+    if (voiceRecording.isRecording) {
+      voiceRecording.stopRecording();
+    } else {
+      voiceRecording.startRecording();
+    }
   };
 
   const getFileIcon = (type) => {
@@ -152,18 +180,31 @@ export function ChatInput({
         </div>
 
         {/* Text Input */}
-        <textarea
-          ref={textareaRef}
-          value={currentMessage}
-          onChange={handleTextareaChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
-          rows={1}
-          className="max-h-[200px] min-h-[40px] flex-1 resize-none rounded-xl border-0 bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-0 disabled:text-neutral-400 disabled:cursor-not-allowed"
-          disabled={disabled}
-        />
+        <div className="flex-1 relative">
+          <textarea
+            ref={textareaRef}
+            value={currentMessage}
+            onChange={handleTextareaChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            rows={1}
+            className="max-h-[200px] min-h-[40px] w-full resize-none rounded-xl border-0 bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-0 disabled:text-neutral-400 disabled:cursor-not-allowed"
+            disabled={disabled}
+          />
+          {/* Real-time interim transcript indicator */}
+          {voiceRecording.isRecording && voiceRecording.interimTranscript && (
+            <div className="absolute bottom-full left-0 mb-2 w-full">
+              <div className="text-sm text-slate-500 italic bg-slate-50 border border-slate-200 rounded-lg p-2 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <Radio className="w-3 h-3 text-red-600 animate-pulse" />
+                  {voiceRecording.interimTranscript}...
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Action Buttons - Right */}
         <div className="flex gap-1 pb-2">
@@ -174,14 +215,14 @@ export function ChatInput({
             onClick={toggleRecording}
             className={clsx(
               "h-9 w-9 rounded-xl transition-all",
-              isRecording
+              voiceRecording.isRecording
                 ? "bg-red-50 text-red-600 hover:bg-red-100"
                 : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
             )}
-            title={isRecording ? "Stop recording" : "Start voice input"}
-            disabled={disabled}
+            title={voiceRecording.isRecording ? "Stop recording" : "Start voice input"}
+            disabled={disabled || !voiceRecording.isSupported}
           >
-            {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            {voiceRecording.isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
           </Button>
 
           <Button
