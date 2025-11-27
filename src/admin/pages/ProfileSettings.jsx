@@ -2,18 +2,12 @@ import { adviseUAdminApi } from "@/admin/api/adviseUAdminApi";
 import { Alert, AlertDescription } from "@/admin/components/ui/alert";
 import { Button } from "@/admin/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/admin/components/ui/card";
+import { CurrencySelector } from "@/admin/components/ui/CurrencySelector.jsx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/admin/components/ui/dialog";
 import { Input } from "@/admin/components/ui/input";
 import { Label } from "@/admin/components/ui/label";
+import { LanguageSwitcher } from "@/admin/components/ui/LanguageSwitcher.jsx";
 import PageHeader from "@/admin/components/ui/page-header.jsx";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/admin/components/ui/select";
-import { CurrencySelector } from "@/admin/components/ui/CurrencySelector.jsx";
 import { Separator } from "@/admin/components/ui/separator";
 import { Switch } from "@/admin/components/ui/switch";
 import { useToast } from "@/admin/components/ui/toast";
@@ -22,8 +16,8 @@ import { createPageUrl } from "@/admin/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, Settings as SettingsIcon, Shield, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
@@ -362,25 +356,14 @@ export default function ProfileSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t("profile.preferences.language")}</Label>
-                <Select
-                  value={preferences.language}
-                  onValueChange={(value) => {
+                <LanguageSwitcher
+                  className="w-full"
+                  onLanguageChange={(value) => {
                     const next = { ...preferences, language: value };
                     setPreferences(next);
                     updatePrefs({ language: value });
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languageOptions.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        {lang.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
               <div className="space-y-2">
                 <Label>{t("profile.preferences.currency")}</Label>

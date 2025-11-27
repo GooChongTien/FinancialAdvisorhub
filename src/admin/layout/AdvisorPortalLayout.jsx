@@ -6,7 +6,6 @@ import adviseULogo from "@/admin/components/ui/advise_u_logo.png";
 import adviseUShield from "@/admin/components/ui/adviseU.png";
 import { Avatar, AvatarFallback } from "@/admin/components/ui/avatar";
 import { Button } from "@/admin/components/ui/button";
-import { useMiraMode } from "@/admin/state/useMiraMode";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,10 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/admin/components/ui/dropdown-menu";
-import { LanguageSwitcherCompact } from "@/admin/components/ui/LanguageSwitcher.jsx";
 import { MiraDrawerProvider, useMiraDrawer } from "@/admin/state/MiraDrawerProvider.jsx";
 import { usePreferences } from "@/admin/state/PreferencesContext.jsx";
 import { MiraChatProvider, useMiraChat } from "@/admin/state/providers/MiraChatProvider.jsx";
+import { useMiraMode } from "@/admin/state/useMiraMode";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -473,12 +472,7 @@ function LayoutWithChatProvider() {
 
           {/* User Profile Section - Bottom */}
           <div className="mt-auto border-t border-menu-divider px-2 py-4">
-            {!sidebarCollapsed && (
-              <LanguageSwitcherCompact
-                className="mb-3 w-full"
-                onLanguageChange={handlePreferredLanguageChange}
-              />
-            )}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -634,14 +628,14 @@ function ChatSidebar({
         {threads.slice(0, 6).map((thread) => {
           const isActive = activeThreadId === thread.id;
           return (
-              <button
-                key={thread.id}
-                type="button"
-                onClick={() => onSelectThread(thread.id)}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70",
-                  isActive && "bg-white/20 text-white",
-                )}
+            <button
+              key={thread.id}
+              type="button"
+              onClick={() => onSelectThread(thread.id)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/70 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70",
+                isActive && "bg-white/20 text-white",
+              )}
               title={thread.title || t("layout.sidebar.miraChat")}
             >
               <MessageCircle className="h-4 w-4" />

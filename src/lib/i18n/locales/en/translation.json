@@ -1020,7 +1020,21 @@
         "policies": "New policies",
         "teamAvg": "Team average policies",
         "policiesLabel": "Policies"
-      }
+      },
+      "goals": {
+        "quarterlyPremium": "Quarterly Premium Target",
+        "newAcquisition": "New Customer Acquisition",
+        "avgCompletion": "Avg. Proposal Completion"
+      },
+      "funnel": {
+        "leads": "Leads",
+        "proposals": "Proposals",
+        "policies": "Policies"
+      },
+      "gauge": {
+        "completion": "Completion"
+      },
+      "drillDown": "Drill-down:"
     }
   },
   "home": {
@@ -1046,8 +1060,8 @@
       },
       "recommendations": {
         "title": "Recommendations",
-        "description": "Give me product recommendations for my customer base",
-        "prompt": "Give me product recommendations for my customer base"
+        "description": "What recommendations do you have for me today?",
+        "prompt": "What recommendations do you have for me today?"
       }
     }
   },

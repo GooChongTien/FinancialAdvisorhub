@@ -26,6 +26,12 @@ import {
   detectMeetingIntentFromPrompt,
   registerMeetingPrepExecutor,
 } from "@/lib/aial/intent/meetingPrep.js";
+import {
+  detectIntentFromPrompt,
+  buildNavigationUrl,
+  shouldNavigate,
+  getStarterPrompts,
+} from "@/lib/aial/intent/intentRouting.js";
 import { useQuery } from "@tanstack/react-query";
 import { useMachine } from "@xstate/react";
 import {
@@ -188,7 +194,7 @@ export default function Home() {
   }, [assistantResponse, clearStreamingTimer, send]);
 
   const handleCommandRun = React.useCallback(
-    async (input) => {
+    async (input, options = {}) => {
       const trimmed = input.trim();
       if (!trimmed || isRunningCommand) return;
 
@@ -215,9 +221,58 @@ export default function Home() {
         source: "home-dashboard",
       });
 
-      // Open split view and send message (keeps user in context)
-      openSplit();
-      sendMessage(trimmed);
+      // Determine if we should navigate based on starter prompt configuration
+      const shouldNavigateDirectly = options.navigateToRoute;
+
+      if (shouldNavigateDirectly) {
+        // Open split view first, then navigate, then send message after rendering
+        openSplit();
+        navigate(shouldNavigateDirectly);
+
+        // Use requestAnimationFrame to ensure navigation and render complete
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            sendMessage(trimmed);
+          });
+        });
+
+        void trackMiraEvent("mira.smart_navigation", {
+          persona,
+          mode: activeMode,
+          intentGuess: intentName,
+          targetRoute: shouldNavigateDirectly,
+          source: "home-dashboard-starter",
+        });
+      } else {
+        // Detect intent from prompt and navigate if applicable
+        const detectedIntent = detectIntentFromPrompt(trimmed);
+        const navigationUrl = buildNavigationUrl(detectedIntent);
+
+        if (navigationUrl) {
+          openSplit();
+          navigate(navigationUrl);
+
+          // Use requestAnimationFrame to ensure navigation and render complete
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              sendMessage(trimmed);
+            });
+          });
+
+          void trackMiraEvent("mira.smart_navigation", {
+            persona,
+            mode: activeMode,
+            detectedIntent,
+            targetRoute: navigationUrl,
+            source: "home-dashboard-auto",
+          });
+        } else {
+          // Default behavior: just open split view and send immediately
+          openSplit();
+          sendMessage(trimmed);
+        }
+      }
+
       return;
     },
     [
@@ -230,6 +285,7 @@ export default function Home() {
       openSplit,
       sendMessage,
       showToast,
+      navigate,
     ],
   );
 
@@ -290,29 +346,31 @@ export default function Home() {
     }
   }, [handleCommandRun, lastPrompt]);
 
-  // Starter Conversation Buttons
-  const starterPrompts = [
+  // Starter Conversation Buttons with routing
+  const starterPromptsConfig = React.useMemo(() => getStarterPrompts(), []);
+
+  const starterPrompts = React.useMemo(() => [
     {
-      key: "customerAnalysis",
+      ...starterPromptsConfig[0],
       icon: Users,
       color: "bg-blue-50 text-blue-600",
     },
     {
-      key: "salesPerformance",
+      ...starterPromptsConfig[1],
       icon: TrendingUp,
       color: "bg-purple-50 text-purple-600",
     },
     {
-      key: "pendingTasks",
+      ...starterPromptsConfig[2],
       icon: CheckSquare,
       color: "bg-green-50 text-green-600",
     },
     {
-      key: "recommendations",
+      ...starterPromptsConfig[3],
       icon: Sparkles,
       color: "bg-orange-50 text-orange-600",
     },
-  ];
+  ], [starterPromptsConfig]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-white to-blue-50/30 px-4 py-12">
@@ -335,7 +393,11 @@ export default function Home() {
           {starterPrompts.map((item) => (
             <button
               key={item.key}
-              onClick={() => handleCommandRun(t(`home.prompts.${item.key}.prompt`))}
+              onClick={() => {
+                const prompt = item.prompt || t(`home.prompts.${item.key}.prompt`);
+                const targetRoute = item.route ? createPageUrl(item.route) : null;
+                handleCommandRun(prompt, { navigateToRoute: targetRoute });
+              }}
               className="group flex flex-col items-start rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
             >
               <div className={`mb-3 rounded-lg p-2 ${item.color}`}>

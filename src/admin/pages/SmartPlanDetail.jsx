@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/admin/components/ui/
 import { Textarea } from "@/admin/components/ui/textarea";
 import { useToast } from "@/admin/components/ui/toast";
 import { createPageUrl } from "@/admin/utils";
+import { useVoiceRecording } from "@/admin/hooks/useVoiceRecording.ts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, CheckCircle2, ClipboardList, FileText, Mic, MicOff, Upload, User } from "lucide-react";
 import React, { useMemo, useState } from "react";
@@ -47,8 +48,36 @@ export default function SmartPlanDetail() {
   const [summaryError, setSummaryError] = useState("");
   const [noteAttachments, setNoteAttachments] = useState([]);
   const [transcriptAttachments, setTranscriptAttachments] = useState([]);
-  const [recordingNotes, setRecordingNotes] = useState(false);
-  const [recordingTranscript, setRecordingTranscript] = useState(false);
+
+  // Real voice recording hooks for notes
+  const notesVoiceRecording = useVoiceRecording({
+    continuous: false,
+    interimResults: true,
+    language: "en-US",
+    onTranscript: (text, isFinal) => {
+      if (isFinal) {
+        setNotes((prev) => prev + (prev ? " " : "") + text);
+      }
+    },
+    onError: (error) => {
+      showToast({ type: "error", title: "Voice recording error", description: error.message });
+    },
+  });
+
+  // Real voice recording hooks for transcript
+  const transcriptVoiceRecording = useVoiceRecording({
+    continuous: false,
+    interimResults: true,
+    language: "en-US",
+    onTranscript: (text, isFinal) => {
+      if (isFinal) {
+        setTranscript((prev) => prev + (prev ? " " : "") + text);
+      }
+    },
+    onError: (error) => {
+      showToast({ type: "error", title: "Voice recording error", description: error.message });
+    },
+  });
 
   React.useEffect(() => {
     if (!task) return;
@@ -260,10 +289,17 @@ export default function SmartPlanDetail() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setRecordingNotes((v) => !v)}
+                    onClick={() => {
+                      if (notesVoiceRecording.isRecording) {
+                        notesVoiceRecording.stopRecording();
+                      } else {
+                        notesVoiceRecording.startRecording();
+                      }
+                    }}
+                    disabled={!notesVoiceRecording.isSupported}
                   >
-                    {recordingNotes ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                    {recordingNotes ? t("smartPlan.detail.notes.stopRecording") : t("smartPlan.detail.notes.voiceNote")}
+                    {notesVoiceRecording.isRecording ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
+                    {notesVoiceRecording.isRecording ? t("smartPlan.detail.notes.stopRecording") : t("smartPlan.detail.notes.voiceNote")}
                   </Button>
                   <Button type="button" variant="outline" asChild>
                     <label className="cursor-pointer inline-flex items-center gap-2">
@@ -283,7 +319,16 @@ export default function SmartPlanDetail() {
                       <span>{noteAttachments.join(", ")}</span>
                     </div>
                   ) : null}
-                  {recordingNotes ? <span className="text-xs text-amber-600 font-semibold">{t("smartPlan.detail.notes.recordingSimulated")}</span> : null}
+                  {notesVoiceRecording.isRecording ? (
+                    <span className="text-xs text-red-600 font-semibold animate-pulse">
+                      ● Recording...
+                    </span>
+                  ) : null}
+                  {notesVoiceRecording.interimTranscript ? (
+                    <span className="text-xs text-slate-500 italic">
+                      {notesVoiceRecording.interimTranscript}...
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex justify-end">
                   <Button onClick={handleSaveNotes}>{t("smartPlan.detail.notes.save")}</Button>
@@ -304,10 +349,17 @@ export default function SmartPlanDetail() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setRecordingTranscript((v) => !v)}
+                      onClick={() => {
+                        if (transcriptVoiceRecording.isRecording) {
+                          transcriptVoiceRecording.stopRecording();
+                        } else {
+                          transcriptVoiceRecording.startRecording();
+                        }
+                      }}
+                      disabled={!transcriptVoiceRecording.isSupported}
                     >
-                      {recordingTranscript ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
-                      {recordingTranscript ? t("smartPlan.detail.transcript.stopRecording") : t("smartPlan.detail.transcript.startRecording")}
+                      {transcriptVoiceRecording.isRecording ? <MicOff className="w-4 h-4 mr-2" /> : <Mic className="w-4 h-4 mr-2" />}
+                      {transcriptVoiceRecording.isRecording ? t("smartPlan.detail.transcript.stopRecording") : t("smartPlan.detail.transcript.startRecording")}
                     </Button>
                     <Button type="button" variant="outline" asChild>
                       <label className="cursor-pointer inline-flex items-center gap-2">
@@ -327,7 +379,16 @@ export default function SmartPlanDetail() {
                         <span>{transcriptAttachments.join(", ")}</span>
                       </div>
                     ) : null}
-                    {recordingTranscript ? <span className="text-xs text-amber-600 font-semibold">{t("smartPlan.detail.notes.recordingSimulated")}</span> : null}
+                    {transcriptVoiceRecording.isRecording ? (
+                      <span className="text-xs text-red-600 font-semibold animate-pulse">
+                        ● Recording...
+                      </span>
+                    ) : null}
+                    {transcriptVoiceRecording.interimTranscript ? (
+                      <span className="text-xs text-slate-500 italic">
+                        {transcriptVoiceRecording.interimTranscript}...
+                      </span>
+                    ) : null}
                   </div>
                   <div className="flex justify-end">
                     <Button onClick={handleSaveTranscript}>{t("smartPlan.detail.transcript.save")}</Button>
