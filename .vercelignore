@@ -1,0 +1,49 @@
+# Environment variables (should be set in Vercel dashboard)
+.env
+.env.local
+.env*.local
+
+# Development files
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+test-results/
+playwright-report/
+tests/
+*.test.js
+*.test.jsx
+*.spec.js
+*.spec.jsx
+
+# IDE / Editor
+.vscode/
+.idea/
+.claude/
+
+# Documentation (optional - remove if you want docs in production)
+docs/
+
+# Scripts (optional - remove if needed in production)
+scripts/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Supabase (local development)
+.supabase/
+
+# Backup files
+*.bak
+*.backup
+*_backup.*
+current_*.jsx
+
+# Logs
+*.log
+*.err
